@@ -66,6 +66,18 @@ const config: Config = {
           "0%": { backgroundPosition: "200% 0" },
           "100%": { backgroundPosition: "-200% 0" },
         },
+        marquee: {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
+        "pulse-soft": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.5" },
+        },
+        "grow-bar": {
+          "0%": { transform: "scaleY(0)" },
+          "100%": { transform: "scaleY(1)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -73,6 +85,9 @@ const config: Config = {
         "fade-up": "fade-up 0.6s ease-out forwards",
         float: "float 4s ease-in-out infinite",
         shimmer: "shimmer 3s linear infinite",
+        marquee: "marquee 32s linear infinite",
+        "pulse-soft": "pulse-soft 2.4s ease-in-out infinite",
+        "grow-bar": "grow-bar 0.8s ease-out forwards",
       },
       backgroundImage: {
         "grid-pattern":

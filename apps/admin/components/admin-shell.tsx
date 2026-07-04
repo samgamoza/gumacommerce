@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { GumaMark } from "@guma-commerce/ui";
 import { SETTINGS_SECTIONS } from "@/lib/settings-nav";
 
 const NAV = [
@@ -73,9 +74,7 @@ export function AdminShell({
     <div className="min-h-screen bg-gray-50 lg:flex">
       <aside className="border-b border-violet-100 bg-violet-50/60 lg:w-64 lg:border-b-0 lg:border-r lg:border-violet-100">
         <div className="flex items-center gap-2 px-4 py-5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-600 text-lg text-white">
-            🛒
-          </span>
+          <GumaMark className="h-9 w-9 shrink-0 drop-shadow-sm" />
           <div className="min-w-0 flex-1">
             <p className="font-bold text-gray-900">Guma Commerce</p>
             <p className="truncate text-xs text-gray-500">

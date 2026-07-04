@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Mail, MapPin, Sparkles } from "lucide-react";
+import { Mail, MapPin } from "lucide-react";
+import { GumaMark } from "@guma-commerce/ui";
 import { company, footerLinks } from "@/lib/site-content";
 import { adminUrl } from "@/lib/utils";
 
@@ -30,10 +31,10 @@ export function LandingFooter() {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-6">
           <div className="sm:col-span-2 lg:col-span-2">
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-md shadow-primary/20">
-                <Sparkles className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <span className="font-display text-xl font-bold">Guma Commerce</span>
+              <GumaMark className="h-9 w-9 drop-shadow-sm" />
+              <span className="font-display text-xl font-bold tracking-tight">
+                Guma<span className="text-gradient">Commerce</span>
+              </span>
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
               The social commerce platform built for Philippine sellers. Turn posts into orders

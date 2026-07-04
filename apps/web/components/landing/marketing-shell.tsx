@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+import { GumaMark } from "@guma-commerce/ui";
 import { LandingNav } from "@/components/landing/navbar";
 import { LandingFooter } from "@/components/landing/footer";
 
@@ -46,8 +46,8 @@ export function Breadcrumb({ items }: { items: { label: string; href?: string }[
     <nav className="mx-auto max-w-4xl px-4 pt-6 text-sm text-muted-foreground sm:px-6">
       <ol className="flex flex-wrap items-center gap-1.5">
         <li>
-          <Link href="/" className="flex items-center gap-1 hover:text-primary">
-            <Sparkles className="h-3.5 w-3.5" />
+          <Link href="/" className="flex items-center gap-1.5 hover:text-primary">
+            <GumaMark className="h-3.5 w-3.5" />
             Home
           </Link>
         </li>

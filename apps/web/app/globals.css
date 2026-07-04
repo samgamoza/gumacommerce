@@ -44,14 +44,33 @@
   .hero-glow {
     background: radial-gradient(
         ellipse 80% 60% at 50% -10%,
-        hsl(160 84% 32% / 0.18),
+        hsl(160 84% 32% / 0.22),
         transparent 70%
       ),
       radial-gradient(
         ellipse 50% 40% at 90% 20%,
-        hsl(38 92% 50% / 0.12),
+        hsl(38 92% 50% / 0.14),
+        transparent 60%
+      ),
+      radial-gradient(
+        ellipse 40% 35% at 5% 45%,
+        hsl(172 66% 40% / 0.12),
         transparent 60%
       );
+  }
+
+  .marquee-mask {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 12%,
+      black 88%,
+      transparent
+    );
+  }
+
+  .text-gradient-amber {
+    @apply bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent;
   }
 
   .glass {

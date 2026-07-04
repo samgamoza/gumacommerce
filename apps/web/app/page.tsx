@@ -5,8 +5,16 @@ import {
   LandingHowItWorks,
   LandingSocialProof,
 } from "@/components/landing/features";
-import { LandingHero } from "@/components/landing/hero";
+import { LandingComparison } from "@/components/landing/comparison";
+import { LandingHero, LandingMarquee } from "@/components/landing/hero";
 import { LandingNav } from "@/components/landing/navbar";
+
+const stats = [
+  { value: "60s", label: "Avg. checkout time" },
+  { value: "8%+", label: "Store conversion" },
+  { value: "₱0", label: "To start" },
+  { value: "24/7", label: "Orders while you sleep" },
+];
 
 export default function HomePage() {
   return (
@@ -14,23 +22,20 @@ export default function HomePage() {
       <LandingNav />
       <main>
         <LandingHero />
-        <section className="border-b border-border/60 bg-background py-10">
-          <div className="mx-auto grid max-w-4xl grid-cols-2 gap-8 px-4 text-center sm:grid-cols-4 sm:px-6">
-            {[
-              { value: "60s", label: "Avg. checkout time" },
-              { value: "8%+", label: "Store conversion" },
-              { value: "₱0", label: "To start" },
-              { value: "24/7", label: "Orders while you sleep" },
-            ].map((stat) => (
-              <div key={stat.label}>
-                <p className="font-display text-2xl font-bold text-primary sm:text-3xl">
+        <LandingMarquee />
+        <section className="bg-background py-12">
+          <div className="mx-auto grid max-w-4xl grid-cols-2 gap-x-8 gap-y-10 px-4 text-center sm:grid-cols-4 sm:divide-x sm:divide-border/60 sm:px-6">
+            {stats.map((stat) => (
+              <div key={stat.label} className="px-2">
+                <p className="font-display text-3xl font-extrabold text-gradient sm:text-4xl">
                   {stat.value}
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{stat.label}</p>
+                <p className="mt-1.5 text-xs text-muted-foreground sm:text-sm">{stat.label}</p>
               </div>
             ))}
           </div>
         </section>
+        <LandingComparison />
         <LandingFeatures />
         <LandingHowItWorks />
         <LandingSocialProof />

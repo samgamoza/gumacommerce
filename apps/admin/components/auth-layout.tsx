@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { GumaMark } from "@guma-commerce/ui";
 
 export function AuthLayout({
   title,
@@ -12,9 +13,11 @@ export function AuthLayout({
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
       <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-12">
-        <Link href="/" className="mb-8 flex items-center justify-center gap-2">
-          <span className="text-2xl">🛒</span>
-          <span className="font-bold text-emerald-800">Guma Commerce</span>
+        <Link href="/" className="mb-8 flex items-center justify-center gap-2.5">
+          <GumaMark className="h-10 w-10 drop-shadow-sm" />
+          <span className="text-xl font-bold tracking-tight text-emerald-900">
+            Guma<span className="text-emerald-600">Commerce</span>
+          </span>
         </Link>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xl shadow-emerald-900/5 sm:p-8">

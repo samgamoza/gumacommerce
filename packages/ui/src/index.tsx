@@ -1,5 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
+export { GumaMark } from "./logo";
+
 const variants = {
   primary: "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm",
   secondary: "bg-white text-gray-900 border border-gray-200 hover:bg-gray-50",

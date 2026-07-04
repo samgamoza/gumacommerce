@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, Menu, Sparkles } from "lucide-react";
+import { ArrowRight, Menu } from "lucide-react";
+import { GumaMark } from "@guma-commerce/ui";
 import { Button } from "@/components/ui/button";
 import { adminUrl } from "@/lib/utils";
 
@@ -7,11 +8,11 @@ export function LandingNav() {
   return (
     <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-md shadow-primary/20">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span className="font-display text-xl font-bold tracking-tight">Guma Commerce</span>
+        <Link href="/" className="group flex items-center gap-2.5">
+          <GumaMark className="h-9 w-9 drop-shadow-sm transition-transform group-hover:-rotate-3 group-hover:scale-105" />
+          <span className="font-display text-xl font-bold tracking-tight">
+            Guma<span className="text-gradient">Commerce</span>
+          </span>
         </Link>
 
         <nav className="hidden items-center gap-8 text-sm font-medium text-muted-foreground md:flex">
