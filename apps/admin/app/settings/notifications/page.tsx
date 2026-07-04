@@ -1,0 +1,5 @@
+import { NotificationsSettingsPage } from "@/components/settings/notifications-settings";
+
+export default function Page() {
+  return <NotificationsSettingsPage />;
+}

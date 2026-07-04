@@ -1,0 +1,99 @@
+import Link from "next/link";
+import { Mail, MapPin, Sparkles } from "lucide-react";
+import { company, footerLinks } from "@/lib/site-content";
+import { adminUrl } from "@/lib/utils";
+
+function FooterColumn({ title, links }: { title: string; links: { label: string; href: string }[] }) {
+  return (
+    <div>
+      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+      <ul className="mt-4 space-y-2.5">
+        {links.map((link) => (
+          <li key={link.href}>
+            <Link
+              href={link.href}
+              className="text-sm text-muted-foreground transition hover:text-primary"
+            >
+              {link.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export function LandingFooter() {
+  return (
+    <footer className="border-t border-border/60 bg-muted/30">
+      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-6">
+          <div className="sm:col-span-2 lg:col-span-2">
+            <Link href="/" className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-md shadow-primary/20">
+                <Sparkles className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <span className="font-display text-xl font-bold">Guma Commerce</span>
+            </Link>
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
+              The social commerce platform built for Philippine sellers. Turn posts into orders
+              with AI, local payments, and delivery.
+            </p>
+            <div className="mt-5 space-y-2 text-sm text-muted-foreground">
+              <a href={`mailto:${company.email}`} className="flex items-center gap-2 hover:text-primary">
+                <Mail className="h-4 w-4 shrink-0" />
+                {company.email}
+              </a>
+              <p className="flex items-start gap-2">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
+                {company.address}
+              </p>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                href="/contact"
+                className="text-sm text-muted-foreground transition hover:text-primary"
+              >
+                Follow Guma Commerce on social — coming soon
+              </Link>
+            </div>
+          </div>
+
+          <FooterColumn title="Product" links={footerLinks.product} />
+          <FooterColumn title="Company" links={footerLinks.company} />
+          <FooterColumn title="Support" links={footerLinks.support} />
+          <FooterColumn title="Legal" links={footerLinks.legal} />
+        </div>
+
+        <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-border/60 pt-8 sm:flex-row">
+          <div className="text-center text-xs text-muted-foreground sm:text-left">
+            <p>
+              © {new Date().getFullYear()} {company.name}. All rights reserved.
+            </p>
+            <p className="mt-1">{company.registry}</p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-4 text-xs text-muted-foreground">
+            <Link href="/privacy" className="hover:text-primary">
+              Privacy
+            </Link>
+            <Link href="/terms" className="hover:text-primary">
+              Terms
+            </Link>
+            <Link href="/refunds" className="hover:text-primary">
+              Refunds
+            </Link>
+            <Link href={adminUrl} className="hover:text-primary">
+              Seller portal
+            </Link>
+          </div>
+        </div>
+
+        <p className="mt-6 text-center text-[11px] leading-relaxed text-muted-foreground/80">
+          Guma Commerce complies with the Philippine Data Privacy Act (RA 10173), Internet Transactions
+          Act (RA 11967), and DTI e-commerce guidelines. Payment processing via BSP-regulated
+          partners.
+        </p>
+      </div>
+    </footer>
+  );
+}

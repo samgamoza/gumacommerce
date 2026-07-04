@@ -1,0 +1,17 @@
+{
+  "name": "Guma Commerce Shop",
+  "short_name": "Guma Commerce",
+  "description": "Order from your favorite PH social sellers",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#059669",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

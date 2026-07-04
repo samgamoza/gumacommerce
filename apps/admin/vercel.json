@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/agents?mode=daily",
+      "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/agents?mode=weekly",
+      "schedule": "0 2 * * 1"
+    },
+    {
+      "path": "/api/cron/agent-reminders",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}

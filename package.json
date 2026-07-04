@@ -1,0 +1,26 @@
+{
+  "name": "guma-commerce",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "db:generate": "pnpm --filter @guma-commerce/db generate",
+    "db:migrate": "pnpm --filter @guma-commerce/db migrate",
+    "db:reconcile": "pnpm --filter @guma-commerce/db reconcile",
+    "db:inspect": "pnpm --filter @guma-commerce/db inspect",
+    "db:push": "pnpm --filter @guma-commerce/db push",
+    "db:studio": "pnpm --filter @guma-commerce/db studio",
+    "db:seed": "pnpm --filter @guma-commerce/db seed",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20"
+  }
+}

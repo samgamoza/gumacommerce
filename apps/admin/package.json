@@ -1,0 +1,37 @@
+{
+  "name": "@guma-commerce/admin",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3001",
+    "dev:clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\" && next dev --port 3001",
+    "build": "next build",
+    "start": "next start --port 3001",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@guma-commerce/ai": "workspace:*",
+    "@guma-commerce/auth": "workspace:*",
+    "@guma-commerce/db": "workspace:*",
+    "@guma-commerce/services": "workspace:*",
+    "@guma-commerce/storefront-themes": "workspace:*",
+    "@guma-commerce/ui": "workspace:*",
+    "sharp": "^0.33.5",
+    "@imgly/background-removal-node": "^1.4.5",
+    "lucide-react": "^1.23.0",
+    "next": "^15.1.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2"
+  }
+}

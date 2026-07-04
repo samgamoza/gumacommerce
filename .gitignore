@@ -1,0 +1,37 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build
+.next
+dist
+.turbo
+out
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea
+.vscode
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Debug
+npm-debug.log*
+pnpm-debug.log*
+
+# Drizzle
+packages/db/drizzle/*.sql
+
+# Vercel
+.vercel
+
+# User uploads (keep folder structure)
+apps/web/public/uploads/products/**
+!apps/web/public/uploads/products/.gitkeep

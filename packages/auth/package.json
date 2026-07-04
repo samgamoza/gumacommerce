@@ -1,0 +1,26 @@
+{
+  "name": "@guma-commerce/auth",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./session": "./src/session.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@guma-commerce/db": "workspace:*",
+    "bcryptjs": "^2.4.3",
+    "drizzle-orm": "^0.38.3",
+    "google-auth-library": "^9.15.1",
+    "jose": "^5.9.6",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}
