@@ -23,6 +23,9 @@ import type { DemoTenant } from "@/lib/demo-data";
 import { useCart } from "@/lib/cart";
 import { whatsappChatUrl } from "@/lib/storefront-settings";
 import { ShopAssistant } from "@/components/storefront/shop-assistant";
+import { LockedAssistantFab } from "@/components/storefront/premium/locked-assistant-fab";
+import { hasProFeatures } from "@/lib/storefront-plans";
+import { displayFontStack } from "@/components/storefront/theme-shell";
 import { STOREFRONT_SETTINGS_LINKS } from "@/lib/settings-nav";
 import { adminUrl, storefrontUrl } from "@/lib/utils";
 
@@ -71,6 +74,7 @@ export function ShopShell({
   const isCoarsePointer = useCoarsePointer();
 
   const accent = tenant.shopTheme?.primaryColor ?? tenant.theme.primaryColor;
+  const fontStack = tenant.shopTheme ? displayFontStack(tenant.shopTheme) : undefined;
 
   function openOwnerMenu() {
     if (closeTimerRef.current) {
@@ -102,7 +106,10 @@ export function ShopShell({
   }, []);
 
   return (
-    <div className="min-h-screen bg-white text-neutral-900">
+    <div
+      className="min-h-screen bg-white text-neutral-900"
+      style={fontStack ? ({ ["--font-bricolage" as string]: fontStack } as React.CSSProperties) : undefined}
+    >
       <header className="sticky top-0 z-50 border-b border-neutral-200 bg-white/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 md:px-8 md:py-5">
           <Link href={`/${tenant.slug}`} className="min-w-0 flex-1">
@@ -255,11 +262,16 @@ export function ShopShell({
 
       {children}
 
-      <ShopAssistant
-        tenantSlug={tenant.slug}
-        shopName={tenant.name}
-        assistant={tenant.storeSettings.shopAssistant}
-      />
+      {tenant.storeSettings.shopAssistant.enabled &&
+        (hasProFeatures(tenant.subscriptionPlan) ? (
+          <ShopAssistant
+            tenantSlug={tenant.slug}
+            shopName={tenant.name}
+            assistant={tenant.storeSettings.shopAssistant}
+          />
+        ) : (
+          <LockedAssistantFab theme={tenant.shopTheme} />
+        ))}
 
       {tenant.storeSettings.whatsapp.enabled && tenant.storeSettings.whatsapp.phone && (
         <a

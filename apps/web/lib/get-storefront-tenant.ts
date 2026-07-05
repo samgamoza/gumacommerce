@@ -61,6 +61,7 @@ export async function getStorefrontTenant(slug: string): Promise<DemoTenant | nu
     codEnabled: storeSettings.codEnabled,
     storeSettings,
     products: mappedProducts,
+    subscriptionPlan: tenant.subscriptionPlan,
   };
 }
 

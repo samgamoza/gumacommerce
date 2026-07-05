@@ -1,6 +1,65 @@
 import { NextResponse } from "next/server";
-import { markOrderPaidByIntent, markPaymentFailedByIntent } from "@guma-commerce/db";
-import { createPayMongoClient } from "@guma-commerce/services";
+import {
+  deletePushSubscriptions,
+  getTenantOwnerContact,
+  getTenantSettings,
+  listPushSubscriptionsForTenant,
+  markOrderPaidByIntent,
+  markPaymentFailedByIntent,
+  markPlanPaymentPaidByIntent,
+  type MarkOrderPaidResult,
+} from "@guma-commerce/db";
+import {
+  createPayMongoClient,
+  createSemaphoreClient,
+  formatPhp,
+  isPushConfigured,
+  sendPushNotifications,
+} from "@guma-commerce/services";
+
+/** Browser push to every device the seller enabled notifications on. */
+async function pushSellerPaymentReceived(result: MarkOrderPaidResult): Promise<void> {
+  if (!result.tenantId || !result.orderNumber || !isPushConfigured()) return;
+
+  const subscriptions = await listPushSubscriptionsForTenant(result.tenantId);
+  if (subscriptions.length === 0) return;
+
+  const total = result.total ? formatPhp(Number(result.total)) : "";
+  const { expiredEndpoints } = await sendPushNotifications(subscriptions, {
+    title: "Payment received 💸",
+    body: `Order ${result.orderNumber}${total ? ` · ${total}` : ""} is paid. Tap to start preparing it.`,
+    url: "/orders",
+    tag: `order-${result.orderNumber}`,
+  });
+  if (expiredEndpoints.length > 0) {
+    await deletePushSubscriptions(expiredEndpoints);
+  }
+}
+
+/**
+ * Texts the seller when a payment lands. Opt-in via the
+ * "SMS me for new orders" notification setting; uses the WhatsApp business
+ * number when set, otherwise the owner account's phone.
+ */
+async function notifySellerPaymentReceived(result: MarkOrderPaidResult): Promise<void> {
+  if (!result.tenantId || !result.orderNumber) return;
+
+  const settings = await getTenantSettings(result.tenantId);
+  if (settings?.settings?.notifications?.smsOnNewOrder !== true) return;
+
+  const owner = await getTenantOwnerContact(result.tenantId);
+  const phone = settings.settings.whatsapp?.phone?.trim() || owner.phone;
+  if (!phone) return;
+
+  const total = result.total ? formatPhp(Number(result.total)) : "";
+  await createSemaphoreClient().send({
+    to: phone,
+    message: `Guma Commerce: Payment received for order ${result.orderNumber}${
+      total ? ` (${total})` : ""
+    }. Open your dashboard to start preparing it.`,
+    priority: true,
+  });
+}
 
 interface PayMongoEvent {
   data: {
@@ -43,7 +102,27 @@ export async function POST(request: Request) {
     if (eventType === "payment.paid" && intentId) {
       const result = await markOrderPaidByIntent(intentId, resource.id, event);
       if (!result.ok) {
-        console.warn("[PayMongo Webhook] No matching payment for intent", intentId);
+        // Not an order payment — check plan-upgrade billing.
+        const planResult = await markPlanPaymentPaidByIntent(intentId);
+        if (planResult.ok && planResult.transitioned) {
+          console.info(
+            "[PayMongo Webhook] Plan upgraded",
+            planResult.tenantId,
+            planResult.plan
+          );
+        } else if (!planResult.ok) {
+          console.warn("[PayMongo Webhook] No matching payment for intent", intentId);
+        }
+      } else if (result.transitioned) {
+        // Only on the first transition, so webhook retries don't re-notify the seller.
+        await Promise.all([
+          notifySellerPaymentReceived(result).catch((error) =>
+            console.error("[PayMongo Webhook] Seller SMS failed:", error)
+          ),
+          pushSellerPaymentReceived(result).catch((error) =>
+            console.error("[PayMongo Webhook] Seller push failed:", error)
+          ),
+        ]);
       }
     } else if (eventType === "payment.failed" && intentId) {
       await markPaymentFailedByIntent(intentId);

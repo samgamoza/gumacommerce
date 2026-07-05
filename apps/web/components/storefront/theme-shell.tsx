@@ -1,7 +1,24 @@
 import type { CSSProperties, ReactNode } from "react";
 import type { ResolvedShopTheme } from "@guma-commerce/storefront-themes";
 
+/**
+ * Storefront components use Tailwind's `font-display` (var(--font-bricolage)).
+ * Remapping that variable per tenant makes the seller's font choice apply to
+ * every heading without touching each component.
+ */
+export function displayFontStack(theme: ResolvedShopTheme): string | undefined {
+  switch (theme.displayFont) {
+    case "system":
+      return "var(--font-jakarta), system-ui, sans-serif";
+    case "mono-accent":
+      return "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+    default:
+      return undefined; // bricolage — keep the root font variable
+  }
+}
+
 export function themeStyle(theme: ResolvedShopTheme): CSSProperties {
+  const fontStack = displayFontStack(theme);
   return {
     ["--shop-primary" as string]: theme.primaryColor,
     ["--shop-accent" as string]: theme.accentColor,
@@ -11,6 +28,7 @@ export function themeStyle(theme: ResolvedShopTheme): CSSProperties {
     ["--shop-muted" as string]: theme.muted,
     ["--shop-border" as string]: theme.border,
     ["--shop-radius" as string]: theme.radius,
+    ...(fontStack ? { ["--font-bricolage" as string]: fontStack } : {}),
     background: theme.background,
     color: theme.foreground,
   };

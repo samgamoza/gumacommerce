@@ -2,18 +2,26 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
   createOrderForTenant,
+  deletePushSubscriptions,
   getTenantStorefrontBySlug,
+  listPushSubscriptionsForTenant,
   OrderError,
+  recordDeliveryQuote,
   recordPaymentIntent,
 } from "@guma-commerce/db";
 import {
+  clientIpFrom,
   createPayMongoClient,
   createSemaphoreClient,
   formatPhp,
   generateOrderNumber,
+  isPushConfigured,
+  rateLimit,
+  sendPushNotifications,
   type PayMongoMethod,
 } from "@guma-commerce/services";
 import { getTenant as getDemoTenant } from "@/lib/demo-data";
+import { getLalamoveCheckoutQuote } from "@/lib/delivery-quote";
 import {
   computeDeliveryFee,
   resolveStorefrontSettings,
@@ -51,7 +59,39 @@ function trackingUrl(tenantSlug: string, orderNumber: string): string {
   return `${base}/${tenantSlug}/orders/${orderNumber}`;
 }
 
+/** COD orders skip the payment webhook, so notify the seller right away. */
+async function pushSellerNewCodOrder(
+  tenantId: string,
+  orderNumber: string,
+  total: string
+): Promise<void> {
+  if (!isPushConfigured()) return;
+  const subscriptions = await listPushSubscriptionsForTenant(tenantId);
+  if (subscriptions.length === 0) return;
+
+  const { expiredEndpoints } = await sendPushNotifications(subscriptions, {
+    title: "New COD order 🛵",
+    body: `Order ${orderNumber} · ${formatPhp(Number(total))} — cash on delivery. Tap to accept it.`,
+    url: "/orders",
+    tag: `order-${orderNumber}`,
+  });
+  if (expiredEndpoints.length > 0) {
+    await deletePushSubscriptions(expiredEndpoints);
+  }
+}
+
 export async function POST(request: Request) {
+  const limited = await rateLimit(`checkout:${clientIpFrom(request)}`, {
+    limit: 10,
+    windowSeconds: 60,
+  });
+  if (!limited.allowed) {
+    return NextResponse.json(
+      { error: "Too many checkout attempts. Please wait a minute and try again." },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSeconds) } }
+    );
+  }
+
   let body: z.infer<typeof checkoutSchema>;
   try {
     body = checkoutSchema.parse(await request.json());
@@ -109,8 +149,17 @@ export async function POST(request: Request) {
       (sum, item) => sum + (priceById.get(item.productId) ?? 0) * item.qty,
       0
     );
+
+    // Lalamove shops get a live distance-based quote; anything else (or any
+    // quote failure) falls back to the seller's flat-rate rules.
+    const liveQuote =
+      body.fulfillment === "delivery" && body.address
+        ? await getLalamoveCheckoutQuote(settings, body.address)
+        : null;
     const deliveryFee =
-      body.fulfillment === "pickup" ? 0 : computeDeliveryFee(estimatedSubtotal, settings);
+      body.fulfillment === "pickup"
+        ? 0
+        : liveQuote?.fee ?? computeDeliveryFee(estimatedSubtotal, settings);
 
     const order = await createOrderForTenant({
       tenantSlug: body.tenantSlug,
@@ -128,6 +177,19 @@ export async function POST(request: Request) {
       sourceChannel: "storefront",
     });
 
+    if (liveQuote) {
+      // Persist the quote so the seller can book the same rate from Orders.
+      await recordDeliveryQuote({
+        tenantId: order.tenantId,
+        orderId: order.id,
+        provider: "lalamove",
+        quoteId: liveQuote.quotationId,
+        fee: liveQuote.fee.toFixed(2),
+        etaMinutes: liveQuote.etaMinutes,
+        rawResponseJson: { stopIds: liveQuote.stopIds, dropoffAddress: body.address },
+      }).catch((error) => console.error("[checkout] Failed to record quote:", error));
+    }
+
     const sms = createSemaphoreClient();
 
     if (body.paymentMethod === "cod") {
@@ -139,6 +201,10 @@ export async function POST(request: Request) {
           trackingUrl: trackingUrl(body.tenantSlug, order.orderNumber),
         })
         .catch((error) => console.error("[checkout] SMS failed:", error));
+
+      await pushSellerNewCodOrder(order.tenantId, order.orderNumber, order.total).catch(
+        (error) => console.error("[checkout] Seller push failed:", error)
+      );
 
       return NextResponse.json({
         orderNumber: order.orderNumber,

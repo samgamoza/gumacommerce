@@ -12,6 +12,7 @@ import {
 } from "@/components/auth-layout";
 import { PasswordInput } from "@/components/password-input";
 import { AuthDivider, GoogleSignInButton } from "@/components/google-sign-in-button";
+import { VibePicker } from "@/components/vibe-picker";
 import { shopUrlDisplayPrefix } from "@/lib/utils";
 
 const CATEGORIES = [
@@ -47,6 +48,7 @@ export function SignupWizard() {
     shopName: "",
     shopSlug: "",
     category: "Food & Beverage",
+    vibe: "",
   });
 
   useEffect(() => {
@@ -224,6 +226,8 @@ export function SignupWizard() {
                 ))}
               </select>
             </AuthField>
+
+            <VibePicker value={form.vibe} onChange={(vibe) => updateField("vibe", vibe)} />
           </>
         )}
 

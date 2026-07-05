@@ -13,7 +13,9 @@ const patchSchema = z.object({
   tagline: z.string().max(160).optional(),
   promoTitle: z.string().max(120).optional(),
   promoSubtitle: z.string().max(160).optional(),
-  subscriptionPlan: z.enum(["free", "growth", "pro"]).optional(),
+  // NOTE: subscriptionPlan is intentionally NOT accepted here. Plan changes
+  // must go through billing; accepting it from the client lets any tenant
+  // self-upgrade to paid plans for free.
   settings: z
     .object({
       codEnabled: z.boolean().optional(),
@@ -26,6 +28,7 @@ const patchSchema = z.object({
           freeDeliveryMin: z.number().min(0).max(999999).optional(),
           pickupEnabled: z.boolean().optional(),
           deliveryNotes: z.string().max(500).optional(),
+          pickupAddress: z.string().max(500).optional(),
         })
         .optional(),
       notifications: z
@@ -45,9 +48,26 @@ const patchSchema = z.object({
         .optional(),
       tracking: z
         .object({
-          facebookPixelId: z.string().max(64).optional(),
-          googleAnalyticsId: z.string().max(64).optional(),
-          tiktokPixelId: z.string().max(64).optional(),
+          // Strict formats: these IDs are rendered into inline <script> tags on
+          // the public storefront, so anything looser is a stored-XSS vector.
+          facebookPixelId: z
+            .string()
+            .regex(/^\d{5,20}$/, "Facebook Pixel ID must be numeric.")
+            .or(z.literal(""))
+            .optional(),
+          googleAnalyticsId: z
+            .string()
+            .regex(
+              /^(G|UA|AW|GTM)-[A-Za-z0-9-]{4,20}$/,
+              "Enter a valid Google tag ID (e.g. G-XXXXXXXXXX)."
+            )
+            .or(z.literal(""))
+            .optional(),
+          tiktokPixelId: z
+            .string()
+            .regex(/^[A-Za-z0-9]{10,30}$/, "Enter a valid TikTok Pixel ID.")
+            .or(z.literal(""))
+            .optional(),
         })
         .optional(),
     })

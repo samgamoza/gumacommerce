@@ -34,6 +34,7 @@ export async function createSessionToken(user: SessionUser): Promise<string> {
     displayName: user.displayName,
     emailVerified: user.emailVerified,
     needsShopSetup: user.needsShopSetup,
+    sv: user.sessionVersion,
   })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(user.userId)
@@ -94,6 +95,7 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
       displayName,
       emailVerified,
       needsShopSetup: resolvedNeedsShopSetup,
+      sessionVersion: typeof payload.sv === "number" ? payload.sv : 0,
       iat: payload.iat ?? 0,
       exp: payload.exp ?? 0,
     };

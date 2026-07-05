@@ -1,6 +1,7 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { getDb } from "../client";
 import {
+  deliveries,
   orderItems,
   orderStatusHistory,
   orders,
@@ -42,10 +43,8 @@ function fromCentavos(centavos: number): string {
   return (centavos / 100).toFixed(2);
 }
 
-function generateOrderNumberCandidate(prefix: string): string {
-  const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-  const rand = Math.floor(Math.random() * 9000 + 1000);
-  return `${prefix.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3) || "ORD"}-${date}-${rand}`;
+function orderNumberPrefix(slug: string): string {
+  return slug.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3) || "ORD";
 }
 
 export class OrderError extends Error {
@@ -200,17 +199,16 @@ export async function createOrderForTenant(input: CreateOrderInput): Promise<Cre
     const initialStatus: OrderStatus =
       input.paymentMethod === "cod" ? "accepted" : "pending_payment";
 
-    // Retry on the (rare) random-suffix collision against the unique index.
-    let orderNumber = generateOrderNumberCandidate(input.tenantSlug);
-    for (let attempt = 0; attempt < 5; attempt += 1) {
-      const [existing] = await tx
-        .select({ id: orders.id })
-        .from(orders)
-        .where(eq(orders.orderNumber, orderNumber))
-        .limit(1);
-      if (!existing) break;
-      orderNumber = generateOrderNumberCandidate(input.tenantSlug);
-    }
+    // Per-tenant sequential order numbers (GMA-0001, GMA-0002, ...), claimed
+    // atomically: the UPDATE row-locks the tenant so two concurrent checkouts
+    // can't get the same number.
+    const [seqRow] = await tx
+      .update(tenants)
+      .set({ nextOrderSeq: sql`${tenants.nextOrderSeq} + 1` })
+      .where(eq(tenants.id, tenant.id))
+      .returning({ nextOrderSeq: tenants.nextOrderSeq });
+    const claimedSeq = (seqRow?.nextOrderSeq ?? 2) - 1;
+    const orderNumber = `${orderNumberPrefix(input.tenantSlug)}-${String(claimedSeq).padStart(4, "0")}`;
 
     const [order] = await tx
       .insert(orders)
@@ -306,12 +304,21 @@ export async function recordPaymentIntent(params: {
   });
 }
 
+export interface MarkOrderPaidResult {
+  ok: boolean;
+  orderNumber?: string;
+  tenantId?: string;
+  total?: string;
+  /** True when this webhook call transitioned the order to paid (vs a replay). */
+  transitioned?: boolean;
+}
+
 /** Webhook handler: marks the payment + order paid by PayMongo intent id. Idempotent. */
 export async function markOrderPaidByIntent(
   gatewayIntentId: string,
   gatewayPaymentId?: string,
   rawWebhookJson?: unknown
-): Promise<{ ok: boolean; orderNumber?: string }> {
+): Promise<MarkOrderPaidResult> {
   const db = getDb();
   const [txn] = await db
     .select()
@@ -334,6 +341,7 @@ export async function markOrderPaidByIntent(
   const [order] = await db.select().from(orders).where(eq(orders.id, txn.orderId)).limit(1);
   if (!order) return { ok: false };
 
+  let transitioned = false;
   if (order.status === "pending_payment") {
     await db
       .update(orders)
@@ -344,14 +352,22 @@ export async function markOrderPaidByIntent(
       status: "paid",
       note: "Payment confirmed via PayMongo",
     });
+    transitioned = true;
   } else if (order.paymentStatus !== "paid") {
     await db
       .update(orders)
       .set({ paymentStatus: "paid", paidAt: now })
       .where(eq(orders.id, order.id));
+    transitioned = true;
   }
 
-  return { ok: true, orderNumber: order.orderNumber };
+  return {
+    ok: true,
+    orderNumber: order.orderNumber,
+    tenantId: order.tenantId,
+    total: order.total,
+    transitioned,
+  };
 }
 
 export async function markPaymentFailedByIntent(gatewayIntentId: string): Promise<void> {
@@ -483,6 +499,97 @@ export async function updateOrderStatusForTenant(params: {
   return params.status;
 }
 
+export interface OrderRefundInfo {
+  orderId: string;
+  orderNumber: string;
+  status: OrderStatus;
+  paymentStatus: string;
+  paymentMethod: string;
+  total: string;
+  totalCentavos: number;
+  gateway: string | null;
+  gatewayPaymentId: string | null;
+}
+
+export async function getOrderPaymentForRefund(
+  tenantId: string,
+  orderId: string
+): Promise<OrderRefundInfo | null> {
+  const db = getDb();
+  const [order] = await db
+    .select()
+    .from(orders)
+    .where(and(eq(orders.id, orderId), eq(orders.tenantId, tenantId)))
+    .limit(1);
+  if (!order) return null;
+
+  const [payment] = await db
+    .select()
+    .from(paymentTransactions)
+    .where(
+      and(eq(paymentTransactions.orderId, order.id), eq(paymentTransactions.status, "paid"))
+    )
+    .orderBy(desc(paymentTransactions.paidAt))
+    .limit(1);
+
+  return {
+    orderId: order.id,
+    orderNumber: order.orderNumber,
+    status: order.status as OrderStatus,
+    paymentStatus: order.paymentStatus ?? "pending",
+    paymentMethod: order.paymentMethod ?? "",
+    total: order.total,
+    totalCentavos: toCentavos(order.total),
+    gateway: payment?.gateway ?? null,
+    gatewayPaymentId: payment?.gatewayPaymentId ?? null,
+  };
+}
+
+/** Marks the order + its payment transaction refunded and logs history. */
+export async function markOrderRefunded(params: {
+  tenantId: string;
+  orderId: string;
+  actorId?: string;
+  note?: string;
+}): Promise<void> {
+  const db = getDb();
+  await db.transaction(async (tx) => {
+    await tx
+      .update(orders)
+      .set({ status: "refunded", paymentStatus: "refunded" })
+      .where(and(eq(orders.id, params.orderId), eq(orders.tenantId, params.tenantId)));
+
+    await tx
+      .update(paymentTransactions)
+      .set({ status: "refunded" })
+      .where(
+        and(
+          eq(paymentTransactions.orderId, params.orderId),
+          eq(paymentTransactions.status, "paid")
+        )
+      );
+
+    await tx.insert(orderStatusHistory).values({
+      orderId: params.orderId,
+      status: "refunded",
+      note: params.note ?? "Refund issued by seller",
+      actorId: params.actorId,
+    });
+  });
+}
+
+export interface OrderTrackingDelivery {
+  provider: string;
+  status: string | null;
+  driverName: string | null;
+  driverPhone: string | null;
+  driverPlateNumber: string | null;
+  driverLat: string | null;
+  driverLng: string | null;
+  driverLocationAt: Date | null;
+  trackingUrl: string | null;
+}
+
 export interface OrderTrackingData {
   orderNumber: string;
   tenantSlug: string;
@@ -498,6 +605,7 @@ export interface OrderTrackingData {
   createdAt: Date;
   items: Array<{ title: string; quantity: number; unitPrice: string; lineTotal: string }>;
   history: Array<{ status: OrderStatus; note: string | null; createdAt: Date }>;
+  delivery: OrderTrackingDelivery | null;
 }
 
 export async function getOrderForTracking(
@@ -524,6 +632,13 @@ export async function getOrderForTracking(
     .where(eq(orderStatusHistory.orderId, row.order.id))
     .orderBy(orderStatusHistory.createdAt);
 
+  const [delivery] = await db
+    .select()
+    .from(deliveries)
+    .where(eq(deliveries.orderId, row.order.id))
+    .orderBy(desc(deliveries.bookedAt))
+    .limit(1);
+
   return {
     orderNumber: row.order.orderNumber,
     tenantSlug: row.tenant.slug,
@@ -548,5 +663,18 @@ export async function getOrderForTracking(
       note: entry.note,
       createdAt: entry.createdAt,
     })),
+    delivery: delivery
+      ? {
+          provider: delivery.provider,
+          status: delivery.status,
+          driverName: delivery.driverName,
+          driverPhone: delivery.driverPhone,
+          driverPlateNumber: delivery.driverPlateNumber,
+          driverLat: delivery.driverLat,
+          driverLng: delivery.driverLng,
+          driverLocationAt: delivery.driverLocationAt,
+          trackingUrl: delivery.trackingUrl,
+        }
+      : null,
   };
 }

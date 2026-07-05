@@ -17,7 +17,24 @@ export interface PlanAiLimits {
   generationsPerMonth: number;
   smsReminders: boolean;
   models: Record<AiTaskType, LlmModelId>;
+  /**
+   * Soft monthly token budget. Once a tenant crosses it, tasks silently fall
+   * back to the cheapest configured model instead of blocking — quality
+   * degrades gracefully, the bill does not.
+   */
+  softTokenBudgetPerMonth: number;
 }
+
+/** Output-token ceilings per task — the single biggest LLM cost lever. */
+export const MAX_TOKENS_BY_TASK: Record<AiTaskType, number> = {
+  chat: 400,
+  generation: 900,
+  agent_post: 900,
+  agent_campaign: 1600,
+};
+
+/** Cheapest live model: Gemini Flash (free tier), then Groq, then 4o-mini. */
+export const THRIFTY_MODEL: LlmModelId = "gemini-2.0-flash";
 
 export const PLAN_AI_LIMITS: Record<SubscriptionPlan, PlanAiLimits> = {
   free: {
@@ -33,6 +50,7 @@ export const PLAN_AI_LIMITS: Record<SubscriptionPlan, PlanAiLimits> = {
       chat: "gemini-2.0-flash",
       generation: "gemini-2.0-flash",
     },
+    softTokenBudgetPerMonth: 200_000,
   },
   growth: {
     label: "Growth",
@@ -47,6 +65,7 @@ export const PLAN_AI_LIMITS: Record<SubscriptionPlan, PlanAiLimits> = {
       chat: "gpt-4o-mini",
       generation: "gpt-4o-mini",
     },
+    softTokenBudgetPerMonth: 2_000_000,
   },
   pro: {
     label: "Pro",
@@ -57,10 +76,14 @@ export const PLAN_AI_LIMITS: Record<SubscriptionPlan, PlanAiLimits> = {
     smsReminders: true,
     models: {
       agent_post: "gpt-4o-mini",
+      // gpt-4o is reserved for the one task that benefits from deep reasoning
+      // (multi-day campaign strategy); listings and posts do fine on 4o-mini
+      // at ~6% of the cost.
       agent_campaign: "gpt-4o",
       chat: "gpt-4o-mini",
-      generation: "gpt-4o",
+      generation: "gpt-4o-mini",
     },
+    softTokenBudgetPerMonth: 8_000_000,
   },
 };
 
@@ -75,6 +98,26 @@ export function resolveModelForTask(
 ): LlmModelId {
   const limits = PLAN_AI_LIMITS[normalizePlan(plan)];
   return limits.models[task];
+}
+
+/**
+ * Plan model, downgraded to the thrifty model when the tenant has burned
+ * through their soft monthly token budget.
+ */
+export function resolveBudgetAwareModel(
+  plan: string | null | undefined,
+  task: AiTaskType,
+  tokensUsedThisMonth?: number
+): LlmModelId {
+  const limits = PLAN_AI_LIMITS[normalizePlan(plan)];
+  const requested = limits.models[task];
+  if (
+    typeof tokensUsedThisMonth === "number" &&
+    tokensUsedThisMonth >= limits.softTokenBudgetPerMonth
+  ) {
+    return THRIFTY_MODEL;
+  }
+  return requested;
 }
 
 export interface AiUsageSnapshot {

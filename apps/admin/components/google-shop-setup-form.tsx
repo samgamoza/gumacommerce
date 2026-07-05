@@ -9,6 +9,7 @@ import {
   AuthSubmitButton,
   authInputClassName,
 } from "@/components/auth-layout";
+import { VibePicker } from "@/components/vibe-picker";
 import { shopUrlDisplayPrefix } from "@/lib/utils";
 
 const CATEGORIES = [
@@ -41,6 +42,7 @@ export function GoogleShopSetupForm() {
     shopName: "",
     shopSlug: "",
     category: "Food & Beverage",
+    vibe: "",
   });
 
   useEffect(() => {
@@ -177,6 +179,11 @@ export function GoogleShopSetupForm() {
             ))}
           </select>
         </AuthField>
+
+        <VibePicker
+          value={form.vibe}
+          onChange={(vibe) => setForm((current) => ({ ...current, vibe }))}
+        />
 
         <AuthSubmitButton loading={loading}>Create my shop</AuthSubmitButton>
       </form>

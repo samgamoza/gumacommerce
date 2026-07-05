@@ -19,6 +19,8 @@ const updateSchema = z.object({
   promoSubtitle: z.string().max(160).optional(),
   primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   accentColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  displayFont: z.enum(["bricolage", "system", "mono-accent"]).optional(),
+  paletteId: z.string().max(64).optional(),
   coverUrl: z.string().url().nullable().optional(),
   logoUrl: z.string().url().nullable().optional(),
 });

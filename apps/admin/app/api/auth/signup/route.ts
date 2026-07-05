@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { AuthError, registerSeller, sendVerificationEmail, sessionCookieHeader } from "@guma-commerce/auth";
+import { clientIpFrom, rateLimit } from "@guma-commerce/services";
 
 const signupSchema = z.object({
   email: z.string().email(),
@@ -9,10 +10,22 @@ const signupSchema = z.object({
   shopName: z.string().min(2).max(255),
   shopSlug: z.string().min(3).max(32),
   category: z.string().optional(),
+  vibe: z.string().max(32).optional(),
 });
 
 export async function POST(request: Request) {
   try {
+    const limited = await rateLimit(`signup:${clientIpFrom(request)}`, {
+      limit: 5,
+      windowSeconds: 600,
+    });
+    if (!limited.allowed) {
+      return NextResponse.json(
+        { ok: false, error: "Too many signups from this connection. Try again later." },
+        { status: 429, headers: { "Retry-After": String(limited.retryAfterSeconds) } }
+      );
+    }
+
     const body = signupSchema.parse(await request.json());
     const { user, sessionToken, verificationToken } = await registerSeller(body);
 

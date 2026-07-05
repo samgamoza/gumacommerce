@@ -12,6 +12,9 @@ const PUBLIC_API_PREFIXES = [
   "/api/auth/google",
   "/api/auth/google/callback",
   "/api/auth/session",
+  // Cron requests carry a Bearer CRON_SECRET, not a session cookie.
+  // Each cron route validates the secret itself.
+  "/api/cron/",
 ];
 
 const SHOP_SETUP_PATHS = ["/signup/shop", "/api/auth/google/complete-shop", "/api/auth/logout"];

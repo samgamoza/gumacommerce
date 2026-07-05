@@ -32,6 +32,7 @@ export function DeliverySettingsPage() {
   const [freeDeliveryMin, setFreeDeliveryMin] = useState("500");
   const [pickupEnabled, setPickupEnabled] = useState(true);
   const [deliveryNotes, setDeliveryNotes] = useState("");
+  const [pickupAddress, setPickupAddress] = useState("");
 
   useEffect(() => {
     if (!settings) return;
@@ -43,6 +44,7 @@ export function DeliverySettingsPage() {
     setFreeDeliveryMin(String(settings.settings.delivery?.freeDeliveryMin ?? 500));
     setPickupEnabled(settings.settings.delivery?.pickupEnabled ?? true);
     setDeliveryNotes(settings.settings.delivery?.deliveryNotes ?? "");
+    setPickupAddress(settings.settings.delivery?.pickupAddress ?? "");
   }, [settings]);
 
   const previewSubtotal = 499;
@@ -128,6 +130,21 @@ export function DeliverySettingsPage() {
               <option value="grab">GrabExpress</option>
             </select>
           </SettingsField>
+          {provider === "lalamove" && (
+            <SettingsField label="Store pickup address (for courier quotes)">
+              <textarea
+                className={textareaClassName()}
+                rows={2}
+                value={pickupAddress}
+                onChange={(e) => setPickupAddress(e.target.value)}
+                placeholder="123 Kalayaan Ave, Brgy. Central, Quezon City"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Customers get live Lalamove quotes from this address. Leave blank to use the
+                flat fee below.
+              </p>
+            </SettingsField>
+          )}
           <SettingsField label="Flat delivery fee (₱)">
             <input
               type="number"
@@ -180,6 +197,7 @@ export function DeliverySettingsPage() {
                   freeDeliveryMin: Number(freeDeliveryMin) || 0,
                   pickupEnabled,
                   deliveryNotes,
+                  pickupAddress,
                 },
               },
             })

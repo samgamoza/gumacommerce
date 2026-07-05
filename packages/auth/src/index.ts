@@ -32,6 +32,8 @@ export {
   sendVerificationEmail,
   authenticateGoogleUser,
   completeGoogleShopSetup,
+  revokeAllSessions,
+  isSessionCurrent,
   normalizeSlug,
   slugFromShopName,
   validateSlug,

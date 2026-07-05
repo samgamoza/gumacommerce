@@ -9,6 +9,7 @@ import {
   saveShopChatMessage,
 } from "@guma-commerce/db";
 import { resolveShopTheme } from "@guma-commerce/storefront-themes";
+import { clientIpFrom, rateLimit } from "@guma-commerce/services";
 import { assertAiQuota } from "@/lib/ai-quota";
 
 const chatSchema = z.object({
@@ -19,6 +20,21 @@ const chatSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const limited = await rateLimit(`chat:${clientIpFrom(request)}`, {
+      limit: 15,
+      windowSeconds: 60,
+    });
+    if (!limited.allowed) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Slow down a little!",
+          reply: "You're sending messages too quickly — give me a few seconds to catch up!",
+        },
+        { status: 429, headers: { "Retry-After": String(limited.retryAfterSeconds) } }
+      );
+    }
+
     const body = chatSchema.parse(await request.json());
     const tenant = await getTenantStorefrontBySlug(body.tenantSlug);
     if (!tenant) {
@@ -92,6 +108,7 @@ ${cod}
 Reply helpfully in ${assistant.tone}. Keep under 120 words. Include order link when relevant.`,
       subscriptionPlan: tenant.subscriptionPlan,
       taskType: "chat",
+      tokensUsedThisMonth: quota.usage.tokensThisMonth,
       seller: {
         brandName: tenant.name,
         category: tenant.category ?? "General",

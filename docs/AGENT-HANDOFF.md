@@ -18,7 +18,7 @@ Three Next.js 15 (App Router, React 19) apps now exist in the `pnpm`+Turbo monor
 | Seller admin | `apps/admin` | 3001 | Per-tenant dashboard (one shop) |
 | **Platform console (NEW)** | `apps/platform` | 3002 | **Super-admin over ALL tenants** |
 
-Stack unchanged: TypeScript, Tailwind v3, Drizzle ORM → **Neon Postgres** (live, Singapore), JWT cookie auth (`jose`, cookie `sari_session`) in `packages/auth`, `bcryptjs` passwords. AI providers + PayMongo/Lalamove/Semaphore unchanged. Deployment target: Vercel (one project per app).
+Stack unchanged: TypeScript, Tailwind v3, Drizzle ORM → **Neon Postgres** (live, Singapore), JWT cookie auth (`jose`, cookie `gumacommerce_session`) in `packages/auth`, `bcryptjs` passwords. AI providers + PayMongo/Lalamove/Semaphore unchanged. Deployment target: Vercel (one project per app).
 
 ### 2. What was built this session
 1. **Guma brand system ported into `apps/admin`** — the emerald/amber HSL design tokens, Bricolage Grotesque + Plus Jakarta Sans fonts, `hero-glow`/grid utilities, and animations from `apps/web` (landing redesign, commit `5facdd1`). Admin sidebar/header/dashboard redesigned with lucide icons (replacing violet theme + emoji nav).
@@ -56,7 +56,7 @@ Added:
 
 ### 5. Auth for the platform console
 - Login: **`admin@guma.ph` / `GumaAdmin2026!`** (seeded super_admin; change before any shared/prod use).
-- Only `role === 'super_admin'` may enter — enforced in `apps/platform/middleware.ts` AND `app/api/auth/login/route.ts`. Reuses the shared `sari_session` cookie + `packages/auth` token helpers (no changes to `packages/auth`).
+- Only `role === 'super_admin'` may enter — enforced in `apps/platform/middleware.ts` AND `app/api/auth/login/route.ts`. Reuses the shared `gumacommerce_session` cookie + `packages/auth` token helpers (no changes to `packages/auth`).
 - All mutations run through **server actions** in `app/actions.ts`, each guarded by `requireSuperAdminApi()` and writing a `platform_audit_log` row + `revalidatePath`.
 
 ### 6. Critical pitfalls / decisions
@@ -95,7 +95,7 @@ Inspect first: `apps/platform/app/actions.ts`, `packages/db/src/queries/platform
 
 ## 1. Product summary
 
-**Guma Commerce** (formerly scaffolded as “SariLink”) is an AI-powered social commerce platform for Philippine sellers.
+**Guma Commerce** is an AI-powered social commerce platform for Philippine sellers.
 
 | Surface | Path | Port | Role |
 |---------|------|------|------|
@@ -127,7 +127,7 @@ Inspect first: `apps/platform/app/actions.ts`, `packages/db/src/queries/platform
 ## 3. Monorepo layout
 
 ```
-guma-commerce/                    # (folder may still be named sari-link)
+guma-commerce/                    
 ├── apps/
 │   ├── web/                     @guma-commerce/web
 │   └── admin/                   @guma-commerce/admin
@@ -162,7 +162,7 @@ guma-commerce/                    # (folder may still be named sari-link)
 | Shop URL display | `{NEXT_PUBLIC_ROOT_DOMAIN}/{slug}` — default host `gumacommerce.ph` |
 | Emails | `hello@gumacommerce.ph`, `support@gumacommerce.ph`, `privacy@gumacommerce.ph` |
 
-**Do not reintroduce:** SariLink, SariPro, SariBiz, sari.link, @sari-link, sarilink.ph.
+**Do not reintroduce** any legacy pre-rebrand brand names, domains, or package scopes. The brand is **Guma Commerce** (`gumacommerce`) everywhere.
 
 **Internal globals (DB client):** `__gumaCommerceDb`, `__gumaCommerceSql` in `packages/db/src/client.ts`.
 
@@ -440,7 +440,7 @@ pnpm db:up
 - Navbar `/#features`, `/#how-it-works`
 - FAQ anchors: `#payments`, `#delivery`, `#ai`
 - Pricing: Sulit / Growth / Pro aligned with admin (₱0 / ₱499 / ₱999)
-- Removed SariPro, SariBiz, sari.link, sarilink.ph
+- Removed all legacy pre-rebrand brand names and domains
 - Blog: removed broken `#` read-more links
 - Footer: removed placeholder social `href="#"`
 
@@ -482,7 +482,7 @@ cd ../.. && pnpm install && pnpm turbo build --filter=@guma-commerce/web
 ## 18. Recommended next work (priority order)
 
 1. **Git + Vercel pre-beta** — first commit, GitHub remote, preview deploy, env vars, migrate prod DB
-2. **Rename local folder** (optional) — `sari-link` → `guma-commerce`; reopen in Cursor
+2. ~~Rename local folder~~ — done; repo now lives at `C:\Users\samga\gumacommerce`
 3. **Contact form backend** — email or store inquiries (Resend, Semaphore, etc.)
 4. **Meta/TikTok OAuth** — auto-publish from content queue (Phase 2)
 5. **Paid billing** — PayMongo subscriptions for Growth/Pro
@@ -528,7 +528,7 @@ Chronological summary for context:
 5. **DB** — migration 0001 for agent tables; `db:reconcile` for push drift
 6. **Vercel prep** — `vercel.json` crons, DEPLOY-VERCEL.md, `.env.example` expansion
 7. **CSS incident** — corrupted `.next` from build+ddev overlap; fixed with `dev:clean`
-8. **Full rebrand pass** — `@sari-link` → `@guma-commerce`, pricing/plan alignment, link fixes, production build verified
+8. **Full rebrand pass** — legacy npm scope → `@guma-commerce`, pricing/plan alignment, link fixes, production build verified
 
 **User preference:** No git commits unless explicitly requested (repo still uncommitted at handoff).
 

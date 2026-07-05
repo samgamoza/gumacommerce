@@ -4,6 +4,8 @@ export interface TenantDeliverySettings {
   freeDeliveryMin?: number;
   pickupEnabled?: boolean;
   deliveryNotes?: string;
+  /** Full store address used as the courier pickup point (geocoded for quotes). */
+  pickupAddress?: string;
 }
 
 export interface TenantNotificationSettings {

@@ -100,6 +100,11 @@ export const tenants = pgTable(
       primaryColor?: string;
       accentColor?: string;
       fontFamily?: string;
+      displayFont?: "bricolage" | "system" | "mono-accent";
+      /** Curated palette applied at signup or from the shop builder. */
+      paletteId?: string;
+      /** Brand vibe chosen at signup. */
+      vibe?: string;
       tagline?: string;
       promoTitle?: string;
       promoSubtitle?: string;
@@ -118,6 +123,7 @@ export const tenants = pgTable(
         freeDeliveryMin?: number;
         pickupEnabled?: boolean;
         deliveryNotes?: string;
+        pickupAddress?: string;
       };
       notifications?: {
         emailOnNewOrder?: boolean;
@@ -153,6 +159,10 @@ export const tenants = pgTable(
       };
     }>(),
     subscriptionPlan: varchar("subscription_plan", { length: 50 }).default("free"),
+    /** When a PayMongo-billed plan period ends; null for free/manual plans. */
+    planExpiresAt: timestamp("plan_expires_at", { withTimezone: true }),
+    /** Next per-tenant order sequence number, claimed atomically at checkout. */
+    nextOrderSeq: integer("next_order_seq").default(1).notNull(),
     status: varchar("status", { length: 20 }).default("active").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -177,6 +187,8 @@ export const users = pgTable(
     }>(),
     emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
     phoneVerifiedAt: timestamp("phone_verified_at", { withTimezone: true }),
+    // Bumping this invalidates every JWT issued before the bump (logout-all).
+    sessionVersion: integer("session_version").default(0).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
@@ -255,29 +267,37 @@ export const products = pgTable(
   ]
 );
 
-export const productVariants = pgTable("product_variants", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  productId: uuid("product_id")
-    .references(() => products.id, { onDelete: "cascade" })
-    .notNull(),
-  sku: varchar("sku", { length: 100 }),
-  title: varchar("title", { length: 255 }).notNull(),
-  price: decimal("price", { precision: 12, scale: 2 }).notNull(),
-  stockQty: integer("stock_qty").default(0),
-  optionsJson: jsonb("options_json").$type<Record<string, string>>(),
-  imageUrl: text("image_url"),
-});
+export const productVariants = pgTable(
+  "product_variants",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    productId: uuid("product_id")
+      .references(() => products.id, { onDelete: "cascade" })
+      .notNull(),
+    sku: varchar("sku", { length: 100 }),
+    title: varchar("title", { length: 255 }).notNull(),
+    price: decimal("price", { precision: 12, scale: 2 }).notNull(),
+    stockQty: integer("stock_qty").default(0),
+    optionsJson: jsonb("options_json").$type<Record<string, string>>(),
+    imageUrl: text("image_url"),
+  },
+  (table) => [index("product_variants_product_idx").on(table.productId)]
+);
 
-export const productImages = pgTable("product_images", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  productId: uuid("product_id")
-    .references(() => products.id, { onDelete: "cascade" })
-    .notNull(),
-  variantId: uuid("variant_id").references(() => productVariants.id),
-  url: text("url").notNull(),
-  alt: varchar("alt", { length: 255 }),
-  sortOrder: integer("sort_order").default(0),
-});
+export const productImages = pgTable(
+  "product_images",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    productId: uuid("product_id")
+      .references(() => products.id, { onDelete: "cascade" })
+      .notNull(),
+    variantId: uuid("variant_id").references(() => productVariants.id),
+    url: text("url").notNull(),
+    alt: varchar("alt", { length: 255 }),
+    sortOrder: integer("sort_order").default(0),
+  },
+  (table) => [index("product_images_product_idx").on(table.productId)]
+);
 
 // ─── Orders ──────────────────────────────────────────────────────────────────
 
@@ -313,37 +333,51 @@ export const orders = pgTable(
     completedAt: timestamp("completed_at", { withTimezone: true }),
   },
   (table) => [
-    uniqueIndex("orders_number_idx").on(table.orderNumber),
+    // Order numbers are unique per tenant (tracking lookups are always scoped
+    // by tenant slug), which lets every shop have its own 0001, 0002, ...
+    uniqueIndex("orders_tenant_number_idx").on(table.tenantId, table.orderNumber),
     index("orders_tenant_status_idx").on(table.tenantId, table.status, table.createdAt),
+    index("orders_tenant_created_idx").on(table.tenantId, table.createdAt),
     index("orders_guest_phone_idx").on(table.guestPhone),
   ]
 );
 
-export const orderItems = pgTable("order_items", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  orderId: uuid("order_id")
-    .references(() => orders.id, { onDelete: "cascade" })
-    .notNull(),
-  productId: uuid("product_id").references(() => products.id),
-  variantId: uuid("variant_id").references(() => productVariants.id),
-  titleSnapshot: varchar("title_snapshot", { length: 255 }).notNull(),
-  variantSnapshot: varchar("variant_snapshot", { length: 255 }),
-  quantity: integer("quantity").notNull(),
-  unitPrice: decimal("unit_price", { precision: 12, scale: 2 }).notNull(),
-  lineTotal: decimal("line_total", { precision: 12, scale: 2 }).notNull(),
-  customizationsJson: jsonb("customizations_json"),
-});
+export const orderItems = pgTable(
+  "order_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orderId: uuid("order_id")
+      .references(() => orders.id, { onDelete: "cascade" })
+      .notNull(),
+    productId: uuid("product_id").references(() => products.id),
+    variantId: uuid("variant_id").references(() => productVariants.id),
+    titleSnapshot: varchar("title_snapshot", { length: 255 }).notNull(),
+    variantSnapshot: varchar("variant_snapshot", { length: 255 }),
+    quantity: integer("quantity").notNull(),
+    unitPrice: decimal("unit_price", { precision: 12, scale: 2 }).notNull(),
+    lineTotal: decimal("line_total", { precision: 12, scale: 2 }).notNull(),
+    customizationsJson: jsonb("customizations_json"),
+  },
+  (table) => [
+    index("order_items_order_idx").on(table.orderId),
+    index("order_items_product_idx").on(table.productId),
+  ]
+);
 
-export const orderStatusHistory = pgTable("order_status_history", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  orderId: uuid("order_id")
-    .references(() => orders.id, { onDelete: "cascade" })
-    .notNull(),
-  status: orderStatusEnum("status").notNull(),
-  note: text("note"),
-  actorId: uuid("actor_id").references(() => users.id),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+export const orderStatusHistory = pgTable(
+  "order_status_history",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orderId: uuid("order_id")
+      .references(() => orders.id, { onDelete: "cascade" })
+      .notNull(),
+    status: orderStatusEnum("status").notNull(),
+    note: text("note"),
+    actorId: uuid("actor_id").references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index("order_status_history_order_idx").on(table.orderId)]
+);
 
 // ─── Payments ────────────────────────────────────────────────────────────────
 
@@ -376,38 +410,101 @@ export const paymentTransactions = pgTable(
 
 // ─── Delivery ────────────────────────────────────────────────────────────────
 
-export const deliveryQuotes = pgTable("delivery_quotes", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  orderId: uuid("order_id").references(() => orders.id),
-  tenantId: uuid("tenant_id")
-    .references(() => tenants.id)
-    .notNull(),
-  provider: deliveryProviderEnum("provider").notNull(),
-  quoteId: varchar("quote_id", { length: 255 }),
-  fee: decimal("fee", { precision: 12, scale: 2 }),
-  currency: varchar("currency", { length: 3 }).default("PHP"),
-  etaMinutes: integer("eta_minutes"),
-  expiresAt: timestamp("expires_at", { withTimezone: true }),
-  rawResponseJson: jsonb("raw_response_json"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+export const deliveryQuotes = pgTable(
+  "delivery_quotes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orderId: uuid("order_id").references(() => orders.id),
+    tenantId: uuid("tenant_id")
+      .references(() => tenants.id)
+      .notNull(),
+    provider: deliveryProviderEnum("provider").notNull(),
+    quoteId: varchar("quote_id", { length: 255 }),
+    fee: decimal("fee", { precision: 12, scale: 2 }),
+    currency: varchar("currency", { length: 3 }).default("PHP"),
+    etaMinutes: integer("eta_minutes"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    rawResponseJson: jsonb("raw_response_json"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index("delivery_quotes_order_idx").on(table.orderId)]
+);
 
-export const deliveries = pgTable("deliveries", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  orderId: uuid("order_id")
-    .references(() => orders.id)
-    .notNull(),
-  quoteId: uuid("quote_id").references(() => deliveryQuotes.id),
-  provider: deliveryProviderEnum("provider").notNull(),
-  providerOrderId: varchar("provider_order_id", { length: 255 }),
-  status: varchar("status", { length: 50 }),
-  driverName: varchar("driver_name", { length: 255 }),
-  driverPhone: varchar("driver_phone", { length: 20 }),
-  trackingUrl: text("tracking_url"),
-  bookedAt: timestamp("booked_at", { withTimezone: true }),
-  pickedUpAt: timestamp("picked_up_at", { withTimezone: true }),
-  deliveredAt: timestamp("delivered_at", { withTimezone: true }),
-});
+export const deliveries = pgTable(
+  "deliveries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orderId: uuid("order_id")
+      .references(() => orders.id)
+      .notNull(),
+    quoteId: uuid("quote_id").references(() => deliveryQuotes.id),
+    provider: deliveryProviderEnum("provider").notNull(),
+    providerOrderId: varchar("provider_order_id", { length: 255 }),
+    status: varchar("status", { length: 50 }),
+    driverName: varchar("driver_name", { length: 255 }),
+    driverPhone: varchar("driver_phone", { length: 20 }),
+    driverPlateNumber: varchar("driver_plate_number", { length: 20 }),
+    /** Last known courier location pushed by the provider webhook. */
+    driverLat: decimal("driver_lat", { precision: 10, scale: 7 }),
+    driverLng: decimal("driver_lng", { precision: 10, scale: 7 }),
+    driverLocationAt: timestamp("driver_location_at", { withTimezone: true }),
+    trackingUrl: text("tracking_url"),
+    bookedAt: timestamp("booked_at", { withTimezone: true }),
+    pickedUpAt: timestamp("picked_up_at", { withTimezone: true }),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("deliveries_order_idx").on(table.orderId),
+    index("deliveries_provider_order_idx").on(table.providerOrderId),
+  ]
+);
+
+// ─── Billing & notifications ─────────────────────────────────────────────────
+
+/** One row per PayMongo plan payment; unique intent id keeps the webhook idempotent. */
+export const planPayments = pgTable(
+  "plan_payments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .references(() => tenants.id)
+      .notNull(),
+    plan: varchar("plan", { length: 50 }).notNull(),
+    amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+    currency: varchar("currency", { length: 3 }).default("PHP").notNull(),
+    gateway: paymentGatewayEnum("gateway").default("paymongo").notNull(),
+    gatewayIntentId: varchar("gateway_intent_id", { length: 255 }),
+    status: paymentStatusEnum("status").default("pending").notNull(),
+    periodDays: integer("period_days").default(30).notNull(),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("plan_payments_intent_idx").on(table.gatewayIntentId),
+    index("plan_payments_tenant_idx").on(table.tenantId),
+  ]
+);
+
+/** Web Push subscriptions for seller notifications (VAPID). */
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .references(() => tenants.id)
+      .notNull(),
+    userId: uuid("user_id").references(() => users.id),
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    userAgent: varchar("user_agent", { length: 255 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("push_subscriptions_endpoint_idx").on(table.endpoint),
+    index("push_subscriptions_tenant_idx").on(table.tenantId),
+  ]
+);
 
 // ─── AI & Content ────────────────────────────────────────────────────────────
 

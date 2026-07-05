@@ -48,6 +48,7 @@ export async function POST(request: Request) {
       variables: body.variables,
       subscriptionPlan: settings?.subscriptionPlan,
       taskType: "generation",
+      tokensUsedThisMonth: quota.usage.tokensThisMonth,
     });
 
     await recordAiUsage(session.tenantId, {

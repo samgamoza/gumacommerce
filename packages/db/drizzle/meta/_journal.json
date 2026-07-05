@@ -15,6 +15,13 @@
       "when": 1783135943735,
       "tag": "0001_sweet_mandroid",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783249404693,
+      "tag": "0002_nosy_ikaris",
+      "breakpoints": true
     }
   ]
 }

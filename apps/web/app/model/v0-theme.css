@@ -1,0 +1,63 @@
+/* v0 AI Commerce Store — exact oklch theme scoped to /model */
+
+.v0-store-root {
+  color-scheme: light;
+  --background: oklch(0.99 0.004 60);
+  --foreground: oklch(0.2 0.02 30);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.02 30);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.02 30);
+  --primary: oklch(0.63 0.2 25);
+  --primary-foreground: oklch(0.99 0.01 60);
+  --secondary: oklch(0.96 0.012 60);
+  --secondary-foreground: oklch(0.25 0.02 30);
+  --muted: oklch(0.96 0.01 70);
+  --muted-foreground: oklch(0.52 0.02 40);
+  --accent: oklch(0.72 0.14 155);
+  --accent-foreground: oklch(0.99 0.01 60);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.91 0.01 70);
+  --input: oklch(0.91 0.01 70);
+  --ring: oklch(0.63 0.2 25);
+  --chart-1: oklch(0.63 0.2 25);
+  --chart-2: oklch(0.72 0.14 155);
+  --chart-3: oklch(0.75 0.15 70);
+  --chart-4: oklch(0.5 0.05 30);
+  --chart-5: oklch(0.3 0.03 30);
+  --radius: 1rem;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+
+  font-family: var(--font-sans);
+}
+
+.v0-store-root .font-display {
+  font-family: var(--font-display);
+}
+
+.v0-store-root .no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.v0-store-root .no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes soko-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--primary) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 10px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.v0-store-root .animate-pulse-ring {
+  animation: soko-pulse-ring 1.8s infinite;
+}

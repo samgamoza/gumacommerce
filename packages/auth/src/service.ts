@@ -1,5 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { getDb, tenants, users } from "@guma-commerce/db";
+import { deriveBrandKit } from "@guma-commerce/storefront-themes";
 import { hashPassword, validatePasswordStrength, verifyPassword } from "./password";
 import {
   createEmailVerificationToken,
@@ -43,7 +44,35 @@ function toSessionUser(
     displayName: user.profileJson?.displayName ?? user.email ?? "Seller",
     emailVerified: Boolean(user.emailVerifiedAt),
     needsShopSetup: !tenant,
+    sessionVersion: user.sessionVersion ?? 0,
   };
+}
+
+/**
+ * Invalidates every session for this user by bumping their session version.
+ * Tokens issued before the bump fail the isSessionCurrent check.
+ */
+export async function revokeAllSessions(userId: string): Promise<void> {
+  const db = getDb();
+  await db
+    .update(users)
+    .set({ sessionVersion: sql`${users.sessionVersion} + 1` })
+    .where(eq(users.id, userId));
+}
+
+/** True when the token's session version matches the user's current one. */
+export async function isSessionCurrent(
+  userId: string,
+  tokenSessionVersion: number
+): Promise<boolean> {
+  const db = getDb();
+  const [row] = await db
+    .select({ sessionVersion: users.sessionVersion })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  if (!row) return false;
+  return (row.sessionVersion ?? 0) === tokenSessionVersion;
 }
 
 export async function isSlugAvailable(slug: string): Promise<boolean> {
@@ -99,6 +128,14 @@ export async function registerSeller(input: RegisterSellerInput): Promise<{
 
   const passwordHash = await hashPassword(input.password);
 
+  const brandKit = deriveBrandKit({
+    shopName: input.shopName,
+    slug: shopSlug,
+    category: input.category,
+    vibe: input.vibe,
+    subscriptionPlan: "free",
+  });
+
   const result = await db.transaction(async (tx) => {
     const [tenant] = await tx
       .insert(tenants)
@@ -106,13 +143,7 @@ export async function registerSeller(input: RegisterSellerInput): Promise<{
         slug: shopSlug,
         name: input.shopName.trim(),
         category: input.category?.trim() || "General",
-        themeJson: {
-          templateId: "clean-sari",
-          primaryColor: "#059669",
-          accentColor: "#f59e0b",
-          promoTitle: "Free delivery on orders ₱500+",
-          promoSubtitle: "Metro Manila · Until 9 PM",
-        },
+        themeJson: brandKit,
         localeDefault: "taglish",
         settingsJson: { codEnabled: true, autoAcceptOrders: false, minOrderAmount: 99 },
         subscriptionPlan: "free",
@@ -326,6 +357,14 @@ export async function completeGoogleShopSetup(input: CompleteGoogleShopInput): P
     throw new AuthError("This shop URL is already taken.", "SLUG_TAKEN");
   }
 
+  const brandKit = deriveBrandKit({
+    shopName: input.shopName,
+    slug: shopSlug,
+    category: input.category,
+    vibe: input.vibe,
+    subscriptionPlan: "free",
+  });
+
   const result = await db.transaction(async (tx) => {
     const [tenant] = await tx
       .insert(tenants)
@@ -333,13 +372,7 @@ export async function completeGoogleShopSetup(input: CompleteGoogleShopInput): P
         slug: shopSlug,
         name: input.shopName.trim(),
         category: input.category?.trim() || "General",
-        themeJson: {
-          templateId: "clean-sari",
-          primaryColor: "#059669",
-          accentColor: "#f59e0b",
-          promoTitle: "Free delivery on orders ₱500+",
-          promoSubtitle: "Metro Manila · Until 9 PM",
-        },
+        themeJson: brandKit,
         localeDefault: "taglish",
         settingsJson: { codEnabled: true, autoAcceptOrders: false, minOrderAmount: 99 },
         subscriptionPlan: "free",

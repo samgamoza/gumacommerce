@@ -1,25 +1,71 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  color-scheme: light;
+  --background: hsl(150 20% 99%);
+  --foreground: hsl(160 30% 8%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(160 30% 8%);
+  --primary: hsl(160 84% 32%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(150 20% 96%);
+  --secondary-foreground: hsl(160 30% 12%);
+  --muted: hsl(150 15% 95%);
+  --muted-foreground: hsl(160 10% 42%);
+  --accent: hsl(38 92% 50%);
+  --accent-foreground: hsl(38 92% 12%);
+  --destructive: hsl(0 84% 60%);
+  --border: hsl(150 15% 90%);
+  --input: hsl(150 15% 90%);
+  --ring: hsl(160 84% 32%);
+  --chart-1: hsl(160 84% 32%);
+  --chart-2: hsl(38 92% 50%);
+  --chart-3: hsl(45 93% 47%);
+  --chart-4: hsl(160 30% 40%);
+  --chart-5: hsl(160 30% 20%);
+  --radius: 0.875rem;
+}
 
 @layer base {
-  :root {
-    --background: 150 20% 99%;
-    --foreground: 160 30% 8%;
-    --card: 0 0% 100%;
-    --card-foreground: 160 30% 8%;
-    --primary: 160 84% 32%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 150 20% 96%;
-    --secondary-foreground: 160 30% 12%;
-    --muted: 150 15% 95%;
-    --muted-foreground: 160 10% 42%;
-    --accent: 38 92% 50%;
-    --accent-foreground: 38 92% 12%;
-    --border: 150 15% 90%;
-    --input: 150 15% 90%;
-    --ring: 160 84% 32%;
-    --radius: 0.875rem;
+  * {
+    @apply border-border outline-ring/50;
   }
 
   html {
@@ -42,31 +88,14 @@
   }
 
   .hero-glow {
-    background: radial-gradient(
-        ellipse 80% 60% at 50% -10%,
-        hsl(160 84% 32% / 0.22),
-        transparent 70%
-      ),
-      radial-gradient(
-        ellipse 50% 40% at 90% 20%,
-        hsl(38 92% 50% / 0.14),
-        transparent 60%
-      ),
-      radial-gradient(
-        ellipse 40% 35% at 5% 45%,
-        hsl(172 66% 40% / 0.12),
-        transparent 60%
-      );
+    background:
+      radial-gradient(ellipse 80% 60% at 50% -10%, hsl(160 84% 32% / 0.22), transparent 70%),
+      radial-gradient(ellipse 50% 40% at 90% 20%, hsl(38 92% 50% / 0.14), transparent 60%),
+      radial-gradient(ellipse 40% 35% at 5% 45%, hsl(172 66% 40% / 0.12), transparent 60%);
   }
 
   .marquee-mask {
-    mask-image: linear-gradient(
-      to right,
-      transparent,
-      black 12%,
-      black 88%,
-      transparent
-    );
+    mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
   }
 
   .text-gradient-amber {

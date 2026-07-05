@@ -106,6 +106,9 @@ export function OrdersManager() {
   const [tab, setTab] = useState<TabId>("all");
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [bookingId, setBookingId] = useState<string | null>(null);
+  const [bookedIds, setBookedIds] = useState<Set<string>>(new Set());
+  const [notice, setNotice] = useState<string | null>(null);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -150,6 +153,62 @@ export function OrdersManager() {
       );
     } catch {
       setError("Network error while updating the order.");
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
+  async function bookRider(order: OrderRow) {
+    setBookingId(order.id);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch(`/api/orders/${order.id}/book-delivery`, { method: "POST" });
+      const data = await res.json();
+      if (!data.ok) {
+        setError(data.error ?? "Could not book a rider.");
+        return;
+      }
+      setBookedIds((current) => new Set(current).add(order.id));
+      setNotice(
+        data.delivery.trackingUrl
+          ? `Rider booked for ${order.orderNumber} (₱${data.delivery.fee}). Track: ${data.delivery.trackingUrl}`
+          : `Rider booked for ${order.orderNumber} (₱${data.delivery.fee}).`
+      );
+    } catch {
+      setError("Network error while booking the rider.");
+    } finally {
+      setBookingId(null);
+    }
+  }
+
+  async function refundOrder(order: OrderRow) {
+    const confirmed = window.confirm(
+      `Refund order ${order.orderNumber} (${formatPrice(Number(order.total))})?` +
+        (order.paymentMethod === "cod"
+          ? "\n\nCOD order — you'll need to return the cash to the customer yourself."
+          : "\n\nThe amount will be refunded through PayMongo.")
+    );
+    if (!confirmed) return;
+
+    setUpdatingId(order.id);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch(`/api/orders/${order.id}/refund`, { method: "POST" });
+      const data = await res.json();
+      if (!data.ok) {
+        setError(data.error ?? "Refund failed.");
+        return;
+      }
+      setOrders((current) =>
+        current.map((row) =>
+          row.id === order.id ? { ...row, status: "refunded", paymentStatus: "refunded" } : row
+        )
+      );
+      setNotice(`Order ${order.orderNumber} refunded.`);
+    } catch {
+      setError("Network error while refunding the order.");
     } finally {
       setUpdatingId(null);
     }
@@ -209,6 +268,11 @@ export function OrdersManager() {
           {error}
         </div>
       )}
+      {notice && (
+        <div className="mb-4 break-all rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          {notice}
+        </div>
+      )}
 
       {loading ? (
         <Card>
@@ -264,6 +328,19 @@ export function OrdersManager() {
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
+                    {order.deliveryType === "delivery" &&
+                      ["paid", "accepted", "preparing", "ready_for_pickup"].includes(
+                        order.status
+                      ) &&
+                      !bookedIds.has(order.id) && (
+                        <button
+                          onClick={() => bookRider(order)}
+                          disabled={bookingId === order.id}
+                          className="rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-medium text-orange-700 transition hover:bg-orange-100 disabled:opacity-50"
+                        >
+                          {bookingId === order.id ? "Booking…" : "Book rider"}
+                        </button>
+                      )}
                     {canCancel(order.status) && (
                       <button
                         onClick={() => {
@@ -277,6 +354,16 @@ export function OrdersManager() {
                         Cancel
                       </button>
                     )}
+                    {order.paymentStatus === "paid" &&
+                      !["cancelled", "refunded"].includes(order.status) && (
+                        <button
+                          onClick={() => refundOrder(order)}
+                          disabled={updatingId === order.id}
+                          className="rounded-lg px-3 py-2 text-xs font-medium text-gray-400 hover:bg-red-50 hover:text-red-600"
+                        >
+                          Refund
+                        </button>
+                      )}
                     {action && (
                       <Button
                         size="sm"

@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { ArrowRight, Check, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, Check, ShieldCheck, Sparkles, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { adminUrl } from "@/lib/utils";
+import { adminUrl, modelStoreUrl } from "@/lib/utils";
 
 const plans = [
   {
@@ -63,6 +63,24 @@ export function LandingPricing() {
             No setup fees. Pay only when you grow — plus a small fee per paid order.
           </p>
         </div>
+
+        <Link
+          href={modelStoreUrl("pricing")}
+          className="mx-auto mt-10 flex max-w-2xl items-center gap-4 rounded-2xl border border-primary/25 bg-gradient-to-r from-emerald-50 to-amber-50/80 p-4 transition hover:border-primary/40 hover:shadow-md sm:p-5"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Zap className="h-5 w-5" />
+          </span>
+          <span className="min-w-0 flex-1 text-left">
+            <span className="block text-sm font-bold text-foreground">
+              See the flagship model store
+            </span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">
+              Live selling, flash deals, reviews &amp; instant chat — preview what Growth &amp; Pro unlock.
+            </span>
+          </span>
+          <ArrowRight className="h-4 w-4 shrink-0 text-primary" />
+        </Link>
 
         <div className="mt-14 grid items-start gap-6 lg:grid-cols-3">
           {plans.map((plan) => (
@@ -180,6 +198,15 @@ export function LandingCta() {
                   className="border-white/30 bg-white/10 text-white hover:border-white/50 hover:bg-white/20 hover:text-white"
                 >
                   Start free
+                </Button>
+              </Link>
+              <Link href={modelStoreUrl("cta")}>
+                <Button
+                  size="xl"
+                  variant="outline"
+                  className="border-white/30 bg-white/10 text-white hover:border-white/50 hover:bg-white/20 hover:text-white"
+                >
+                  See model store
                 </Button>
               </Link>
             </div>

@@ -33,6 +33,8 @@ export interface BookDeliveryInput {
   stopIds: { pickup: string; dropoff: string };
   recipientName: string;
   recipientPhone: string;
+  senderName?: string;
+  senderPhone?: string;
   remarks?: string;
 }
 
@@ -138,7 +140,11 @@ export class LalamoveClient {
     const body = JSON.stringify({
       data: {
         quotationId: input.quotationId,
-        sender: { stopId: input.stopIds.pickup, name: "Seller", phone: "+639000000000" },
+        sender: {
+          stopId: input.stopIds.pickup,
+          name: input.senderName ?? "Seller",
+          phone: input.senderPhone ?? "+639000000000",
+        },
         recipients: [
           {
             stopId: input.stopIds.dropoff,

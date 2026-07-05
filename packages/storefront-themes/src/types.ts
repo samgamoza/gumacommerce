@@ -1,5 +1,5 @@
 export const SHOP_TEMPLATE_IDS = [
-  "clean-sari",
+  "clean-guma",
   "mono-market",
   "blush-bakery",
   "neon-bazaar",
@@ -17,10 +17,13 @@ export type ShopHeaderStyle = "standard" | "floating-glass" | "minimal" | "split
 export type ShopCardStyle = "row" | "grid" | "glass-tile" | "brutal" | "magazine";
 export type ShopHeroStyle = "gradient" | "mesh" | "chrome" | "noise" | "photo";
 
+export type ShopDisplayFont = "bricolage" | "system" | "mono-accent";
+
 export interface TenantThemeJson {
   templateId?: string;
   primaryColor?: string;
   accentColor?: string;
+  displayFont?: ShopDisplayFont;
   tagline?: string;
   promoTitle?: string;
   promoSubtitle?: string;
@@ -49,7 +52,7 @@ export interface ShopTemplateDefinition {
     border: string;
     mode: "light" | "dark";
     radius: string;
-    displayFont: "bricolage" | "system" | "mono-accent";
+    displayFont: ShopDisplayFont;
   };
 }
 
@@ -73,6 +76,6 @@ export interface ResolvedShopTheme {
   border: string;
   mode: "light" | "dark";
   radius: string;
-  displayFont: "bricolage" | "system" | "mono-accent";
+  displayFont: ShopDisplayFont;
   previewGradient: string;
 }

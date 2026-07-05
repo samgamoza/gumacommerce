@@ -23,6 +23,8 @@ export interface GenerateInput {
   variables?: Record<string, string>;
   subscriptionPlan?: string | null;
   taskType?: "agent_post" | "agent_campaign" | "chat" | "generation";
+  /** Tenant's month-to-date token usage; over-budget tenants degrade to the cheapest model. */
+  tokensUsedThisMonth?: number;
 }
 
 export interface GenerateResult {

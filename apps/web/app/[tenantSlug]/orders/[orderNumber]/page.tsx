@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import { getOrderForTracking, type OrderStatus } from "@guma-commerce/db";
 import { Badge, Button, Card } from "@guma-commerce/ui";
 import { getTenant as getDemoTenant } from "@/lib/demo-data";
+import { OrderAutoRefresh } from "@/components/order-auto-refresh";
+
+export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ tenantSlug: string; orderNumber: string }>;
@@ -96,9 +99,16 @@ export default async function OrderTrackingPage({ params }: PageProps) {
     order?.paymentMethod ?? "cod"
   );
   const awaitingPayment = status === "pending_payment";
+  const inMotion = !isCancelled && status !== "delivered" && !demoTenant;
+  const delivery = order?.delivery ?? null;
+  const driverMapUrl =
+    delivery?.driverLat && delivery.driverLng
+      ? `https://www.google.com/maps?q=${delivery.driverLat},${delivery.driverLng}`
+      : null;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
+      <OrderAutoRefresh active={inMotion} />
       <div className="mx-auto max-w-lg space-y-4">
         <Card className="text-center">
           <div className="text-4xl">{isCancelled ? "❌" : awaitingPayment ? "⏳" : "✅"}</div>
@@ -149,6 +159,52 @@ export default async function OrderTrackingPage({ params }: PageProps) {
                 </li>
               ))}
             </ol>
+          </Card>
+        )}
+
+        {delivery && !isCancelled && (
+          <Card>
+            <h2 className="font-semibold">Your rider</h2>
+            {delivery.driverName ? (
+              <div className="mt-3 space-y-1 text-sm">
+                <p className="font-medium">
+                  {delivery.driverName}
+                  {delivery.driverPlateNumber ? ` · ${delivery.driverPlateNumber}` : ""}
+                </p>
+                {delivery.driverPhone && (
+                  <a href={`tel:${delivery.driverPhone}`} className="block text-emerald-700">
+                    {delivery.driverPhone}
+                  </a>
+                )}
+                {delivery.driverLocationAt && driverMapUrl && (
+                  <p className="text-gray-500">
+                    Last seen {formatTime(delivery.driverLocationAt)} ·{" "}
+                    <a
+                      href={driverMapUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-emerald-700 underline"
+                    >
+                      View live location
+                    </a>
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-gray-500">
+                Finding a rider for your order… this usually takes a few minutes.
+              </p>
+            )}
+            {delivery.trackingUrl && (
+              <a
+                href={delivery.trackingUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 block rounded-lg bg-emerald-600 px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-emerald-700"
+              >
+                Track rider on {delivery.provider === "lalamove" ? "Lalamove" : "the map"}
+              </a>
+            )}
           </Card>
         )}
 

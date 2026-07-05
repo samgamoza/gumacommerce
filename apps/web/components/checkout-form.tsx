@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -68,10 +68,55 @@ export function CheckoutForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [touched, setTouched] = useState(false);
+  const [liveQuote, setLiveQuote] = useState<{ fee: number; etaMinutes: number | null } | null>(
+    null
+  );
+  const [quoting, setQuoting] = useState(false);
+
+  // Live Lalamove quote once the customer has typed a usable address.
+  const wantsLiveQuote =
+    storeSettings.delivery.provider === "lalamove" &&
+    fulfillment === "delivery" &&
+    address.trim().length >= 10;
+  const quoteAddress = wantsLiveQuote ? address.trim() : "";
+
+  useEffect(() => {
+    if (!quoteAddress) {
+      setLiveQuote(null);
+      return;
+    }
+    let cancelled = false;
+    setQuoting(true);
+    const timer = window.setTimeout(async () => {
+      try {
+        const res = await fetch("/api/delivery/quote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tenantSlug, address: quoteAddress }),
+        });
+        const data = await res.json();
+        if (!cancelled) {
+          setLiveQuote(
+            res.ok && data.live ? { fee: data.fee, etaMinutes: data.etaMinutes } : null
+          );
+        }
+      } catch {
+        if (!cancelled) setLiveQuote(null);
+      } finally {
+        if (!cancelled) setQuoting(false);
+      }
+    }, 800);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [quoteAddress, tenantSlug]);
 
   const subtotal = cart.subtotal;
   const deliveryFee =
-    fulfillment === "pickup" ? 0 : computeDeliveryFee(subtotal, storeSettings);
+    fulfillment === "pickup"
+      ? 0
+      : liveQuote?.fee ?? computeDeliveryFee(subtotal, storeSettings);
   const total = subtotal + deliveryFee;
   const belowMinimum = subtotal > 0 && subtotal < storeSettings.minOrderAmount;
 
@@ -380,9 +425,15 @@ export function CheckoutForm({
               <div className="flex justify-between">
                 <span className="text-muted-foreground">
                   {deliveryProviderLabel(storeSettings.delivery.provider)}
-                  {deliveryFee === 0 && storeSettings.delivery.freeDeliveryMin > 0
-                    ? " (free)"
-                    : ""}
+                  {liveQuote
+                    ? liveQuote.etaMinutes
+                      ? ` · live quote · ~${liveQuote.etaMinutes} min`
+                      : " · live quote"
+                    : quoting
+                      ? " · getting quote…"
+                      : deliveryFee === 0 && storeSettings.delivery.freeDeliveryMin > 0
+                        ? " (free)"
+                        : ""}
                 </span>
                 <span>{formatPrice(deliveryFee, storeSettings.currency)}</span>
               </div>

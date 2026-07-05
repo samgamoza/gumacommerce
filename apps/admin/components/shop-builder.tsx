@@ -1,8 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card } from "@guma-commerce/ui";
-import type { ResolvedShopTheme } from "@guma-commerce/storefront-themes";
+import { BRAND_PALETTES } from "@guma-commerce/storefront-themes";
+import type { ResolvedShopTheme, ShopDisplayFont } from "@guma-commerce/storefront-themes";
+import { modelStoreUrl } from "@/lib/utils";
+
+const FONT_OPTIONS: Array<{ id: ShopDisplayFont; label: string; hint: string }> = [
+  { id: "bricolage", label: "Rounded", hint: "Friendly & modern" },
+  { id: "system", label: "Classic", hint: "Clean & neutral" },
+  { id: "mono-accent", label: "Techy", hint: "Bold & digital" },
+];
 
 interface TemplateOption {
   id: string;
@@ -143,13 +152,15 @@ export function ShopBuilder() {
   const [tiers, setTiers] = useState<TemplateTier[]>([]);
   const [urls, setUrls] = useState<ShopUrls | null>(null);
   const [subscriptionPlan, setSubscriptionPlan] = useState("free");
-  const [selectedTemplateId, setSelectedTemplateId] = useState("clean-sari");
+  const [selectedTemplateId, setSelectedTemplateId] = useState("clean-guma");
   const [tagline, setTagline] = useState("");
   const [promoTitle, setPromoTitle] = useState("");
   const [promoSubtitle, setPromoSubtitle] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#059669");
   const [accentColor, setAccentColor] = useState("#f59e0b");
+  const [displayFont, setDisplayFont] = useState<ShopDisplayFont>("bricolage");
   const [previewTheme, setPreviewTheme] = useState<ResolvedShopTheme | null>(null);
+  const [lockedPrompt, setLockedPrompt] = useState<TemplateOption | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -172,7 +183,7 @@ export function ShopBuilder() {
     if (templatesData.ok) {
       setTiers(templatesData.tiers);
       setSubscriptionPlan(templatesData.subscriptionPlan ?? "free");
-      setSelectedTemplateId(templatesData.currentTemplateId ?? "clean-sari");
+      setSelectedTemplateId(templatesData.currentTemplateId ?? "clean-guma");
     }
 
     setShopName(shopData.shop.tenant.name);
@@ -183,6 +194,7 @@ export function ShopBuilder() {
     setPromoSubtitle(shopData.theme.promoSubtitle ?? "");
     setPrimaryColor(shopData.theme.primaryColor ?? "#059669");
     setAccentColor(shopData.theme.accentColor ?? "#f59e0b");
+    setDisplayFont(shopData.theme.displayFont ?? "bricolage");
   }, []);
 
   useEffect(() => {
@@ -198,16 +210,36 @@ export function ShopBuilder() {
       promoSubtitle: promoSubtitle || previewTheme.promoSubtitle,
       primaryColor,
       accentColor,
+      displayFont,
     };
-  }, [previewTheme, tagline, promoTitle, promoSubtitle, primaryColor, accentColor]);
+  }, [previewTheme, tagline, promoTitle, promoSubtitle, primaryColor, accentColor, displayFont]);
+
+  function applyPalette(paletteId: string) {
+    const palette = BRAND_PALETTES.find((p) => p.id === paletteId);
+    if (!palette) return;
+    setSaved(false);
+    setPrimaryColor(palette.primary);
+    setAccentColor(palette.accent);
+  }
+
+  function shuffleStyle() {
+    const palette = BRAND_PALETTES[Math.floor(Math.random() * BRAND_PALETTES.length)];
+    const font = FONT_OPTIONS[Math.floor(Math.random() * FONT_OPTIONS.length)];
+    if (!palette || !font) return;
+    setSaved(false);
+    setPrimaryColor(palette.primary);
+    setAccentColor(palette.accent);
+    setDisplayFont(font.id);
+  }
 
   async function selectTemplate(template: TemplateOption) {
     if (template.locked) {
-      setError("This template is on a higher plan. Starter includes Basic; upgrade for Standard & Advanced.");
+      setLockedPrompt(template);
+      setError(null);
       return;
     }
 
-    setError(null);
+    setLockedPrompt(null);
     setSaved(false);
     setSelectedTemplateId(template.id);
 
@@ -243,6 +275,7 @@ export function ShopBuilder() {
         promoSubtitle,
         primaryColor,
         accentColor,
+        displayFont,
       }),
     });
 
@@ -278,14 +311,24 @@ export function ShopBuilder() {
             </p>
           </div>
           {urls && (
-            <a
-              href={urls.preview}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-xl border border-emerald-200 bg-white px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-50"
-            >
-              Open live preview ↗
-            </a>
+            <div className="flex flex-wrap gap-2">
+              <a
+                href={urls.preview}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-xl border border-emerald-200 bg-white px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-50"
+              >
+                Your live preview ↗
+              </a>
+              <a
+                href={modelStoreUrl("shop-builder")}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100"
+              >
+                See flagship model store ↗
+              </a>
+            </div>
           )}
         </div>
         <p className="mt-3 text-xs text-gray-500">
@@ -296,6 +339,79 @@ export function ShopBuilder() {
 
       {error && <p className="text-sm text-red-600">{error}</p>}
       {saved && <p className="text-sm text-emerald-700">Shop design saved.</p>}
+
+      {lockedPrompt && (
+        <Card className="border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-amber-900">
+                {lockedPrompt.label} requires {lockedPrompt.minPlan === "pro" ? "Pro" : "Growth"}
+              </p>
+              <p className="mt-1 max-w-xl text-sm text-gray-600">
+                Preview how flagship shops look with live selling, flash deals, and more on our model
+                store — then upgrade to unlock {lockedPrompt.minPlan === "pro" ? "Pro" : "Growth"}{" "}
+                templates for your shop.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="text-sm text-gray-400 hover:text-gray-600"
+              onClick={() => setLockedPrompt(null)}
+              aria-label="Dismiss"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <a
+              href={modelStoreUrl("shop-builder")}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-xl bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-200"
+            >
+              See model store ↗
+            </a>
+            <Link
+              href={`/settings/subscription?highlight=${lockedPrompt.minPlan}&ref=shop-builder`}
+              className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+            >
+              Upgrade to {lockedPrompt.minPlan === "pro" ? "Pro" : "Growth"}
+            </Link>
+          </div>
+        </Card>
+      )}
+
+      {subscriptionPlan === "free" && urls && (
+        <Card className="border-gray-200 p-5">
+          <h3 className="font-semibold text-gray-900">Compare: your shop vs flagship</h3>
+          <p className="mt-1 text-sm text-gray-500">
+            Open both side by side on your phone. The model store shows what Growth &amp; Pro features
+            feel like — your live preview is what customers see today on Sulit (free).
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <a
+              href={urls.preview}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-xl border border-gray-200 bg-white p-4 transition hover:border-emerald-300 hover:shadow-sm"
+            >
+              <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">Your shop</p>
+              <p className="mt-1 font-medium text-gray-900">{shopName}</p>
+              <p className="mt-2 text-xs text-gray-500">Current plan · Basic templates</p>
+            </a>
+            <a
+              href={modelStoreUrl("shop-builder")}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-xl border border-amber-200 bg-gradient-to-br from-[#1a1a2e] to-[#16213e] p-4 text-white transition hover:shadow-md"
+            >
+              <p className="text-xs font-bold uppercase tracking-wide text-amber-300">Model store</p>
+              <p className="mt-1 font-medium">Guma Supply Co.</p>
+              <p className="mt-2 text-xs text-gray-300">Growth + Pro features · Staged demo</p>
+            </a>
+          </div>
+        </Card>
+      )}
 
       <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
         <div className="space-y-8">
@@ -329,7 +445,11 @@ export function ShopBuilder() {
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-medium text-gray-900">{template.label}</p>
                         {selected && <Badge>Active</Badge>}
-                        {template.locked && <Badge className="bg-gray-100 text-gray-600">Pro</Badge>}
+                        {template.locked && (
+                          <Badge className="bg-gray-100 text-gray-600 capitalize">
+                            {template.minPlan}
+                          </Badge>
+                        )}
                       </div>
                       <p className="mt-1 text-xs text-gray-500">{template.description}</p>
                       <p className="mt-2 text-[11px] font-medium uppercase tracking-wide text-gray-400">
@@ -343,10 +463,80 @@ export function ShopBuilder() {
           ))}
 
           <Card className="p-5">
-            <h3 className="font-semibold text-gray-900">Customize copy & colors</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Fine-tune your tagline, promo banner, and brand colors on top of the template.
-            </p>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <h3 className="font-semibold text-gray-900">Customize copy & colors</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  Fine-tune your tagline, promo banner, brand colors, and font on top of the
+                  template.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={shuffleStyle}
+                className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                🎲 Surprise me
+              </button>
+            </div>
+
+            <div className="mt-4">
+              <span className="mb-2 block text-xs font-medium text-gray-600">Color palettes</span>
+              <div className="flex flex-wrap gap-2">
+                {BRAND_PALETTES.map((palette) => {
+                  const active =
+                    palette.primary.toLowerCase() === primaryColor.toLowerCase() &&
+                    palette.accent.toLowerCase() === accentColor.toLowerCase();
+                  return (
+                    <button
+                      key={palette.id}
+                      type="button"
+                      title={palette.label}
+                      onClick={() => applyPalette(palette.id)}
+                      className={`flex h-9 items-center gap-0 overflow-hidden rounded-full border transition ${
+                        active
+                          ? "border-emerald-500 ring-2 ring-emerald-500"
+                          : "border-gray-200 hover:border-gray-400"
+                      }`}
+                    >
+                      <span className="h-9 w-6" style={{ backgroundColor: palette.primary }} />
+                      <span className="h-9 w-6" style={{ backgroundColor: palette.accent }} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <span className="mb-2 block text-xs font-medium text-gray-600">Display font</span>
+              <div className="grid grid-cols-3 gap-2">
+                {FONT_OPTIONS.map((font) => (
+                  <button
+                    key={font.id}
+                    type="button"
+                    onClick={() => {
+                      setSaved(false);
+                      setDisplayFont(font.id);
+                    }}
+                    className={`rounded-xl border p-2.5 text-left transition ${
+                      displayFont === font.id
+                        ? "border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500"
+                        : "border-gray-200 bg-white hover:border-gray-300"
+                    }`}
+                  >
+                    <p
+                      className={`text-sm font-semibold text-gray-900 ${
+                        font.id === "mono-accent" ? "font-mono" : ""
+                      }`}
+                    >
+                      {font.label}
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-gray-500">{font.hint}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <form onSubmit={handleSaveDetails} className="mt-4 grid gap-4 md:grid-cols-2">
               <label className="block md:col-span-2">
                 <span className="mb-1 block text-xs font-medium text-gray-600">Shop tagline</span>

@@ -8,6 +8,8 @@ interface ProductRow {
   title: string;
   slug: string;
   basePrice: string;
+  compareAtPrice: string | null;
+  descriptionHtml: string | null;
   status: string;
   stockQty: number;
   aiGenerated: boolean;
@@ -82,6 +84,9 @@ export function ProductsManager() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
   const [enhancing, setEnhancing] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -113,6 +118,8 @@ export function ProductsManager() {
     setManualMode(false);
     setAiPrompt("");
     setPriceHint("");
+    setEditingId(null);
+    setNotice(null);
   }
 
   function closeCreateForm() {
@@ -125,6 +132,58 @@ export function ProductsManager() {
     setManualMode(false);
     setOriginalImageUrl(null);
     setEnhancing(false);
+    setEditingId(null);
+  }
+
+  function startEdit(product: ProductRow) {
+    setShowForm(true);
+    setManualMode(true);
+    setEditingId(product.id);
+    setAiModel(null);
+    setError(null);
+    setNotice(null);
+    setOriginalImageUrl(product.imageUrl);
+    setDraft({
+      title: product.title,
+      slug: product.slug,
+      descriptionHtml: product.descriptionHtml ?? "",
+      shortDescription: "",
+      basePrice: String(Number(product.basePrice)),
+      compareAtPrice: product.compareAtPrice ? String(Number(product.compareAtPrice)) : "",
+      stockQty: String(product.stockQty),
+      // Archived products come back as drafts so they stay hidden until re-activated.
+      status: product.status === "active" ? "active" : "draft",
+      tags: [],
+      photoShotList: [],
+      imageUrl: product.imageUrl ?? "",
+    });
+  }
+
+  async function handleDelete(product: ProductRow) {
+    const confirmed = window.confirm(
+      `Delete "${product.title}"? If it has past orders it will be archived instead.`
+    );
+    if (!confirmed) return;
+
+    setDeletingId(product.id);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch(`/api/products/${product.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!data.ok) {
+        setError(data.error ?? "Could not delete product.");
+        return;
+      }
+      setNotice(
+        data.result === "archived"
+          ? `"${product.title}" has past orders, so it was archived (hidden from your shop).`
+          : `"${product.title}" deleted.`
+      );
+      await load();
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   async function handleGenerate() {
@@ -268,21 +327,37 @@ export function ProductsManager() {
 
     const compareAt = draft.compareAtPrice ? Number(draft.compareAtPrice) : null;
 
-    const res = await fetch("/api/products", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: draft.title.trim(),
-        slug: draft.slug || draft.title,
-        descriptionHtml: draft.descriptionHtml || `<p>${draft.shortDescription || draft.title}</p>`,
-        basePrice: price,
-        compareAtPrice: compareAt && compareAt > price ? compareAt : undefined,
-        status: draft.status,
-        stockQty: Number(draft.stockQty) || 0,
-        aiGenerated: Boolean(aiModel),
-        imageUrl: draft.imageUrl || undefined,
-      }),
-    });
+    const res = editingId
+      ? await fetch(`/api/products/${editingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: draft.title.trim(),
+            descriptionHtml:
+              draft.descriptionHtml || `<p>${draft.shortDescription || draft.title}</p>`,
+            basePrice: price,
+            compareAtPrice: compareAt && compareAt > price ? compareAt : null,
+            status: draft.status,
+            stockQty: Number(draft.stockQty) || 0,
+            imageUrl: draft.imageUrl || null,
+          }),
+        })
+      : await fetch("/api/products", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: draft.title.trim(),
+            slug: draft.slug || draft.title,
+            descriptionHtml:
+              draft.descriptionHtml || `<p>${draft.shortDescription || draft.title}</p>`,
+            basePrice: price,
+            compareAtPrice: compareAt && compareAt > price ? compareAt : undefined,
+            status: draft.status,
+            stockQty: Number(draft.stockQty) || 0,
+            aiGenerated: Boolean(aiModel),
+            imageUrl: draft.imageUrl || undefined,
+          }),
+        });
 
     const data = await res.json();
     setSaving(false);
@@ -401,7 +476,9 @@ export function ProductsManager() {
           {(draft || manualMode) && (
             <form onSubmit={handleSubmit} className="mt-5 space-y-4">
               <div className="flex flex-wrap items-center gap-2">
-                <h4 className="font-medium">Review & edit listing</h4>
+                <h4 className="font-medium">
+                  {editingId ? "Edit product" : "Review & edit listing"}
+                </h4>
                 {aiModel && <Badge>AI · {aiModel === "mock" ? "demo mode" : "generated"}</Badge>}
               </div>
 
@@ -624,7 +701,7 @@ export function ProductsManager() {
 
               <div className="flex flex-wrap gap-2 pt-1">
                 <Button type="submit" disabled={saving}>
-                  {saving ? "Saving…" : "Save product"}
+                  {saving ? "Saving…" : editingId ? "Save changes" : "Save product"}
                 </Button>
                 {aiModel && (
                   <Button
@@ -655,6 +732,17 @@ export function ProductsManager() {
             <p className="mt-3 text-sm text-red-600">{error}</p>
           )}
         </Card>
+      )}
+
+      {notice && (
+        <p className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">
+          {notice}
+        </p>
+      )}
+      {error && !showForm && !showEmptyComposer && (
+        <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
+          {error}
+        </p>
       )}
 
       {loading ? (
@@ -702,6 +790,23 @@ export function ProductsManager() {
                   {formatPrice(Number(product.basePrice))} · Stock: {product.stockQty} · /
                   {product.slug}
                 </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => startEdit(product)}
+                  className="rounded-xl border border-gray-200 px-3 py-1.5 text-sm text-gray-700 transition hover:bg-gray-50"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(product)}
+                  disabled={deletingId === product.id}
+                  className="rounded-xl px-3 py-1.5 text-sm text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                >
+                  {deletingId === product.id ? "Deleting…" : "Delete"}
+                </button>
               </div>
             </Card>
           ))}

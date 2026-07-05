@@ -13,3 +13,9 @@ export function shopUrlDisplayPrefix(): string {
 export function storefrontUrl(slug: string, path = ""): string {
   return `${storefrontBaseUrl}/${slug}${path}`;
 }
+
+/** Admin-owned concept storefront — optional ref for upgrade-funnel attribution. */
+export function modelStoreUrl(ref?: string): string {
+  const base = `${storefrontBaseUrl}/model`;
+  return ref ? `${base}?ref=${encodeURIComponent(ref)}` : base;
+}

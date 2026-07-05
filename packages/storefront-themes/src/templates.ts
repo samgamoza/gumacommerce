@@ -2,9 +2,9 @@ import type { ShopTemplateDefinition, ShopTemplateId } from "./types";
 
 export const SHOP_TEMPLATES: ShopTemplateDefinition[] = [
   {
-    id: "clean-sari",
+    id: "clean-guma",
     tier: "basic",
-    label: "Clean Sari",
+    label: "Clean Guma",
     description: "Mobile-first catalog with crisp cards and a friendly checkout flow.",
     mood: "Trusted · everyday · shoppable",
     tags: ["default", "food", "services"],
@@ -243,6 +243,15 @@ export const SHOP_TEMPLATE_MAP = Object.fromEntries(
 
 export function getShopTemplate(id: ShopTemplateId): ShopTemplateDefinition {
   return SHOP_TEMPLATE_MAP[id];
+}
+
+/** Template IDs that existed before the rebrand and may still be stored in tenant themeJson. */
+const LEGACY_TEMPLATE_IDS: Record<string, ShopTemplateId> = {
+  "clean-sari": "clean-guma",
+};
+
+export function normalizeShopTemplateId(value: string): string {
+  return LEGACY_TEMPLATE_IDS[value] ?? value;
 }
 
 export function isShopTemplateId(value: string): value is ShopTemplateId {

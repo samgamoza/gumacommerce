@@ -1,4 +1,4 @@
-export const AUTH_COOKIE_NAME = "sari_session";
+export const AUTH_COOKIE_NAME = "gumacommerce_session";
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
 export const EMAIL_VERIFY_MAX_AGE_SECONDS = 60 * 60 * 24; // 24 hours
 
@@ -12,6 +12,8 @@ export interface SessionUser {
   displayName: string;
   emailVerified: boolean;
   needsShopSetup: boolean;
+  /** Mirrors users.session_version; tokens with an older value are revoked. */
+  sessionVersion: number;
 }
 
 export interface SessionPayload extends SessionUser {
@@ -26,6 +28,8 @@ export interface RegisterSellerInput {
   shopName: string;
   shopSlug: string;
   category?: string;
+  /** Brand vibe chosen at signup — seeds a unique starting theme. */
+  vibe?: string;
 }
 
 export interface CompleteGoogleShopInput {
@@ -33,6 +37,8 @@ export interface CompleteGoogleShopInput {
   shopName: string;
   shopSlug: string;
   category?: string;
+  /** Brand vibe chosen at signup — seeds a unique starting theme. */
+  vibe?: string;
 }
 
 export interface GoogleProfile {

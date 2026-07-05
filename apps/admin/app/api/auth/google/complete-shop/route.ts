@@ -7,6 +7,7 @@ const schema = z.object({
   shopName: z.string().min(2).max(255),
   shopSlug: z.string().min(3).max(32),
   category: z.string().optional(),
+  vibe: z.string().max(32).optional(),
 });
 
 export async function POST(request: Request) {

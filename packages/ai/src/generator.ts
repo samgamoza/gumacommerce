@@ -1,7 +1,7 @@
 import type { GenerateInput, GenerateResult } from "./types";
 import { MASTER_SYSTEM_PROMPT, TEMPLATE_PROMPTS } from "./templates/index";
 import { resolveEffectiveModel, callLlm } from "./providers/llm";
-import { normalizePlan, resolveModelForTask } from "./plan-limits";
+import { MAX_TOKENS_BY_TASK, normalizePlan, resolveBudgetAwareModel } from "./plan-limits";
 
 function mockProductListing(userPrompt: string, category: string): Record<string, unknown> {
   const priceMatch = userPrompt.match(/₱?\s*(\d{2,6})/);
@@ -70,7 +70,11 @@ export class AiContentGenerator {
           ? "agent_campaign"
           : "generation");
 
-    const requestedModel = resolveModelForTask(input.subscriptionPlan, taskType);
+    const requestedModel = resolveBudgetAwareModel(
+      input.subscriptionPlan,
+      taskType,
+      input.tokensUsedThisMonth
+    );
     const model = resolveEffectiveModel(requestedModel);
 
     const variables = {
@@ -108,6 +112,7 @@ export class AiContentGenerator {
       system: systemPrompt,
       user: userPrompt,
       jsonMode: input.templateKey !== "support_chatbot",
+      maxTokens: MAX_TOKENS_BY_TASK[taskType],
     });
 
     let output: unknown;

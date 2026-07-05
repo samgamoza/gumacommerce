@@ -15,6 +15,9 @@ export interface TenantStorefrontSettings {
     primaryColor?: string;
     accentColor?: string;
     fontFamily?: string;
+    displayFont?: "bricolage" | "system" | "mono-accent";
+    paletteId?: string;
+    vibe?: string;
     tagline?: string;
     promoTitle?: string;
     promoSubtitle?: string;
@@ -25,6 +28,8 @@ export interface UpdateTenantStorefrontInput {
   templateId?: string;
   primaryColor?: string;
   accentColor?: string;
+  displayFont?: "bricolage" | "system" | "mono-accent";
+  paletteId?: string;
   tagline?: string;
   promoTitle?: string;
   promoSubtitle?: string;
@@ -68,6 +73,8 @@ export async function updateTenantStorefront(
     ...(input.templateId !== undefined ? { templateId: input.templateId } : {}),
     ...(input.primaryColor !== undefined ? { primaryColor: input.primaryColor } : {}),
     ...(input.accentColor !== undefined ? { accentColor: input.accentColor } : {}),
+    ...(input.displayFont !== undefined ? { displayFont: input.displayFont } : {}),
+    ...(input.paletteId !== undefined ? { paletteId: input.paletteId } : {}),
     ...(input.tagline !== undefined ? { tagline: input.tagline } : {}),
     ...(input.promoTitle !== undefined ? { promoTitle: input.promoTitle } : {}),
     ...(input.promoSubtitle !== undefined ? { promoSubtitle: input.promoSubtitle } : {}),

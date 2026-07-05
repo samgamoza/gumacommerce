@@ -1,16 +1,17 @@
-import { getShopTemplate, isShopTemplateId } from "./templates";
+import { getShopTemplate, isShopTemplateId, normalizeShopTemplateId } from "./templates";
 import type { ResolvedShopTheme, TenantThemeJson } from "./types";
 
-const DEFAULT_TEMPLATE_ID = "clean-sari";
+const DEFAULT_TEMPLATE_ID = "clean-guma";
 
 export function resolveShopTheme(
   themeJson: TenantThemeJson | null | undefined,
   shopName: string
 ): ResolvedShopTheme {
+  const storedId = themeJson?.templateId
+    ? normalizeShopTemplateId(themeJson.templateId)
+    : undefined;
   const templateId =
-    themeJson?.templateId && isShopTemplateId(themeJson.templateId)
-      ? themeJson.templateId
-      : DEFAULT_TEMPLATE_ID;
+    storedId && isShopTemplateId(storedId) ? storedId : DEFAULT_TEMPLATE_ID;
 
   const template = getShopTemplate(templateId);
 
@@ -34,7 +35,7 @@ export function resolveShopTheme(
     border: template.tokens.border,
     mode: template.tokens.mode,
     radius: template.tokens.radius,
-    displayFont: template.tokens.displayFont,
+    displayFont: themeJson?.displayFont ?? template.tokens.displayFont,
     previewGradient: template.previewGradient,
   };
 }
@@ -43,8 +44,9 @@ export function canUseTemplate(
   templateId: string,
   subscriptionPlan: string | null | undefined
 ): boolean {
-  if (!isShopTemplateId(templateId)) return false;
-  const template = getShopTemplate(templateId);
+  const normalized = normalizeShopTemplateId(templateId);
+  if (!isShopTemplateId(normalized)) return false;
+  const template = getShopTemplate(normalized);
   const plan = subscriptionPlan ?? "free";
 
   if (template.minPlan === "free") return true;

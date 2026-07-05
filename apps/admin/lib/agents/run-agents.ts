@@ -10,6 +10,7 @@ import {
   type AgentSettings,
 } from "@guma-commerce/db";
 import { resolveShopTheme } from "@guma-commerce/storefront-themes";
+import { getUsageSnapshot } from "@/lib/agents/usage-gate";
 
 type TenantContext = {
   tenantId: string;
@@ -71,6 +72,7 @@ export async function runPostingAgent(
     );
     const orderLink = `${storefrontBase()}/${tenant.slug}?utm_source=guma_agents`;
     const generator = createAiGenerator();
+    const usage = await getUsageSnapshot(tenant.tenantId);
 
     const insightContext = insights.insightLines.join(" ");
     const prompt = featured
@@ -86,6 +88,7 @@ export async function runPostingAgent(
         userPrompt: prompt,
         subscriptionPlan: tenant.subscriptionPlan,
         taskType: "agent_post",
+        tokensUsedThisMonth: usage.tokensThisMonth + tokensUsed,
         seller: {
           brandName: tenant.name,
           category: tenant.category ?? "General",
@@ -144,12 +147,14 @@ export async function runCampaignAgent(tenant: TenantContext): Promise<number> {
     );
     const orderLink = `${storefrontBase()}/${tenant.slug}?utm_source=guma_campaign`;
     const generator = createAiGenerator();
+    const usage = await getUsageSnapshot(tenant.tenantId);
 
     const result = await generator.generate({
       templateKey: "campaign_strategy",
       userPrompt: `Plan a 7-day Guma-style video + social campaign for ${tenant.name}. Tagline: ${theme.tagline}. Orders last 7 days: ${insights.orderCount}. Revenue: ₱${insights.revenue}. ${insights.insightLines.join(" ")}`,
       subscriptionPlan: tenant.subscriptionPlan,
       taskType: "agent_campaign",
+      tokensUsedThisMonth: usage.tokensThisMonth,
       seller: {
         brandName: tenant.name,
         category: tenant.category ?? "General",

@@ -7,6 +7,16 @@ import {
 import { adminUrl } from "@/lib/utils";
 import { ShopShell } from "@/components/storefront/shop-shell";
 import { ShopifyCatalog } from "@/components/storefront/shopify-catalog";
+import { PremiumStorefrontSections } from "@/components/storefront/premium/premium-storefront-sections";
+import { ThemedStorefrontHome } from "@/components/storefront/themed-home";
+
+const UTM_LABELS: Record<string, string> = {
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  facebook: "Facebook",
+  whatsapp: "WhatsApp",
+  shop_assistant: "our shop assistant",
+};
 
 interface PageProps {
   params: Promise<{ tenantSlug: string }>;
@@ -53,8 +63,21 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
     notFound();
   }
 
+  // Classic templates use the standard catalog shell; every other template
+  // renders its own fully themed layout (bento, editorial, immersive, ...).
+  if (tenant.shopTheme.layout !== "classic") {
+    const utmSource = query.utm_source ?? "";
+    return (
+      <ThemedStorefrontHome
+        tenant={tenant}
+        utmLabel={UTM_LABELS[utmSource] ?? (utmSource || undefined)}
+      />
+    );
+  }
+
   return (
     <ShopShell tenant={tenant}>
+      <PremiumStorefrontSections tenant={tenant} />
       <ShopifyCatalog tenant={tenant} activeCategorySlug={query.category} />
     </ShopShell>
   );

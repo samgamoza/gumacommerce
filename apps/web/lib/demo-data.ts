@@ -28,6 +28,7 @@ export interface DemoTenant {
   codEnabled: boolean;
   storeSettings: import("./storefront-settings").StorefrontStoreSettings;
   products: DemoProduct[];
+  subscriptionPlan?: string | null;
 }
 
 export const DEMO_TENANT: DemoTenant = {
@@ -62,6 +63,7 @@ export const DEMO_TENANT: DemoTenant = {
     previewGradient: "linear-gradient(135deg, #0f172a 0%, #7c3aed 50%, #22d3ee 100%)",
   },
   codEnabled: true,
+  subscriptionPlan: "pro",
   storeSettings: {
     ...DEFAULT_STOREFRONT_SETTINGS,
     delivery: {
@@ -130,7 +132,17 @@ export const DEMO_TENANT: DemoTenant = {
   ],
 };
 
+function demoShopEnabled(): boolean {
+  // Demo data must never shadow a real tenant slug in production; enable it
+  // explicitly with NEXT_PUBLIC_ENABLE_DEMO_SHOP=true (always on in dev).
+  return (
+    process.env.NODE_ENV === "development" ||
+    process.env.NEXT_PUBLIC_ENABLE_DEMO_SHOP === "true"
+  );
+}
+
 export function getTenant(slug: string): DemoTenant | null {
+  if (!demoShopEnabled()) return null;
   if (slug === "demo" || slug === "haloqueen") {
     return { ...DEMO_TENANT, slug };
   }

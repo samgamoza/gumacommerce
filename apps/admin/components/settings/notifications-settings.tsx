@@ -1,12 +1,99 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { SettingsShell } from "@/components/settings/settings-shell";
 import {
   SettingsActions,
   SettingsCard,
   useTenantSettings,
 } from "@/components/settings/settings-forms";
+
+function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const output = new Uint8Array(new ArrayBuffer(rawData.length));
+  for (let i = 0; i < rawData.length; i += 1) {
+    output[i] = rawData.charCodeAt(i);
+  }
+  return output;
+}
+
+type PushState = "unsupported" | "unavailable" | "off" | "on" | "busy";
+
+function usePushNotifications() {
+  const [state, setState] = useState<PushState>("busy");
+
+  useEffect(() => {
+    (async () => {
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+        setState("unsupported");
+        return;
+      }
+      try {
+        const res = await fetch("/api/push/subscribe");
+        const data = await res.json();
+        if (!data.ok) {
+          setState("unavailable");
+          return;
+        }
+        const registration = await navigator.serviceWorker.register("/sw.js");
+        const subscription = await registration.pushManager.getSubscription();
+        setState(subscription ? "on" : "off");
+      } catch {
+        setState("unavailable");
+      }
+    })();
+  }, []);
+
+  const enable = useCallback(async () => {
+    setState("busy");
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        setState("off");
+        return;
+      }
+      const keyRes = await fetch("/api/push/subscribe");
+      const keyData = await keyRes.json();
+      const registration = await navigator.serviceWorker.register("/sw.js");
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(keyData.publicKey),
+      });
+      const res = await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(subscription.toJSON()),
+      });
+      const data = await res.json();
+      setState(data.ok ? "on" : "off");
+    } catch {
+      setState("off");
+    }
+  }, []);
+
+  const disable = useCallback(async () => {
+    setState("busy");
+    try {
+      const registration = await navigator.serviceWorker.register("/sw.js");
+      const subscription = await registration.pushManager.getSubscription();
+      if (subscription) {
+        await fetch("/api/push/subscribe", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ endpoint: subscription.endpoint }),
+        });
+        await subscription.unsubscribe();
+      }
+      setState("off");
+    } catch {
+      setState("on");
+    }
+  }, []);
+
+  return { state, enable, disable };
+}
 
 const TOGGLES = [
   {
@@ -37,6 +124,7 @@ const TOGGLES = [
 
 export function NotificationsSettingsPage() {
   const { settings, loading, saving, error, saved, save } = useTenantSettings();
+  const push = usePushNotifications();
   const [emailOnNewOrder, setEmailOnNewOrder] = useState(true);
   const [smsOnNewOrder, setSmsOnNewOrder] = useState(false);
   const [emailOnOrderStatus, setEmailOnOrderStatus] = useState(true);
@@ -76,6 +164,38 @@ export function NotificationsSettingsPage() {
       {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
 
       <div className="space-y-4">
+        <SettingsCard title="Push notifications">
+          <div className="flex items-start justify-between gap-4 rounded-xl border border-gray-100 p-3">
+            <span>
+              <span className="block text-sm font-medium text-gray-900">
+                Browser push for new orders
+              </span>
+              <span className="mt-0.5 block text-xs text-gray-500">
+                Get an instant notification on this device the moment a payment lands — even
+                when the dashboard tab is closed.
+              </span>
+            </span>
+            {push.state === "unsupported" ? (
+              <span className="shrink-0 text-xs text-gray-400">Not supported here</span>
+            ) : push.state === "unavailable" ? (
+              <span className="shrink-0 text-xs text-gray-400">Not configured</span>
+            ) : (
+              <button
+                type="button"
+                onClick={push.state === "on" ? push.disable : push.enable}
+                disabled={push.state === "busy"}
+                className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
+                  push.state === "on"
+                    ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {push.state === "busy" ? "…" : push.state === "on" ? "On — tap to turn off" : "Turn on"}
+              </button>
+            )}
+          </div>
+        </SettingsCard>
+
         <SettingsCard title="Seller alerts">
           {TOGGLES.filter((toggle) => toggle.group === "seller").map((toggle) => (
             <label key={toggle.key} className="flex gap-3 rounded-xl border border-gray-100 p-3">

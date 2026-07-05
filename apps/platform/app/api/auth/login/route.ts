@@ -57,6 +57,7 @@ export async function POST(request: Request) {
       displayName: row.user.profileJson?.displayName ?? row.user.email ?? "Admin",
       emailVerified: Boolean(row.user.emailVerifiedAt),
       needsShopSetup: false,
+      sessionVersion: row.user.sessionVersion ?? 0,
     };
 
     const token = await createSessionToken(sessionUser);

@@ -1,5 +1,9 @@
 import Link from "next/link";
 import { Search, ShoppingBag, Sparkles } from "lucide-react";
+import { PremiumStorefrontSections } from "@/components/storefront/premium/premium-storefront-sections";
+import { LockedAssistantFab } from "@/components/storefront/premium/locked-assistant-fab";
+import { ShopAssistant } from "@/components/storefront/shop-assistant";
+import { hasProFeatures } from "@/lib/storefront-plans";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { DemoTenant } from "@/lib/demo-data";
@@ -263,6 +267,8 @@ export function ThemedStorefrontHome({
 
       <PromoBanner tenant={tenant} />
 
+      <PremiumStorefrontSections tenant={tenant} />
+
       {categories.length > 0 && (
         <div className="mx-auto max-w-lg overflow-x-auto px-4 pb-2">
           <div className="flex gap-2">
@@ -332,6 +338,17 @@ export function ThemedStorefrontHome({
           </code>
         </div>
       </section>
+
+      {tenant.storeSettings.shopAssistant.enabled &&
+        (hasProFeatures(tenant.subscriptionPlan) ? (
+          <ShopAssistant
+            tenantSlug={tenant.slug}
+            shopName={tenant.name}
+            assistant={tenant.storeSettings.shopAssistant}
+          />
+        ) : (
+          <LockedAssistantFab theme={theme} />
+        ))}
     </StorefrontThemeShell>
   );
 }

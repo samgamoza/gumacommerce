@@ -10,3 +10,8 @@ export const adminUrl =
 
 export const storefrontUrl =
   process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3000";
+
+export function modelStoreUrl(ref?: string): string {
+  const base = `${storefrontUrl}/model`;
+  return ref ? `${base}?ref=${encodeURIComponent(ref)}` : base;
+}

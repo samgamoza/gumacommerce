@@ -3,14 +3,22 @@
 import Script from "next/script";
 import type { StorefrontStoreSettings } from "@/lib/storefront-settings";
 
+// These IDs are interpolated into inline <script> bodies, so only allow a
+// conservative character set. Anything else (quotes, angle brackets, etc.)
+// would be a stored-XSS vector against every storefront visitor.
+function safeTrackingId(raw: string): string {
+  const id = raw.trim();
+  return /^[A-Za-z0-9_-]{1,64}$/.test(id) ? id : "";
+}
+
 export function StorefrontTracking({
   tracking,
 }: {
   tracking: StorefrontStoreSettings["tracking"];
 }) {
-  const fbId = tracking.facebookPixelId.trim();
-  const gaId = tracking.googleAnalyticsId.trim();
-  const tiktokId = tracking.tiktokPixelId.trim();
+  const fbId = safeTrackingId(tracking.facebookPixelId);
+  const gaId = safeTrackingId(tracking.googleAnalyticsId);
+  const tiktokId = safeTrackingId(tracking.tiktokPixelId);
 
   return (
     <>

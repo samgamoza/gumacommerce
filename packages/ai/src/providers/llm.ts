@@ -5,7 +5,11 @@ export interface LlmCallInput {
   system: string;
   user: string;
   jsonMode?: boolean;
+  /** Output-token ceiling; keeps a single runaway response from eating the budget. */
+  maxTokens?: number;
 }
+
+const DEFAULT_MAX_TOKENS = 1024;
 
 export interface LlmCallResult {
   content: string;
@@ -18,7 +22,8 @@ async function callOpenAi(
   model: string,
   system: string,
   user: string,
-  jsonMode: boolean
+  jsonMode: boolean,
+  maxTokens: number
 ): Promise<LlmCallResult> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY not configured");
@@ -37,6 +42,7 @@ async function callOpenAi(
       ],
       ...(jsonMode ? { response_format: { type: "json_object" } } : {}),
       temperature: 0.8,
+      max_tokens: maxTokens,
     }),
   });
 
@@ -57,7 +63,11 @@ async function callOpenAi(
   };
 }
 
-async function callGemini(system: string, user: string): Promise<LlmCallResult> {
+async function callGemini(
+  system: string,
+  user: string,
+  maxTokens: number
+): Promise<LlmCallResult> {
   const apiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_AI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
 
@@ -73,6 +83,7 @@ async function callGemini(system: string, user: string): Promise<LlmCallResult> 
       generationConfig: {
         temperature: 0.8,
         responseMimeType: "application/json",
+        maxOutputTokens: maxTokens,
       },
     }),
   });
@@ -95,7 +106,12 @@ async function callGemini(system: string, user: string): Promise<LlmCallResult> 
   };
 }
 
-async function callGroq(system: string, user: string, jsonMode: boolean): Promise<LlmCallResult> {
+async function callGroq(
+  system: string,
+  user: string,
+  jsonMode: boolean,
+  maxTokens: number
+): Promise<LlmCallResult> {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) throw new Error("GROQ_API_KEY not configured");
 
@@ -114,6 +130,7 @@ async function callGroq(system: string, user: string, jsonMode: boolean): Promis
       ],
       ...(jsonMode ? { response_format: { type: "json_object" } } : {}),
       temperature: 0.7,
+      max_tokens: maxTokens,
     }),
   });
 
@@ -136,16 +153,17 @@ async function callGroq(system: string, user: string, jsonMode: boolean): Promis
 
 export async function callLlm(input: LlmCallInput): Promise<LlmCallResult> {
   const jsonMode = input.jsonMode ?? true;
+  const maxTokens = input.maxTokens ?? DEFAULT_MAX_TOKENS;
 
   switch (input.model) {
     case "gpt-4o-mini":
-      return callOpenAi("gpt-4o-mini", input.system, input.user, jsonMode);
+      return callOpenAi("gpt-4o-mini", input.system, input.user, jsonMode, maxTokens);
     case "gpt-4o":
-      return callOpenAi("gpt-4o", input.system, input.user, jsonMode);
+      return callOpenAi("gpt-4o", input.system, input.user, jsonMode, maxTokens);
     case "gemini-2.0-flash":
-      return callGemini(input.system, input.user);
+      return callGemini(input.system, input.user, maxTokens);
     case "llama-3.3-70b-groq":
-      return callGroq(input.system, input.user, jsonMode);
+      return callGroq(input.system, input.user, jsonMode, maxTokens);
     case "mock":
       return {
         content: JSON.stringify({ message: "Mock LLM response" }),
@@ -153,7 +171,7 @@ export async function callLlm(input: LlmCallInput): Promise<LlmCallResult> {
         provider: "mock",
       };
     default:
-      return callOpenAi("gpt-4o-mini", input.system, input.user, jsonMode);
+      return callOpenAi("gpt-4o-mini", input.system, input.user, jsonMode, maxTokens);
   }
 }
 

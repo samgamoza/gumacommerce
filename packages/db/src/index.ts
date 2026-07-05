@@ -28,11 +28,15 @@ export {
 export {
   listProductsForTenant,
   createProductForTenant,
+  updateProductForTenant,
+  deleteProductForTenant,
   isProductSlugAvailable,
   slugFromProductTitle,
   normalizeProductSlug,
   type ProductListItem,
   type CreateProductInput,
+  type UpdateProductInput,
+  type DeleteProductResult,
 } from "./queries/products";
 export {
   createCategoryForTenant,
@@ -51,8 +55,10 @@ export {
 export {
   createOrderForTenant,
   getOrderForTracking,
+  getOrderPaymentForRefund,
   listOrdersForTenant,
   markOrderPaidByIntent,
+  markOrderRefunded,
   markPaymentFailedByIntent,
   recordPaymentIntent,
   updateOrderStatusForTenant,
@@ -60,10 +66,42 @@ export {
   ORDER_STATUS_TRANSITIONS,
   type CreateOrderInput,
   type CreatedOrder,
+  type MarkOrderPaidResult,
+  type OrderRefundInfo,
   type OrderStatus,
   type OrderTrackingData,
+  type OrderTrackingDelivery,
   type TenantOrderListItem,
 } from "./queries/orders";
+export {
+  PLAN_PRICES_PHP,
+  PLAN_PERIOD_DAYS,
+  createPlanPayment,
+  markPlanPaymentPaidByIntent,
+  type CreatePlanPaymentInput,
+  type MarkPlanPaymentPaidResult,
+} from "./queries/plan-billing";
+export {
+  savePushSubscription,
+  deletePushSubscription,
+  deletePushSubscriptions,
+  listPushSubscriptionsForTenant,
+  type SavePushSubscriptionInput,
+  type TenantPushSubscription,
+} from "./queries/push-subscriptions";
+export {
+  recordDeliveryQuote,
+  createDeliveryBooking,
+  updateDeliveryByProviderOrderId,
+  advanceOrderStatusFromDelivery,
+  getDeliveryForOrder,
+  getOrderForDeliveryBooking,
+  type RecordDeliveryQuoteInput,
+  type CreateDeliveryBookingInput,
+  type DeliveryStatusPatch,
+  type OrderDeliveryInfo,
+  type OrderForDeliveryBooking,
+} from "./queries/deliveries";
 export {
   getOrderInsightsLast7d,
   getProductById,

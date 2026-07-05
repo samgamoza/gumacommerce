@@ -9,6 +9,7 @@ export interface StorefrontStoreSettings {
     freeDeliveryMin: number;
     pickupEnabled: boolean;
     deliveryNotes: string;
+    pickupAddress: string;
   };
   whatsapp: {
     enabled: boolean;
@@ -39,6 +40,7 @@ export const DEFAULT_STOREFRONT_SETTINGS: StorefrontStoreSettings = {
     freeDeliveryMin: 500,
     pickupEnabled: true,
     deliveryNotes: "",
+    pickupAddress: "",
   },
   whatsapp: {
     enabled: false,
@@ -86,6 +88,7 @@ export function resolveStorefrontSettings(
         settingsJson?.delivery?.freeDeliveryMin ?? defaults.delivery.freeDeliveryMin,
       pickupEnabled: settingsJson?.delivery?.pickupEnabled ?? defaults.delivery.pickupEnabled,
       deliveryNotes: settingsJson?.delivery?.deliveryNotes ?? defaults.delivery.deliveryNotes,
+      pickupAddress: settingsJson?.delivery?.pickupAddress ?? defaults.delivery.pickupAddress,
     },
     whatsapp: {
       enabled: settingsJson?.whatsapp?.enabled ?? defaults.whatsapp.enabled,

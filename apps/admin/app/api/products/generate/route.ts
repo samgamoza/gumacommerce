@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAiGenerator } from "@guma-commerce/ai";
-import { getTenantDashboard } from "@guma-commerce/db";
+import { getTenantDashboard, recordAiUsage } from "@guma-commerce/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
+import { assertAiQuota } from "@/lib/agents/usage-gate";
 
 const generateSchema = z.object({
   prompt: z.string().min(3).max(2000),
@@ -30,6 +31,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: "Shop not found." }, { status: 404 });
     }
 
+    const quota = await assertAiQuota(session.tenantId, "generation");
+    if (!quota.allowed) {
+      return NextResponse.json(
+        { ok: false, error: quota.reason, upgradeRequired: true, usage: quota.usage },
+        { status: 402 }
+      );
+    }
+
     const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3000";
     const generator = createAiGenerator();
 
@@ -50,6 +59,14 @@ export async function POST(request: Request) {
         seller_notes: `${body.prompt.trim()}${priceNote}`,
         category: dashboard.tenant.category ?? "General",
       },
+      subscriptionPlan: quota.usage.plan,
+      taskType: "generation",
+      tokensUsedThisMonth: quota.usage.tokensThisMonth,
+    });
+
+    await recordAiUsage(session.tenantId, {
+      incrementGenerations: true,
+      tokensUsed: result.tokensUsed,
     });
 
     const output = result.output as AiListingOutput;

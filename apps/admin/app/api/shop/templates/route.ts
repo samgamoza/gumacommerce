@@ -4,6 +4,7 @@ import {
   TIER_DESCRIPTIONS,
   TIER_LABELS,
   canUseTemplate,
+  normalizeShopTemplateId,
 } from "@guma-commerce/storefront-themes";
 import { getTenantStorefrontSettings } from "@guma-commerce/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
@@ -31,7 +32,7 @@ export async function GET() {
           locked: !canUseTemplate(template.id, plan),
         })),
       })),
-      currentTemplateId: settings?.themeJson?.templateId ?? "clean-sari",
+      currentTemplateId: normalizeShopTemplateId(settings?.themeJson?.templateId ?? "clean-guma"),
       subscriptionPlan: plan,
     });
   } catch (error) {
