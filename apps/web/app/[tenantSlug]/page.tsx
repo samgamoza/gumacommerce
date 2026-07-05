@@ -22,18 +22,30 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
     const pending = await getPendingStorefrontTenant(tenantSlug);
     if (pending) {
       return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-50 p-6 text-center">
-          <p className="text-5xl">🛍️</p>
-          <h1 className="mt-4 text-2xl font-bold">{pending.name}</h1>
-          <p className="mt-2 max-w-sm text-neutral-600">
-            This shop is being set up and isn&apos;t live yet.
-          </p>
-          <Link
-            href={`${adminUrl}/shop-builder`}
-            className="mt-6 inline-flex rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-semibold text-white"
-          >
-            Design your shop
-          </Link>
+        <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background p-6 text-center hero-glow">
+          <div className="absolute inset-0 bg-grid-pattern bg-grid opacity-40 [mask-image:linear-gradient(to_bottom,white,transparent)]" />
+          <div className="relative flex flex-col items-center">
+            <span className="flex h-20 w-20 animate-float items-center justify-center rounded-3xl border border-border/60 bg-card text-4xl shadow-xl">
+              🛍️
+            </span>
+            <span className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
+              </span>
+              Coming soon
+            </span>
+            <h1 className="mt-4 font-display text-3xl font-bold tracking-tight">{pending.name}</h1>
+            <p className="mt-2 max-w-sm text-muted-foreground">
+              This shop is being set up and isn&apos;t live yet. Check back soon!
+            </p>
+            <Link
+              href={`${adminUrl}/shop-builder`}
+              className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition hover:bg-emerald-700"
+            >
+              Design your shop
+            </Link>
+          </div>
         </div>
       );
     }

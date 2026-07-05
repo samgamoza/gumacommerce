@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 150 20% 99%;
+    --foreground: 160 30% 8%;
+    --card: 0 0% 100%;
+    --card-foreground: 160 30% 8%;
+    --primary: 160 84% 32%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 150 20% 96%;
+    --secondary-foreground: 160 30% 12%;
+    --muted: 150 15% 95%;
+    --muted-foreground: 160 10% 42%;
+    --accent: 38 92% 50%;
+    --accent-foreground: 38 92% 12%;
+    --border: 150 15% 90%;
+    --input: 150 15% 90%;
+    --ring: 160 84% 32%;
+    --radius: 0.875rem;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 bg-clip-text text-transparent;
+  }
+
+  .hero-glow {
+    background: radial-gradient(
+        ellipse 80% 60% at 50% -10%,
+        hsl(160 84% 32% / 0.18),
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 50% 40% at 90% 20%,
+        hsl(38 92% 50% / 0.12),
+        transparent 60%
+      );
+  }
+
+  /* Dark authoritative sidebar to distinguish the super-admin console */
+  .sidebar-glow {
+    background:
+      radial-gradient(ellipse 90% 40% at 20% 0%, hsl(160 84% 40% / 0.22), transparent 70%),
+      linear-gradient(180deg, hsl(160 32% 12%), hsl(160 36% 8%));
+  }
+}

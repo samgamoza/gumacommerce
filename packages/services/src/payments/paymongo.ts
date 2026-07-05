@@ -136,8 +136,9 @@ export class PayMongoClient {
       {} as Record<string, string>
     );
 
+    // PayMongo signs as `t=<timestamp>,te=<test-mode sig>,li=<live-mode sig>`.
     const timestamp = parts["t"];
-    const signature = parts["v1"];
+    const signature = parts["li"] || parts["te"] || parts["v1"];
     if (!timestamp || !signature) return false;
 
     const signed = `${timestamp}.${payload}`;

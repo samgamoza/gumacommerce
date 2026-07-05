@@ -3,6 +3,7 @@ import Image from "next/image";
 import { ArrowLeft, ShieldCheck, Truck } from "lucide-react";
 import type { DemoProduct, DemoTenant } from "@/lib/demo-data";
 import { adminUrl } from "@/lib/utils";
+import { AddToCartButton } from "./add-to-cart";
 import { ShopifyRelatedProducts } from "./shopify-catalog";
 
 function formatPrice(amount: number): string {
@@ -77,13 +78,7 @@ export function ShopifyProductStage({
               {product.shortDescription}
             </p>
 
-            <Link
-              href={`/${tenant.slug}/checkout`}
-              className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full py-4 text-base font-semibold text-white transition hover:opacity-90 md:max-w-md"
-              style={{ backgroundColor: accent }}
-            >
-              Add to Cart
-            </Link>
+            <AddToCartButton tenantSlug={tenant.slug} product={product} accent={accent} />
 
             <div className="mt-6 flex flex-wrap gap-6 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
               <span className="inline-flex items-center gap-2">

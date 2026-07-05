@@ -15,7 +15,7 @@ export default async function ProductPage({ params }: PageProps) {
   const { tenant, product } = result;
 
   return (
-    <ShopShell tenant={tenant} cartCount={1} cartTotal={product.price}>
+    <ShopShell tenant={tenant}>
       <ShopifyProductStage tenant={tenant} product={product} />
     </ShopShell>
   );

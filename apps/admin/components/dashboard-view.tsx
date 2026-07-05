@@ -3,6 +3,19 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import {
+  ArrowUpRight,
+  BadgeCheck,
+  CheckCircle2,
+  Circle,
+  Copy,
+  ExternalLink,
+  Link2,
+  Package,
+  PackageCheck,
+  ShoppingBag,
+  Wallet,
+} from "lucide-react";
 import { Badge, Button, Card, formatPrice } from "@guma-commerce/ui";
 import type { SetupStep, TenantDashboardData } from "@guma-commerce/db";
 
@@ -15,7 +28,15 @@ interface ShopResponse {
 
 function statusBadge(status: string) {
   if (status === "active") {
-    return <Badge className="bg-emerald-100 text-emerald-800">Live</Badge>;
+    return (
+      <Badge className="gap-1 bg-emerald-100 text-emerald-800">
+        <span className="relative flex h-1.5 w-1.5">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        </span>
+        Live
+      </Badge>
+    );
   }
   return <Badge className="bg-amber-100 text-amber-800">Pending activation</Badge>;
 }
@@ -26,6 +47,37 @@ function greeting(): string {
   if (hour < 18) return "Good afternoon";
   return "Good evening";
 }
+
+const STATS = [
+  {
+    key: "totalSales",
+    label: "Total sales",
+    icon: Wallet,
+    iconBg: "bg-emerald-500/10",
+    iconColor: "text-emerald-600",
+  },
+  {
+    key: "orderCount",
+    label: "Orders",
+    icon: ShoppingBag,
+    iconBg: "bg-sky-500/10",
+    iconColor: "text-sky-600",
+  },
+  {
+    key: "activeProductCount",
+    label: "Products online",
+    icon: PackageCheck,
+    iconBg: "bg-amber-500/10",
+    iconColor: "text-amber-600",
+  },
+  {
+    key: "productCount",
+    label: "All products",
+    icon: Package,
+    iconBg: "bg-violet-500/10",
+    iconColor: "text-violet-600",
+  },
+] as const;
 
 export function DashboardView({ displayName }: { displayName: string }) {
   const router = useRouter();
@@ -70,7 +122,17 @@ export function DashboardView({ displayName }: { displayName: string }) {
   }
 
   if (loading) {
-    return <p className="text-gray-500">Loading your dashboard...</p>;
+    return (
+      <div className="space-y-6">
+        <div className="h-28 animate-pulse rounded-2xl bg-muted" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-24 animate-pulse rounded-2xl bg-muted" />
+          ))}
+        </div>
+        <div className="h-48 animate-pulse rounded-2xl bg-muted" />
+      </div>
+    );
   }
 
   if (!data?.ok || !data.shop || !data.urls) {
@@ -82,23 +144,31 @@ export function DashboardView({ displayName }: { displayName: string }) {
 
   return (
     <div className="space-y-6">
-      <Card className="border-emerald-100 bg-gradient-to-r from-white to-emerald-50/50">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+      <Card className="relative overflow-hidden border-emerald-100">
+        <div className="absolute inset-0 hero-glow opacity-60" />
+        <div className="absolute inset-0 bg-grid-pattern bg-grid opacity-30 [mask-image:linear-gradient(to_bottom,white,transparent)]" />
+        <div className="relative flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               {greeting()}, {displayName.split(" ")[0]}!
             </p>
             <div className="mt-1 flex flex-wrap items-center gap-2">
-              <h2 className="text-xl font-bold">@{shop.tenant.slug}</h2>
+              <h2 className="font-display text-2xl font-bold tracking-tight">
+                @{shop.tenant.slug}
+              </h2>
               {statusBadge(shop.tenant.status)}
             </div>
-            <p className="mt-1 text-sm text-gray-600">{shop.tenant.name}</p>
+            <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+              {shop.tenant.name}
+              {isLive && <BadgeCheck className="h-3.5 w-3.5 text-emerald-600" />}
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             {isLive ? (
               <a href={urls.storefront} target="_blank" rel="noreferrer">
-                <Button variant="secondary" size="sm">
+                <Button variant="secondary" size="sm" className="gap-1.5">
                   Go to my shop
+                  <ExternalLink className="h-3.5 w-3.5" />
                 </Button>
               </a>
             ) : (
@@ -111,76 +181,123 @@ export function DashboardView({ displayName }: { displayName: string }) {
       </Card>
 
       {message && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+        <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
           {message}
         </div>
       )}
 
-      <Card>
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <div>
-            <h3 className="font-semibold">Complete your setup</h3>
-            <p className="text-sm text-gray-500">{shop.setup.progressPercent}% complete</p>
-          </div>
-          <div className="h-2 w-32 overflow-hidden rounded-full bg-gray-100">
-            <div
-              className="h-full rounded-full bg-emerald-500 transition-all"
-              style={{ width: `${shop.setup.progressPercent}%` }}
-            />
-          </div>
-        </div>
-        <ul className="space-y-3">
-          {shop.setup.steps.map((step: SetupStep) => (
-            <li key={step.id} className="flex items-center justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2.5">
-              <div className="flex items-center gap-2">
-                <span className={step.completed ? "text-emerald-600" : "text-gray-400"}>
-                  {step.completed ? "✓" : "○"}
-                </span>
-                <span className={`text-sm ${step.completed ? "text-gray-700" : "text-gray-900"}`}>
-                  {step.label}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {STATS.map((stat) => {
+          const Icon = stat.icon;
+          const value =
+            stat.key === "totalSales"
+              ? formatPrice(shop.stats.totalSales)
+              : shop.stats[stat.key];
+          return (
+            <Card key={stat.key} className="transition hover:shadow-md">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-sm text-muted-foreground">{stat.label}</p>
+                  <p className="mt-1 font-display text-2xl font-bold tracking-tight">{value}</p>
+                </div>
+                <span
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${stat.iconBg}`}
+                >
+                  <Icon className={`h-4 w-4 ${stat.iconColor}`} />
                 </span>
               </div>
-              {!step.completed && step.href && step.action && (
-                <Link href={step.href}>
-                  <Button variant="secondary" size="sm">
-                    {step.action}
-                  </Button>
-                </Link>
-              )}
-              {!step.completed && step.id === "activate" && shop.setup.canActivate && (
-                <Button size="sm" onClick={activateShop} disabled={activating}>
-                  Activate
-                </Button>
-              )}
-            </li>
-          ))}
-        </ul>
-      </Card>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <p className="text-sm text-gray-500">Total sales</p>
-          <p className="mt-1 text-2xl font-bold">{formatPrice(shop.stats.totalSales)}</p>
-        </Card>
-        <Card>
-          <p className="text-sm text-gray-500">Orders</p>
-          <p className="mt-1 text-2xl font-bold">{shop.stats.orderCount}</p>
-        </Card>
-        <Card>
-          <p className="text-sm text-gray-500">Products online</p>
-          <p className="mt-1 text-2xl font-bold">{shop.stats.activeProductCount}</p>
-        </Card>
-        <Card>
-          <p className="text-sm text-gray-500">All products</p>
-          <p className="mt-1 text-2xl font-bold">{shop.stats.productCount}</p>
-        </Card>
+            </Card>
+          );
+        })}
       </div>
 
+      {shop.setup.progressPercent < 100 && (
+        <Card>
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <div>
+              <h3 className="font-display font-bold tracking-tight">Complete your setup</h3>
+              <p className="text-sm text-muted-foreground">
+                {shop.setup.progressPercent}% complete
+              </p>
+            </div>
+            <div className="h-2 w-32 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all"
+                style={{ width: `${shop.setup.progressPercent}%` }}
+              />
+            </div>
+          </div>
+          <ul className="space-y-2">
+            {shop.setup.steps.map((step: SetupStep) => (
+              <li
+                key={step.id}
+                className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 ${
+                  step.completed
+                    ? "border-transparent bg-emerald-50/60"
+                    : "border-border/60 bg-card"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  {step.completed ? (
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                  ) : (
+                    <Circle className="h-4 w-4 shrink-0 text-muted-foreground/40" />
+                  )}
+                  <span
+                    className={`text-sm ${
+                      step.completed
+                        ? "text-muted-foreground line-through decoration-emerald-300"
+                        : "font-medium text-foreground"
+                    }`}
+                  >
+                    {step.label}
+                  </span>
+                </div>
+                {!step.completed && step.href && step.action && (
+                  <Link href={step.href}>
+                    <Button variant="secondary" size="sm" className="gap-1">
+                      {step.action}
+                      <ArrowUpRight className="h-3.5 w-3.5" />
+                    </Button>
+                  </Link>
+                )}
+                {!step.completed && step.id === "activate" && shop.setup.canActivate && (
+                  <Button size="sm" onClick={activateShop} disabled={activating}>
+                    Activate
+                  </Button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
       <Card>
-        <p className="text-sm font-medium text-gray-700">Your Order Now link</p>
-        <code className="mt-2 block truncate rounded-xl bg-gray-50 px-3 py-2.5 text-xs text-emerald-700">
-          {urls.orderLink}
-        </code>
+        <div className="flex items-center gap-2">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10">
+            <Link2 className="h-4 w-4 text-emerald-600" />
+          </span>
+          <div>
+            <p className="text-sm font-semibold">Your Order Now link</p>
+            <p className="text-xs text-muted-foreground">
+              Drop this in your FB, TikTok, and IG posts
+            </p>
+          </div>
+        </div>
+        <div className="mt-3 flex items-center gap-2 rounded-xl border border-border/60 bg-muted/50 px-3 py-2.5">
+          <code className="min-w-0 flex-1 truncate text-xs text-emerald-700">
+            {urls.orderLink}
+          </code>
+          <button
+            type="button"
+            onClick={copyLink}
+            className="flex shrink-0 items-center gap-1 rounded-lg bg-card px-2 py-1 text-xs font-medium text-muted-foreground shadow-sm transition hover:text-foreground"
+          >
+            <Copy className="h-3 w-3" />
+            {copied ? "Copied!" : "Copy"}
+          </button>
+        </div>
         {!isLive && (
           <p className="mt-2 text-xs text-amber-700">
             Link goes live after you activate your shop (add a product + verify email first).

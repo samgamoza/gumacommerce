@@ -1,7 +1,95 @@
 # Guma Commerce — Agent Handoff Document
 
-**Last updated:** 2026-07-04  
+**Last updated:** 2026-07-05  
 **Purpose:** Hands-off context for the next agent or developer. Read this before making changes.
+
+> **Newest work is documented in [Session 2026-07-05](#session-2026-07-05--brand-redesign--platform-super-admin-console) immediately below.** Sections 1–21 remain the durable reference for the core platform (agents, AI, settings, DB). Where they conflict with the 2026-07-05 session, the session wins.
+
+---
+
+## Session 2026-07-05 — Brand redesign + Platform (super-admin) console
+
+### 1. Project overview (delta)
+Three Next.js 15 (App Router, React 19) apps now exist in the `pnpm`+Turbo monorepo, all sharing `packages/*`:
+
+| App | Path | Port | Role |
+|-----|------|------|------|
+| Storefront + marketing | `apps/web` | 3000 | `/{tenantSlug}` shops, checkout, buyer chat |
+| Seller admin | `apps/admin` | 3001 | Per-tenant dashboard (one shop) |
+| **Platform console (NEW)** | `apps/platform` | 3002 | **Super-admin over ALL tenants** |
+
+Stack unchanged: TypeScript, Tailwind v3, Drizzle ORM → **Neon Postgres** (live, Singapore), JWT cookie auth (`jose`, cookie `sari_session`) in `packages/auth`, `bcryptjs` passwords. AI providers + PayMongo/Lalamove/Semaphore unchanged. Deployment target: Vercel (one project per app).
+
+### 2. What was built this session
+1. **Guma brand system ported into `apps/admin`** — the emerald/amber HSL design tokens, Bricolage Grotesque + Plus Jakarta Sans fonts, `hero-glow`/grid utilities, and animations from `apps/web` (landing redesign, commit `5facdd1`). Admin sidebar/header/dashboard redesigned with lucide icons (replacing violet theme + emoji nav).
+2. **Seller storefront polish** — fixed off-brand violet in owner menu, accent-tinted checkout button, rebranded the "shop being set up" pending page, friendlier empty catalog state.
+3. **`apps/platform` — a brand-new super-admin console** (the bulk of the session). Distinct dark-emerald sidebar to differentiate from the seller admin. Surfaces: Dashboard (MRR/GMV/shops/users KPIs + SVG revenue/signup charts + plan/status bars), Tenants (filterable list → detail with suspend/activate/set-pending/change-plan/view-storefront), Subscriptions (plan catalog + MRR/ARR/ARPU + per-shop plan mgmt), Users (role change + suspend/reactivate), Moderation (`content_queue` approve/reject/flag), Orders (platform-wide), Audit Log.
+4. **DB schema additions** (see §4) + seeded a `super_admin`.
+
+### 3. Files created / modified
+
+**New — `apps/platform/` (entire app):**
+- Config: `package.json`, `next.config.ts`, `tsconfig.json`, `tailwind.config.ts`, `postcss.config.mjs`, `next-env.d.ts`, `middleware.ts`
+- `app/`: `globals.css`, `layout.tsx`, `page.tsx` (dashboard), `login/page.tsx`, `actions.ts` (server actions for all mutations), `tenants/page.tsx`, `tenants/[id]/page.tsx`, `subscriptions/page.tsx`, `users/page.tsx`, `moderation/page.tsx`, `orders/page.tsx`, `audit/page.tsx`, `api/auth/{login,logout,session}/route.ts`
+- `components/`: `platform-shell.tsx`, `ui.tsx` (StatCard/StatusPill/PlanBadge/AreaChart/BarMeter/EmptyState/Panel), `login-form.tsx`, `filter-bar.tsx` (URL-synced), `tenant-actions.tsx`, `user-actions.tsx`, `plan-select.tsx`, `moderation-actions.tsx`
+- `lib/`: `session.ts` (`requireSuperAdmin`), `api-auth.ts` (`requireSuperAdminApi`), `format.ts`, `plans.ts` (**client-safe** plan catalog — see pitfall in §6)
+
+**New — db package:** `packages/db/src/queries/platform.ts` (all platform reads/writes + `PLATFORM_PLANS` catalog).
+
+**Modified:**
+- `packages/db/src/schema/index.ts` — added `users.status`, `content_queue` moderation cols, `platform_audit_log` table.
+- `packages/db/src/index.ts` — re-export platform queries/types.
+- `apps/admin/app/{globals.css,layout.tsx}`, `apps/admin/tailwind.config.ts`, `apps/admin/components/{admin-shell,dashboard-view}.tsx` — brand redesign.
+- `apps/web/app/[tenantSlug]/page.tsx`, `apps/web/components/storefront/{shop-shell,shopify-catalog}.tsx` — storefront polish.
+
+> ⚠️ The working tree also has **unrelated uncommitted changes from a prior session** (orders manager, cart, checkout/paymongo, `packages/db/src/queries/orders.ts`, etc.). Those were **not** touched this session — don't attribute or bundle them blindly.
+
+### 4. Database changes (APPLIED to live Neon)
+Applied via a **surgical idempotent SQL script** (`ADD COLUMN IF NOT EXISTS` / `CREATE TABLE IF NOT EXISTS`) — **NOT** `drizzle-kit push`, which failed trying to drop/rebuild a pre-existing primary key (`column "id" is in a primary key`). **Do not run `db:push` against this DB** — use targeted SQL or a proper generated migration.
+
+Added:
+- `users.status varchar(20) NOT NULL DEFAULT 'active'` — values `active | suspended`.
+- `content_queue`: `flagged bool NOT NULL DEFAULT false`, `moderation_note text`, `moderated_by uuid → users`, `moderated_at timestamptz`, + `content_queue_flagged_idx`.
+- New table `platform_audit_log` (id, actor_id, actor_email, action, entity_type, entity_id, entity_label, metadata_json, created_at) + 3 indexes.
+
+**Schema drift note:** these are in `schema/index.ts` but **no drizzle migration file was generated** — the DB and schema agree, but `packages/db/drizzle/` is behind. Next agent should `pnpm db:generate` and reconcile before the next real migration.
+
+### 5. Auth for the platform console
+- Login: **`admin@guma.ph` / `GumaAdmin2026!`** (seeded super_admin; change before any shared/prod use).
+- Only `role === 'super_admin'` may enter — enforced in `apps/platform/middleware.ts` AND `app/api/auth/login/route.ts`. Reuses the shared `sari_session` cookie + `packages/auth` token helpers (no changes to `packages/auth`).
+- All mutations run through **server actions** in `app/actions.ts`, each guarded by `requireSuperAdminApi()` and writing a `platform_audit_log` row + `revalidatePath`.
+
+### 6. Critical pitfalls / decisions
+- **Client components must NOT import from `@guma-commerce/db`.** The package barrel pulls `client.ts` → `postgres` → node `net`, which breaks the browser bundle (`Can't resolve 'net'`) and 500s *every* page. This is why the client-side plan list lives in `apps/platform/lib/plans.ts` (mirror of `PLATFORM_PLANS`; keep in sync). Server components/actions import from `@guma-commerce/db` freely.
+- **Plan catalog inconsistency (tech debt):** `PLATFORM_PLANS` (db) defines `free/starter/growth/pro` at ₱0/499/1499/2999. This differs from `packages/ai/src/plan-limits.ts` (`free/growth/pro`) and the marketing pricing (Pro was ₱999). MRR/ARR/ARPU on the Subscriptions page derive from `PLATFORM_PLANS`. **Reconcile these three sources before wiring real billing.**
+- Charts are dependency-free inline SVG (`AreaChart`, `BarMeter` in `components/ui.tsx`) — no chart lib added.
+- Pages are **server components** (direct query calls, no client fetch/loading states) + server actions for writes — the modern idiom, differs from `apps/admin`'s client-fetch+API-route pattern.
+
+### 7. Verification done
+- `tsc --noEmit` clean: `apps/platform` and `packages/db`.
+- Platform dev server (port 3002) compiles; all 7 routes return 200 with live data (MRR ₱2,999 from 1 Pro shop; 4 shops; 4 users).
+- End-to-end mutation tested: activated a pending tenant → status flipped + success toast + audit-log row with actor/label. **Test change was reverted** (tenant back to `pending`, test audit row deleted) — live data is clean.
+- Not yet run: `next build` (production) for `apps/platform`; no automated tests exist.
+
+### 8. Pending / recommended next steps (this session's scope)
+- **High:** `pnpm db:generate` to create the migration file for the schema additions (DB is ahead of `drizzle/`).
+- **High:** Reconcile the 3 plan-price sources (§6) before billing.
+- **Medium:** `next build` the platform app; add it to CI/Vercel (new project, port 3002, same monorepo build command, needs `AUTH_SECRET` + `DATABASE_URL*`).
+- **Medium:** Enforce `users.status='suspended'` and `tenants.status='suspended'` at the **seller** login/storefront layer (platform can suspend, but `apps/admin`/`apps/web` don't yet block suspended accounts/shops).
+- **Low:** Moderation currently only covers `content_queue`; extend to products if needed. Add pagination to platform tables (currently limit 200–500).
+- **Housekeeping:** Nothing from this session is committed. A launch config for the platform app exists at `D:\All Apps\guma-phase1.2\.claude\launch.json` (name `gumacommerce-platform`).
+
+### 9. Next-agent quick start (platform work)
+```cmd
+cd C:\Users\samga\gumacommerce
+pnpm install
+pnpm --dir apps/platform exec next dev   # → http://localhost:3002, login admin@guma.ph / GumaAdmin2026!
+pnpm --dir apps/platform exec tsc --noEmit
+```
+Inspect first: `apps/platform/app/actions.ts`, `packages/db/src/queries/platform.ts`, `apps/platform/components/platform-shell.tsx`, `apps/platform/lib/plans.ts`. **Warning:** never import `@guma-commerce/db` from a `"use client"` file; never run `db:push`.
+
+### 10. Recommended next prompt (paste to continue)
+> You're working in the `guma-commerce` pnpm+Turbo monorepo at `C:\Users\samga\gumacommerce`. Read `docs/AGENT-HANDOFF.md` (Session 2026-07-05 first). Three Next.js 15 apps: `web` (3000), `admin` (3001), and the new super-admin `platform` (3002, login `admin@guma.ph`/`GumaAdmin2026!`). A prior session added `apps/platform`, `packages/db/src/queries/platform.ts`, and DB schema (`users.status`, `content_queue` moderation cols, `platform_audit_log`) already applied to live Neon — but **no drizzle migration file was generated**. Your tasks, in order: (1) run `pnpm db:generate` and reconcile so `packages/db/drizzle/` matches the live DB; (2) reconcile the three conflicting plan-price sources — `PLATFORM_PLANS` in `packages/db/src/queries/platform.ts`, `packages/ai/src/plan-limits.ts`, and marketing pricing — into one source of truth; (3) make `apps/admin` (seller login) and `apps/web` (storefront) respect `users.status='suspended'` and `tenants.status='suspended'`. Constraints: never import `@guma-commerce/db` from a `"use client"` component (it pulls the Postgres driver and 500s the page — keep client plan data in `apps/platform/lib/plans.ts`); never run `db:push` against this DB (it fails on a pre-existing PK). Verify with `pnpm --dir apps/platform exec tsc --noEmit` and by loading the affected pages. Don't commit unless asked.
 
 ---
 
@@ -13,6 +101,7 @@
 |---------|------|------|------|
 | Storefront | `apps/web` | 3000 | Marketing site + `/{tenantSlug}` shops, checkout, shop assistant chat |
 | Admin | `apps/admin` | 3001 | Seller dashboard, settings, AI Studio, Agents, products/orders |
+| Platform | `apps/platform` | 3002 | Super-admin over all tenants (added 2026-07-05 — see top session) |
 
 **Core value:** Turn social traffic into a branded mobile storefront with GCash/Maya/COD, delivery stubs, AI content, and agentic daily posting workflows.
 
@@ -25,8 +114,8 @@
 
 | Item | Status |
 |------|--------|
-| **Local folder** | May still be `C:\Users\samga\Projects\sari-link` — user may rename to `guma-commerce` |
-| **Git** | Initialized, **no commits yet**, no remote |
+| **Local folder** | `C:\Users\samga\gumacommerce` (active repo; pushes work here) |
+| **Git** | Branch `master`; latest commit `5facdd1` (landing redesign). 2026-07-05 work is **uncommitted** in the working tree |
 | **npm scope** | `@guma-commerce/*` (rebrand complete in source) |
 | **Root package name** | `guma-commerce` |
 | **Production deploy** | Not done — docs ready in `docs/DEPLOY-VERCEL.md` |

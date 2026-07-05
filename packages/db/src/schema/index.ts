@@ -168,6 +168,7 @@ export const users = pgTable(
     phone: varchar("phone", { length: 20 }),
     passwordHash: text("password_hash"),
     role: userRoleEnum("role").default("customer").notNull(),
+    status: varchar("status", { length: 20 }).default("active").notNull(),
     tenantId: uuid("tenant_id").references(() => tenants.id),
     profileJson: jsonb("profile_json").$type<{
       displayName?: string;
@@ -441,11 +442,38 @@ export const contentQueue = pgTable(
     scheduledFor: timestamp("scheduled_for", { withTimezone: true }),
     postedAt: timestamp("posted_at", { withTimezone: true }),
     outputJson: jsonb("output_json"),
+    flagged: boolean("flagged").default(false).notNull(),
+    moderationNote: text("moderation_note"),
+    moderatedBy: uuid("moderated_by").references(() => users.id),
+    moderatedAt: timestamp("moderated_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     index("content_queue_tenant_idx").on(table.tenantId),
     index("content_queue_status_idx").on(table.status),
+    index("content_queue_flagged_idx").on(table.flagged),
+  ]
+);
+
+// ─── Platform administration ─────────────────────────────────────────────────
+
+export const platformAuditLog = pgTable(
+  "platform_audit_log",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    actorId: uuid("actor_id").references(() => users.id),
+    actorEmail: varchar("actor_email", { length: 255 }),
+    action: varchar("action", { length: 80 }).notNull(),
+    entityType: varchar("entity_type", { length: 40 }).notNull(),
+    entityId: uuid("entity_id"),
+    entityLabel: varchar("entity_label", { length: 255 }),
+    metadataJson: jsonb("metadata_json").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("platform_audit_actor_idx").on(table.actorId),
+    index("platform_audit_created_idx").on(table.createdAt),
+    index("platform_audit_entity_idx").on(table.entityType, table.entityId),
   ]
 );
 

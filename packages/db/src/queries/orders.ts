@@ -1,0 +1,552 @@
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { getDb } from "../client";
+import {
+  orderItems,
+  orderStatusHistory,
+  orders,
+  paymentTransactions,
+  productVariants,
+  products,
+  tenants,
+} from "../schema/index";
+
+export type OrderStatus =
+  | "pending_payment"
+  | "paid"
+  | "accepted"
+  | "preparing"
+  | "ready_for_pickup"
+  | "out_for_delivery"
+  | "delivered"
+  | "cancelled"
+  | "refunded";
+
+/** Valid forward transitions a seller (or webhook) can make. */
+export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  pending_payment: ["paid", "cancelled"],
+  paid: ["accepted", "cancelled", "refunded"],
+  accepted: ["preparing", "cancelled"],
+  preparing: ["ready_for_pickup", "out_for_delivery", "cancelled"],
+  ready_for_pickup: ["out_for_delivery", "delivered"],
+  out_for_delivery: ["delivered"],
+  delivered: ["refunded"],
+  cancelled: [],
+  refunded: [],
+};
+
+function toCentavos(value: string | number): number {
+  return Math.round(Number(value) * 100);
+}
+
+function fromCentavos(centavos: number): string {
+  return (centavos / 100).toFixed(2);
+}
+
+function generateOrderNumberCandidate(prefix: string): string {
+  const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const rand = Math.floor(Math.random() * 9000 + 1000);
+  return `${prefix.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3) || "ORD"}-${date}-${rand}`;
+}
+
+export class OrderError extends Error {
+  constructor(
+    message: string,
+    public code:
+      | "TENANT_NOT_FOUND"
+      | "EMPTY_CART"
+      | "PRODUCT_UNAVAILABLE"
+      | "OUT_OF_STOCK"
+      | "BELOW_MINIMUM"
+      | "INVALID_TRANSITION"
+      | "ORDER_NOT_FOUND"
+  ) {
+    super(message);
+    this.name = "OrderError";
+  }
+}
+
+export interface CreateOrderItemInput {
+  productId: string;
+  quantity: number;
+}
+
+export interface CreateOrderInput {
+  tenantSlug: string;
+  items: CreateOrderItemInput[];
+  customer: { name: string; phone: string; email?: string };
+  deliveryType: "delivery" | "pickup";
+  deliveryAddress?: { line1: string; notes?: string };
+  paymentMethod: string;
+  /** Delivery fee in PHP, already resolved by the caller from tenant settings. */
+  deliveryFee: number;
+  /** Minimum order amount in PHP; 0 disables the check. */
+  minOrderAmount: number;
+  notes?: string;
+  sourceChannel?: string;
+}
+
+export interface CreatedOrder {
+  id: string;
+  orderNumber: string;
+  tenantId: string;
+  status: OrderStatus;
+  subtotal: string;
+  deliveryFee: string;
+  total: string;
+  totalCentavos: number;
+  items: Array<{ title: string; quantity: number; unitPrice: string; lineTotal: string }>;
+}
+
+/**
+ * Creates an order with server-side pricing: unit prices are always read from
+ * the products table, never from the client. Decrements default-variant stock
+ * for products that track inventory.
+ */
+export async function createOrderForTenant(input: CreateOrderInput): Promise<CreatedOrder> {
+  const db = getDb();
+
+  const [tenant] = await db
+    .select()
+    .from(tenants)
+    .where(eq(tenants.slug, input.tenantSlug))
+    .limit(1);
+  if (!tenant || tenant.status !== "active") {
+    throw new OrderError("This shop is not accepting orders right now.", "TENANT_NOT_FOUND");
+  }
+
+  if (input.items.length === 0) {
+    throw new OrderError("Your cart is empty.", "EMPTY_CART");
+  }
+
+  const quantities = new Map<string, number>();
+  for (const item of input.items) {
+    if (!Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 99) {
+      throw new OrderError("Invalid item quantity.", "PRODUCT_UNAVAILABLE");
+    }
+    quantities.set(item.productId, (quantities.get(item.productId) ?? 0) + item.quantity);
+  }
+  const productIds = [...quantities.keys()];
+
+  return db.transaction(async (tx) => {
+    const catalog = await tx
+      .select({
+        id: products.id,
+        title: products.title,
+        status: products.status,
+        basePrice: products.basePrice,
+        trackInventory: products.trackInventory,
+        variantId: productVariants.id,
+        variantTitle: productVariants.title,
+        stockQty: productVariants.stockQty,
+      })
+      .from(products)
+      .leftJoin(productVariants, eq(productVariants.productId, products.id))
+      .where(and(eq(products.tenantId, tenant.id), inArray(products.id, productIds)));
+
+    // one row per product (first/default variant wins)
+    const byProduct = new Map<string, (typeof catalog)[number]>();
+    for (const row of catalog) {
+      if (!byProduct.has(row.id)) byProduct.set(row.id, row);
+    }
+
+    let subtotalCentavos = 0;
+    const lines: Array<{
+      productId: string;
+      variantId: string | null;
+      title: string;
+      variantTitle: string | null;
+      quantity: number;
+      unitPriceCentavos: number;
+    }> = [];
+
+    for (const [productId, quantity] of quantities) {
+      const row = byProduct.get(productId);
+      if (!row || row.status !== "active") {
+        throw new OrderError(
+          "One of the items in your cart is no longer available.",
+          "PRODUCT_UNAVAILABLE"
+        );
+      }
+      if (row.trackInventory && row.variantId !== null && (row.stockQty ?? 0) < quantity) {
+        throw new OrderError(
+          `Not enough stock for "${row.title}" (only ${row.stockQty ?? 0} left).`,
+          "OUT_OF_STOCK"
+        );
+      }
+      const unitPriceCentavos = toCentavos(row.basePrice);
+      subtotalCentavos += unitPriceCentavos * quantity;
+      lines.push({
+        productId,
+        variantId: row.variantId,
+        title: row.title,
+        variantTitle: row.variantTitle,
+        quantity,
+        unitPriceCentavos,
+      });
+    }
+
+    if (input.minOrderAmount > 0 && subtotalCentavos < toCentavos(input.minOrderAmount)) {
+      throw new OrderError(
+        `Minimum order is ₱${input.minOrderAmount}.`,
+        "BELOW_MINIMUM"
+      );
+    }
+
+    const deliveryFeeCentavos =
+      input.deliveryType === "pickup" ? 0 : toCentavos(input.deliveryFee);
+    const totalCentavos = subtotalCentavos + deliveryFeeCentavos;
+
+    // COD orders are actionable immediately; online payments wait for the webhook.
+    const initialStatus: OrderStatus =
+      input.paymentMethod === "cod" ? "accepted" : "pending_payment";
+
+    // Retry on the (rare) random-suffix collision against the unique index.
+    let orderNumber = generateOrderNumberCandidate(input.tenantSlug);
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const [existing] = await tx
+        .select({ id: orders.id })
+        .from(orders)
+        .where(eq(orders.orderNumber, orderNumber))
+        .limit(1);
+      if (!existing) break;
+      orderNumber = generateOrderNumberCandidate(input.tenantSlug);
+    }
+
+    const [order] = await tx
+      .insert(orders)
+      .values({
+        tenantId: tenant.id,
+        orderNumber,
+        guestName: input.customer.name,
+        guestPhone: input.customer.phone,
+        guestEmail: input.customer.email,
+        status: initialStatus,
+        subtotal: fromCentavos(subtotalCentavos),
+        deliveryFee: fromCentavos(deliveryFeeCentavos),
+        total: fromCentavos(totalCentavos),
+        paymentStatus: "pending",
+        paymentMethod: input.paymentMethod,
+        deliveryType: input.deliveryType,
+        deliveryAddressJson: input.deliveryAddress ?? null,
+        notes: input.notes,
+        sourceChannel: input.sourceChannel ?? "storefront",
+      })
+      .returning();
+
+    if (!order) throw new Error("Failed to create order");
+
+    await tx.insert(orderItems).values(
+      lines.map((line) => ({
+        orderId: order.id,
+        productId: line.productId,
+        variantId: line.variantId,
+        titleSnapshot: line.title,
+        variantSnapshot: line.variantTitle,
+        quantity: line.quantity,
+        unitPrice: fromCentavos(line.unitPriceCentavos),
+        lineTotal: fromCentavos(line.unitPriceCentavos * line.quantity),
+      }))
+    );
+
+    await tx.insert(orderStatusHistory).values({
+      orderId: order.id,
+      status: initialStatus,
+      note:
+        input.paymentMethod === "cod"
+          ? "Order placed (Cash on Delivery)"
+          : "Order placed, awaiting payment",
+    });
+
+    // Decrement stock for tracked products.
+    for (const line of lines) {
+      const row = byProduct.get(line.productId);
+      if (row?.trackInventory && line.variantId) {
+        await tx
+          .update(productVariants)
+          .set({ stockQty: sql`greatest(${productVariants.stockQty} - ${line.quantity}, 0)` })
+          .where(eq(productVariants.id, line.variantId));
+      }
+    }
+
+    return {
+      id: order.id,
+      orderNumber: order.orderNumber,
+      tenantId: tenant.id,
+      status: order.status as OrderStatus,
+      subtotal: order.subtotal,
+      deliveryFee: order.deliveryFee ?? "0.00",
+      total: order.total,
+      totalCentavos,
+      items: lines.map((line) => ({
+        title: line.title,
+        quantity: line.quantity,
+        unitPrice: fromCentavos(line.unitPriceCentavos),
+        lineTotal: fromCentavos(line.unitPriceCentavos * line.quantity),
+      })),
+    };
+  });
+}
+
+export async function recordPaymentIntent(params: {
+  orderId: string;
+  tenantId: string;
+  gatewayIntentId: string;
+  amount: string;
+  methodType: string;
+}): Promise<void> {
+  const db = getDb();
+  await db.insert(paymentTransactions).values({
+    orderId: params.orderId,
+    tenantId: params.tenantId,
+    gateway: "paymongo",
+    gatewayIntentId: params.gatewayIntentId,
+    amount: params.amount,
+    status: "pending",
+    methodType: params.methodType,
+  });
+}
+
+/** Webhook handler: marks the payment + order paid by PayMongo intent id. Idempotent. */
+export async function markOrderPaidByIntent(
+  gatewayIntentId: string,
+  gatewayPaymentId?: string,
+  rawWebhookJson?: unknown
+): Promise<{ ok: boolean; orderNumber?: string }> {
+  const db = getDb();
+  const [txn] = await db
+    .select()
+    .from(paymentTransactions)
+    .where(eq(paymentTransactions.gatewayIntentId, gatewayIntentId))
+    .limit(1);
+  if (!txn) return { ok: false };
+
+  const now = new Date();
+  await db
+    .update(paymentTransactions)
+    .set({
+      status: "paid",
+      gatewayPaymentId,
+      paidAt: now,
+      ...(rawWebhookJson !== undefined ? { rawWebhookJson } : {}),
+    })
+    .where(eq(paymentTransactions.id, txn.id));
+
+  const [order] = await db.select().from(orders).where(eq(orders.id, txn.orderId)).limit(1);
+  if (!order) return { ok: false };
+
+  if (order.status === "pending_payment") {
+    await db
+      .update(orders)
+      .set({ status: "paid", paymentStatus: "paid", paidAt: now })
+      .where(eq(orders.id, order.id));
+    await db.insert(orderStatusHistory).values({
+      orderId: order.id,
+      status: "paid",
+      note: "Payment confirmed via PayMongo",
+    });
+  } else if (order.paymentStatus !== "paid") {
+    await db
+      .update(orders)
+      .set({ paymentStatus: "paid", paidAt: now })
+      .where(eq(orders.id, order.id));
+  }
+
+  return { ok: true, orderNumber: order.orderNumber };
+}
+
+export async function markPaymentFailedByIntent(gatewayIntentId: string): Promise<void> {
+  const db = getDb();
+  const [txn] = await db
+    .select()
+    .from(paymentTransactions)
+    .where(eq(paymentTransactions.gatewayIntentId, gatewayIntentId))
+    .limit(1);
+  if (!txn) return;
+
+  await db
+    .update(paymentTransactions)
+    .set({ status: "failed" })
+    .where(eq(paymentTransactions.id, txn.id));
+}
+
+export interface TenantOrderListItem {
+  id: string;
+  orderNumber: string;
+  customerName: string;
+  customerPhone: string;
+  status: OrderStatus;
+  paymentStatus: string;
+  paymentMethod: string;
+  deliveryType: string;
+  total: string;
+  itemsSummary: string;
+  itemCount: number;
+  createdAt: Date;
+}
+
+export async function listOrdersForTenant(tenantId: string): Promise<TenantOrderListItem[]> {
+  const db = getDb();
+  const rows = await db
+    .select()
+    .from(orders)
+    .where(eq(orders.tenantId, tenantId))
+    .orderBy(desc(orders.createdAt))
+    .limit(200);
+
+  if (rows.length === 0) return [];
+
+  const items = await db
+    .select({
+      orderId: orderItems.orderId,
+      title: orderItems.titleSnapshot,
+      quantity: orderItems.quantity,
+    })
+    .from(orderItems)
+    .where(
+      inArray(
+        orderItems.orderId,
+        rows.map((row) => row.id)
+      )
+    );
+
+  const itemsByOrder = new Map<string, Array<{ title: string; quantity: number }>>();
+  for (const item of items) {
+    const list = itemsByOrder.get(item.orderId) ?? [];
+    list.push({ title: item.title, quantity: item.quantity });
+    itemsByOrder.set(item.orderId, list);
+  }
+
+  return rows.map((row) => {
+    const orderItemsList = itemsByOrder.get(row.id) ?? [];
+    return {
+      id: row.id,
+      orderNumber: row.orderNumber,
+      customerName: row.guestName ?? "Customer",
+      customerPhone: row.guestPhone ?? "",
+      status: row.status as OrderStatus,
+      paymentStatus: row.paymentStatus ?? "pending",
+      paymentMethod: row.paymentMethod ?? "",
+      deliveryType: row.deliveryType ?? "delivery",
+      total: row.total,
+      itemCount: orderItemsList.reduce((sum, item) => sum + item.quantity, 0),
+      itemsSummary: orderItemsList
+        .map((item) => `${item.quantity}× ${item.title}`)
+        .join(", "),
+      createdAt: row.createdAt,
+    };
+  });
+}
+
+export async function updateOrderStatusForTenant(params: {
+  tenantId: string;
+  orderId: string;
+  status: OrderStatus;
+  note?: string;
+  actorId?: string;
+}): Promise<TenantOrderListItem["status"]> {
+  const db = getDb();
+  const [order] = await db
+    .select()
+    .from(orders)
+    .where(and(eq(orders.id, params.orderId), eq(orders.tenantId, params.tenantId)))
+    .limit(1);
+  if (!order) throw new OrderError("Order not found.", "ORDER_NOT_FOUND");
+
+  const allowed = ORDER_STATUS_TRANSITIONS[order.status as OrderStatus] ?? [];
+  if (!allowed.includes(params.status)) {
+    throw new OrderError(
+      `Cannot move an order from "${order.status}" to "${params.status}".`,
+      "INVALID_TRANSITION"
+    );
+  }
+
+  const now = new Date();
+  const isDelivered = params.status === "delivered";
+  const codCollected = isDelivered && order.paymentMethod === "cod";
+
+  await db
+    .update(orders)
+    .set({
+      status: params.status,
+      ...(isDelivered ? { completedAt: now } : {}),
+      ...(codCollected ? { paymentStatus: "paid" as const, paidAt: now } : {}),
+    })
+    .where(eq(orders.id, order.id));
+
+  await db.insert(orderStatusHistory).values({
+    orderId: order.id,
+    status: params.status,
+    note: params.note ?? (codCollected ? "Delivered — COD collected" : undefined),
+    actorId: params.actorId,
+  });
+
+  return params.status;
+}
+
+export interface OrderTrackingData {
+  orderNumber: string;
+  tenantSlug: string;
+  tenantName: string;
+  status: OrderStatus;
+  paymentStatus: string;
+  paymentMethod: string;
+  deliveryType: string;
+  customerName: string;
+  subtotal: string;
+  deliveryFee: string;
+  total: string;
+  createdAt: Date;
+  items: Array<{ title: string; quantity: number; unitPrice: string; lineTotal: string }>;
+  history: Array<{ status: OrderStatus; note: string | null; createdAt: Date }>;
+}
+
+export async function getOrderForTracking(
+  tenantSlug: string,
+  orderNumber: string
+): Promise<OrderTrackingData | null> {
+  const db = getDb();
+  const [row] = await db
+    .select({ order: orders, tenant: tenants })
+    .from(orders)
+    .innerJoin(tenants, eq(orders.tenantId, tenants.id))
+    .where(and(eq(orders.orderNumber, orderNumber), eq(tenants.slug, tenantSlug)))
+    .limit(1);
+  if (!row) return null;
+
+  const items = await db
+    .select()
+    .from(orderItems)
+    .where(eq(orderItems.orderId, row.order.id));
+
+  const history = await db
+    .select()
+    .from(orderStatusHistory)
+    .where(eq(orderStatusHistory.orderId, row.order.id))
+    .orderBy(orderStatusHistory.createdAt);
+
+  return {
+    orderNumber: row.order.orderNumber,
+    tenantSlug: row.tenant.slug,
+    tenantName: row.tenant.name,
+    status: row.order.status as OrderStatus,
+    paymentStatus: row.order.paymentStatus ?? "pending",
+    paymentMethod: row.order.paymentMethod ?? "",
+    deliveryType: row.order.deliveryType ?? "delivery",
+    customerName: row.order.guestName ?? "Customer",
+    subtotal: row.order.subtotal,
+    deliveryFee: row.order.deliveryFee ?? "0.00",
+    total: row.order.total,
+    createdAt: row.order.createdAt,
+    items: items.map((item) => ({
+      title: item.titleSnapshot,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      lineTotal: item.lineTotal,
+    })),
+    history: history.map((entry) => ({
+      status: entry.status as OrderStatus,
+      note: entry.note,
+      createdAt: entry.createdAt,
+    })),
+  };
+}

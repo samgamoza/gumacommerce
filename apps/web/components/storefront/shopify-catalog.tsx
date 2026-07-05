@@ -90,9 +90,12 @@ export function ShopifyCatalog({
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-neutral-200 py-20 text-center">
-          <p className="text-lg font-semibold">No products yet</p>
-          <p className="mt-2 text-sm text-neutral-500">Check back soon for new items.</p>
+        <div className="flex flex-col items-center rounded-3xl border border-dashed border-neutral-200 bg-neutral-50/50 py-20 text-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-100 text-2xl">
+            🛍️
+          </span>
+          <p className="mt-4 text-lg font-semibold">No products yet</p>
+          <p className="mt-1 text-sm text-neutral-500">Check back soon for new items.</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-8 lg:grid-cols-3">

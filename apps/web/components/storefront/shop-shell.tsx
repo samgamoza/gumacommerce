@@ -20,6 +20,7 @@ import {
   User,
 } from "lucide-react";
 import type { DemoTenant } from "@/lib/demo-data";
+import { useCart } from "@/lib/cart";
 import { whatsappChatUrl } from "@/lib/storefront-settings";
 import { ShopAssistant } from "@/components/storefront/shop-assistant";
 import { STOREFRONT_SETTINGS_LINKS } from "@/lib/settings-nav";
@@ -58,15 +59,12 @@ const SETTINGS_ICONS: Record<string, React.ReactNode> = {
 
 export function ShopShell({
   tenant,
-  cartCount = 0,
-  cartTotal = 0,
   children,
 }: {
   tenant: DemoTenant;
-  cartCount?: number;
-  cartTotal?: number;
   children: React.ReactNode;
 }) {
+  const { count: cartCount, subtotal: cartTotal } = useCart(tenant.slug);
   const [ownerMenuOpen, setOwnerMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const closeTimerRef = useRef<number | null>(null);
@@ -290,8 +288,8 @@ export function ShopShell({
             </div>
             <Link
               href={`/${tenant.slug}/checkout`}
-              className="rounded-full px-8 py-3 text-sm font-semibold text-white"
-              style={{ backgroundColor: accent }}
+              className="rounded-full px-8 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
+              style={{ backgroundColor: accent, boxShadow: `0 8px 20px -6px ${accent}66` }}
             >
               Checkout
             </Link>
@@ -319,11 +317,11 @@ function OwnerMenuLink({
       role="menuitem"
       className={`flex items-center gap-3 px-4 py-2.5 text-sm transition ${
         highlight
-          ? "bg-violet-50 font-medium text-violet-700 hover:bg-violet-100"
+          ? "bg-emerald-50 font-medium text-emerald-700 hover:bg-emerald-100"
           : "text-neutral-700 hover:bg-neutral-50"
       }`}
     >
-      <span className={highlight ? "text-violet-500" : "text-neutral-400"}>{icon}</span>
+      <span className={highlight ? "text-emerald-600" : "text-neutral-400"}>{icon}</span>
       {children}
     </Link>
   );

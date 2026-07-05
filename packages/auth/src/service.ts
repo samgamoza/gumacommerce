@@ -161,7 +161,11 @@ export async function loginUser(input: LoginInput): Promise<{
     .where(eq(users.email, email))
     .limit(1);
 
-  if (!row?.user.passwordHash) {
+  if (!row) {
+    throw new AuthError("Invalid email or password.", "INVALID_CREDENTIALS");
+  }
+
+  if (!row.user.passwordHash) {
     throw new AuthError("Sign in with Google for this account.", "USE_GOOGLE");
   }
 
