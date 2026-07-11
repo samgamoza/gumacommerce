@@ -20,7 +20,7 @@ const PLANS = [
     price: "₱499/mo",
     features: [
       "Standard templates (Neon Bazaar, Street Cart…)",
-      "Flash deals & review sections",
+      "Live selling, flash deals & review sections",
       "Background removal",
       "Priority support",
     ],
@@ -31,9 +31,9 @@ const PLANS = [
     price: "₱999/mo",
     features: [
       "Advanced templates (Glass Future, Holo Grid…)",
-      "Live selling layout + WhatsApp agent",
-      "SMS order notifications",
-      "Lower AI costs at scale",
+      "WhatsApp agent & SMS order notifications",
+      "Higher AI limits at scale",
+      "Lower transaction fees",
     ],
   },
 ] as const;
@@ -118,8 +118,8 @@ export function SubscriptionSettingsPage() {
         <Card className="mb-4 border-amber-200 bg-gradient-to-r from-amber-50 to-white p-5">
           <p className="font-semibold text-amber-900">Not sure which plan fits?</p>
           <p className="mt-1 text-sm text-gray-600">
-            Tour our flagship model store — live selling, flash deals, and reviews are labeled by
-            plan tier so you know exactly what you&apos;re unlocking.
+            Tour our flagship model store — live selling unlocks on Growth; flash deals and reviews
+            are labeled by plan tier so you know exactly what you&apos;re unlocking.
           </p>
           <a
             href={modelStoreUrl(refSource ? `subscription-${refSource}` : "subscription")}

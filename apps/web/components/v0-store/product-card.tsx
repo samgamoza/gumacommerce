@@ -2,9 +2,10 @@
 
 import Image from "next/image"
 import { Plus, Star } from "lucide-react"
+import { useContext } from "react"
 import { cn } from "@/lib/utils"
 import { formatPrice, type Product } from "@/lib/store-data"
-import { useCart } from "@/components/v0-store/cart-provider"
+import { CartContext } from "@/components/v0-store/cart-provider"
 
 const badgeStyles: Record<string, string> = {
   Deal: "bg-primary text-primary-foreground",
@@ -12,8 +13,17 @@ const badgeStyles: Record<string, string> = {
   Bestseller: "bg-foreground text-background",
 }
 
-export function ProductCard({ product, className }: { product: Product; className?: string }) {
-  const { add } = useCart()
+export function ProductCard({
+  product,
+  className,
+  onAdd,
+}: {
+  product: Product
+  className?: string
+  onAdd?: (product: Product) => void
+}) {
+  const cart = useContext(CartContext)
+  const add = onAdd ?? cart?.add
   const discount = product.originalPrice
     ? Math.round((1 - product.price / product.originalPrice) * 100)
     : 0
@@ -73,7 +83,8 @@ export function ProductCard({ product, className }: { product: Product; classNam
           </div>
           <button
             type="button"
-            onClick={() => add(product)}
+            onClick={() => add?.(product)}
+            disabled={!add}
             aria-label={`Add ${product.name} to cart`}
             className="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform active:scale-90"
           >

@@ -10,7 +10,7 @@ import {
   Play,
   Sparkles,
 } from "lucide-react";
-import { AdminShell } from "@/components/admin-shell";
+import { PatternAdminShell } from "@/components/pattern-admin-shell";
 import { Button, Card } from "@guma-commerce/ui";
 import type {
   AgentSettings,
@@ -136,14 +136,14 @@ export function AgentsManager() {
 
   if (loading) {
     return (
-      <AdminShell title="Agents">
+      <PatternAdminShell title="Agents">
         <p className="text-gray-500">Loading agent workspace…</p>
-      </AdminShell>
+      </PatternAdminShell>
     );
   }
 
   return (
-    <AdminShell title="Agents">
+    <PatternAdminShell title="Agents">
       <div className="mb-6 rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-950 via-indigo-950 to-black p-6 text-white">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -498,7 +498,7 @@ export function AgentsManager() {
           </ul>
         )}
       </Card>
-    </AdminShell>
+    </PatternAdminShell>
   );
 }
 

@@ -1,5 +1,6 @@
 import { Star } from "lucide-react"
-import { reviews } from "@/lib/store-data"
+import type { Review } from "@/lib/store-data"
+import { reviews as defaultReviews } from "@/lib/store-data"
 import { SectionHeading } from "@/components/v0-store/section-heading"
 import { cn } from "@/lib/utils"
 
@@ -17,7 +18,9 @@ function initials(name: string) {
     .slice(0, 2)
 }
 
-export function CustomerReviews() {
+export function CustomerReviews({ items = defaultReviews }: { items?: Review[] }) {
+  if (items.length === 0) return null
+
   return (
     <section className="bg-secondary/50 py-12">
       <div className="mx-auto max-w-6xl px-4">
@@ -26,7 +29,7 @@ export function CustomerReviews() {
           subtitle="Real reviews from buyers across Facebook, Instagram & TikTok"
         />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {reviews.map((r) => (
+          {items.map((r) => (
             <figure
               key={r.id}
               className="flex flex-col rounded-2xl border border-border bg-card p-5"

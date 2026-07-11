@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { AUTH_COOKIE_NAME, readSessionCookie, verifySessionToken } from "@guma-commerce/auth/session";
 
-const PUBLIC_PATHS = ["/login", "/signup", "/verify-email"];
+const PUBLIC_PATHS = ["/login", "/signup", "/verify-email", "/kyc/mobile"];
 
 const PUBLIC_API_PREFIXES = [
   "/api/auth/login",
@@ -12,6 +12,11 @@ const PUBLIC_API_PREFIXES = [
   "/api/auth/google",
   "/api/auth/google/callback",
   "/api/auth/session",
+  // Mobile KYC flow uses a signed session token instead of a login cookie.
+  "/api/kyc/session",
+  "/api/kyc/upload",
+  "/api/kyc/submit",
+  "/api/kyc/document/",
   // Cron requests carry a Bearer CRON_SECRET, not a session cookie.
   // Each cron route validates the secret itself.
   "/api/cron/",
@@ -45,7 +50,22 @@ export async function middleware(request: NextRequest) {
   const session = token ? await verifySessionToken(token) : null;
   const isPublic = isPublicPath(pathname);
 
-  if (session?.needsShopSetup) {
+  // Platform admins (no shop) must not use the seller app — their cookie is shared
+  // with the Platform Console and lacks tenantId.
+  if (session?.role === "super_admin" && !session.tenantId) {
+    if (!isPublic) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set(
+        "error",
+        "Platform admin accounts cannot manage a shop here. Sign in with a seller account, or use the Platform Console."
+      );
+      return NextResponse.redirect(loginUrl);
+    }
+    return NextResponse.next();
+  }
+
+  // Only redirect to shop setup when the account truly has no tenant yet.
+  if (session?.needsShopSetup && !session.tenantId) {
     if (isShopSetupPath(pathname)) {
       return NextResponse.next();
     }

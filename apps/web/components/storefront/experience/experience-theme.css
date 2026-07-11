@@ -1,0 +1,112 @@
+/* Model-store visual system — scoped to tenant storefront experience */
+
+.storefront-experience-root {
+  color-scheme: light;
+  --background: oklch(0.99 0.004 60);
+  --foreground: oklch(0.2 0.02 30);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.02 30);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.02 30);
+  --primary: oklch(0.63 0.2 25);
+  --primary-foreground: oklch(0.99 0.01 60);
+  --secondary: oklch(0.96 0.012 60);
+  --secondary-foreground: oklch(0.25 0.02 30);
+  --muted: oklch(0.96 0.01 70);
+  --muted-foreground: oklch(0.52 0.02 40);
+  --accent: oklch(0.72 0.14 155);
+  --accent-foreground: oklch(0.99 0.01 60);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.91 0.01 70);
+  --input: oklch(0.91 0.01 70);
+  --ring: oklch(0.63 0.2 25);
+  --radius: 1rem;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+
+  font-family: var(--font-sans);
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+.storefront-experience-root .font-display {
+  font-family: var(--font-display);
+}
+
+.storefront-experience-root .no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.storefront-experience-root .no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.storefront-experience-root .bg-background {
+  background-color: var(--background);
+}
+
+.storefront-experience-root .bg-foreground {
+  background-color: var(--foreground);
+}
+
+.storefront-experience-root .bg-card {
+  background-color: var(--card);
+}
+
+.storefront-experience-root .bg-muted {
+  background-color: var(--muted);
+}
+
+.storefront-experience-root .bg-primary {
+  background-color: var(--primary);
+}
+
+.storefront-experience-root .text-foreground {
+  color: var(--foreground);
+}
+
+.storefront-experience-root .text-background {
+  color: var(--background);
+}
+
+.storefront-experience-root .text-card-foreground {
+  color: var(--card-foreground);
+}
+
+.storefront-experience-root .text-muted-foreground {
+  color: var(--muted-foreground);
+}
+
+.storefront-experience-root .text-primary {
+  color: var(--primary);
+}
+
+.storefront-experience-root .text-primary-foreground {
+  color: var(--primary-foreground);
+}
+
+.storefront-experience-root .border-border {
+  border-color: var(--border);
+}
+
+.storefront-experience-root .border-primary {
+  border-color: var(--primary);
+}
+
+.storefront-experience-root .rounded-3xl {
+  border-radius: calc(var(--radius) * 1.5);
+}
+
+.storefront-experience-root .rounded-2xl {
+  border-radius: calc(var(--radius) * 1.25);
+}
+
+.storefront-experience-root .rounded-xl {
+  border-radius: calc(var(--radius) * 1.1);
+}
+
+.storefront-experience-root .rounded-full {
+  border-radius: 9999px;
+}

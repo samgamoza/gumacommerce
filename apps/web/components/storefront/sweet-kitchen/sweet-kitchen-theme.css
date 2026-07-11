@@ -1,0 +1,39 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600&family=Birthstone+Bounce:wght@400&display=swap");
+
+.sweet-kitchen-root {
+  --sweet-cream: #fffdf5;
+  --sweet-espresso: #2d1b1b;
+  --sweet-petal: #ffd1dc;
+  --sweet-neon: #ff007f;
+  --font-sweet-display: "Birthstone Bounce", cursive;
+  --font-sweet-heading: "Cormorant Garamond", Georgia, serif;
+  --font-sweet-body: "Inter", system-ui, sans-serif;
+  background: var(--sweet-cream);
+  color: var(--sweet-espresso);
+  font-family: var(--font-sweet-body);
+}
+
+.sweet-kitchen-root .font-display {
+  font-family: var(--font-sweet-display);
+}
+
+.sweet-kitchen-root .font-heading {
+  font-family: var(--font-sweet-heading);
+}
+
+.sweet-kitchen-root .glass-card {
+  background: rgba(255, 209, 220, 0.25);
+  border: 1px solid rgba(255, 209, 220, 0.6);
+  backdrop-filter: blur(8px);
+}
+
+.sweet-kitchen-root .neon-btn {
+  background: var(--sweet-neon);
+  color: white;
+  transition: box-shadow 0.3s, transform 0.2s;
+}
+
+.sweet-kitchen-root .neon-btn:hover {
+  box-shadow: 0 0 20px color-mix(in srgb, var(--sweet-neon) 50%, transparent);
+  transform: scale(1.03);
+}

@@ -35,3 +35,6 @@ packages/db/drizzle/*.sql
 # User uploads (keep folder structure)
 apps/web/public/uploads/products/**
 !apps/web/public/uploads/products/.gitkeep
+
+# Private KYC uploads (local dev)
+apps/admin/.data/

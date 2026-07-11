@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AdminShell } from "@/components/admin-shell";
+import { PatternAdminShell } from "@/components/pattern-admin-shell";
 import { Button, Card } from "@guma-commerce/ui";
 
 interface SessionUser {
@@ -45,9 +45,9 @@ export default function OnboardingPage() {
 
   if (loading) {
     return (
-      <AdminShell title="Welcome">
+      <PatternAdminShell title="Welcome">
         <p className="text-gray-500">Loading...</p>
-      </AdminShell>
+      </PatternAdminShell>
     );
   }
 
@@ -55,7 +55,7 @@ export default function OnboardingPage() {
     process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3000";
 
   return (
-    <AdminShell title="Welcome to Guma Commerce">
+    <PatternAdminShell title="Welcome to Guma Commerce">
       <div className="mx-auto max-w-2xl space-y-6">
         <Card>
           <h2 className="text-lg font-semibold">🎉 Your shop is created!</h2>
@@ -124,6 +124,6 @@ export default function OnboardingPage() {
           </div>
         </Card>
       </div>
-    </AdminShell>
+    </PatternAdminShell>
   );
 }

@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { Search, ShoppingBag, Sparkles } from "lucide-react";
 import { PremiumStorefrontSections } from "@/components/storefront/premium/premium-storefront-sections";
-import { LockedAssistantFab } from "@/components/storefront/premium/locked-assistant-fab";
 import { ShopAssistant } from "@/components/storefront/shop-assistant";
-import { hasProFeatures } from "@/lib/storefront-plans";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { DemoTenant } from "@/lib/demo-data";
@@ -339,16 +337,13 @@ export function ThemedStorefrontHome({
         </div>
       </section>
 
-      {tenant.storeSettings.shopAssistant.enabled &&
-        (hasProFeatures(tenant.subscriptionPlan) ? (
-          <ShopAssistant
-            tenantSlug={tenant.slug}
-            shopName={tenant.name}
-            assistant={tenant.storeSettings.shopAssistant}
-          />
-        ) : (
-          <LockedAssistantFab theme={theme} />
-        ))}
+      {tenant.storeSettings.shopAssistant.enabled && (
+        <ShopAssistant
+          tenantSlug={tenant.slug}
+          shopName={tenant.name}
+          assistant={tenant.storeSettings.shopAssistant}
+        />
+      )}
     </StorefrontThemeShell>
   );
 }

@@ -15,14 +15,17 @@
     "inspect": "tsx src/inspect-db.ts",
     "push": "drizzle-kit push",
     "studio": "drizzle-kit studio",
-    "seed": "tsx src/seed.ts"
+    "seed": "tsx src/seed.ts",
+    "seed:simply-sweet": "tsx src/seed-simply-sweet.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.38.3",
     "postgres": "^3.4.5"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.10.2",
+    "bcryptjs": "^2.4.3",
     "dotenv": "^16.4.7",
     "drizzle-kit": "^0.30.1",
     "tsx": "^4.19.2",

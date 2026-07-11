@@ -1,4 +1,5 @@
 import { DEFAULT_STOREFRONT_SETTINGS } from "./storefront-settings";
+import type { StorePatternId } from "@guma-commerce/storefront-themes";
 
 export interface DemoProduct {
   id: string;
@@ -29,6 +30,7 @@ export interface DemoTenant {
   storeSettings: import("./storefront-settings").StorefrontStoreSettings;
   products: DemoProduct[];
   subscriptionPlan?: string | null;
+  patternId?: StorePatternId;
 }
 
 export const DEMO_TENANT: DemoTenant = {

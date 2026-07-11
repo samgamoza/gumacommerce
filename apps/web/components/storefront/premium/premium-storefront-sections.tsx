@@ -6,7 +6,6 @@ import { useMemo, useState } from "react";
 import type { DemoProduct, DemoTenant } from "@/lib/demo-data";
 import {
   hasGrowthFeatures,
-  hasProFeatures,
   upgradeUrl,
 } from "@/lib/storefront-plans";
 import { STOREFRONT_REVIEW_SEEDS } from "@/lib/storefront-review-seeds";
@@ -104,20 +103,30 @@ function ProductMiniCard({
   );
 }
 
-export function PremiumStorefrontSections({ tenant }: { tenant: DemoTenant }) {
+export function PremiumStorefrontSections({
+  tenant,
+  wideLayout = false,
+  hideSearch = false,
+  externalSearch,
+}: {
+  tenant: DemoTenant;
+  wideLayout?: boolean;
+  hideSearch?: boolean;
+  externalSearch?: string;
+}) {
   const theme = tenant.shopTheme;
   const plan = tenant.subscriptionPlan;
-  const [search, setSearch] = useState("");
+  const [internalSearch, setInternalSearch] = useState("");
+  const search = externalSearch ?? internalSearch;
   const countdown = useDealCountdown();
   const { addItem } = useCart(tenant.slug);
 
   const growthUrl = upgradeUrl("growth");
-  const proUrl = upgradeUrl("pro");
 
-  const filtered = useMemo(
-    () => tenant.products.filter((p) => matchesQuery(p, search)),
-    [tenant.products, search]
-  );
+  const filtered = useMemo(() => {
+    let list = tenant.products.filter((p) => matchesQuery(p, search));
+    return list;
+  }, [tenant.products, search]);
 
   const featured = filtered.slice(0, 6);
   const deals = filtered.filter((p) => p.compareAtPrice && p.compareAtPrice > p.price).slice(0, 4);
@@ -126,8 +135,8 @@ export function PremiumStorefrontSections({ tenant }: { tenant: DemoTenant }) {
   const popular = filtered.slice(0, 5);
   const liveProducts = filtered.slice(0, 3);
 
-  const maxWidth = theme.layout === "classic" ? "max-w-6xl" : "max-w-lg";
-  const sectionPad = theme.layout === "classic" ? "px-4 md:px-8" : "px-4";
+  const maxWidth = wideLayout || theme.layout === "classic" ? "max-w-6xl" : "max-w-lg";
+  const sectionPad = wideLayout || theme.layout === "classic" ? "px-4 md:px-8" : "px-4";
 
   if (tenant.products.length === 0) return null;
 
@@ -135,12 +144,14 @@ export function PremiumStorefrontSections({ tenant }: { tenant: DemoTenant }) {
     <>
       <UpgradeHintBanner plan={plan} theme={theme} />
 
-      <div className={`mx-auto ${maxWidth} ${sectionPad} pb-2`}>
-        <StoreSearchBar theme={theme} value={search} onChange={setSearch} />
-      </div>
+      {!hideSearch && (
+        <div className={`mx-auto ${maxWidth} ${sectionPad} pb-2`}>
+          <StoreSearchBar theme={theme} value={search} onChange={setInternalSearch} />
+        </div>
+      )}
 
       {featured.length > 0 && (
-        <section className={`mx-auto ${maxWidth} ${sectionPad} py-3`}>
+        <section id="featured" className={`mx-auto ${maxWidth} ${sectionPad} py-3`}>
           <PremiumSectionHead title="Featured Products" theme={theme} />
           <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1 snap-x snap-mandatory">
             {featured.map((product) => (
@@ -208,23 +219,23 @@ export function PremiumStorefrontSections({ tenant }: { tenant: DemoTenant }) {
         </section>
       )}
 
-      <section className={`mx-auto ${maxWidth} ${sectionPad} py-3`}>
+      <section id="live" className={`mx-auto ${maxWidth} ${sectionPad} py-3`}>
         <PremiumSectionHead
           title="Live Selling"
           theme={theme}
-          tier="pro"
+          tier="growth"
           subtitle={
-            hasProFeatures(plan)
+            hasGrowthFeatures(plan)
               ? "Join the live stream and shop in real time"
-              : "TikTok-style live selling + instant chat —"
+              : "TikTok-style live selling on your storefront —"
           }
-          upgradeHref={hasProFeatures(plan) ? undefined : proUrl}
+          upgradeHref={hasGrowthFeatures(plan) ? undefined : growthUrl}
         />
         <FeatureGate
-          required="pro"
+          required="growth"
           plan={plan}
           theme={theme}
-          upgradeHref={proUrl}
+          upgradeHref={growthUrl}
           teaser={
             <LiveSellingContent tenant={tenant} products={liveProducts} onAdd={addItem} />
           }

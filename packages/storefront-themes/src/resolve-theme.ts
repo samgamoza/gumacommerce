@@ -1,7 +1,24 @@
-import { getShopTemplate, isShopTemplateId, normalizeShopTemplateId } from "./templates";
-import type { ResolvedShopTheme, TenantThemeJson } from "./types";
+import {
+  getShopTemplate,
+  isShopTemplateId,
+  normalizeShopTemplateId,
+  SHOP_TEMPLATES,
+} from "./templates";
+import type { ResolvedShopTheme, ShopTemplateId, TenantThemeJson } from "./types";
 
-const DEFAULT_TEMPLATE_ID = "clean-guma";
+const DEFAULT_TEMPLATE_ID: ShopTemplateId = "clean-guma";
+
+function fallbackTemplateId(subscriptionPlan?: string | null): ShopTemplateId {
+  const preferred = SHOP_TEMPLATES.find(
+    (template) => template.id === DEFAULT_TEMPLATE_ID && canUseTemplate(template.id, subscriptionPlan)
+  );
+  if (preferred) return preferred.id;
+
+  const allowed = SHOP_TEMPLATES.find((template) =>
+    canUseTemplate(template.id, subscriptionPlan)
+  );
+  return allowed?.id ?? DEFAULT_TEMPLATE_ID;
+}
 
 export function resolveShopTheme(
   themeJson: TenantThemeJson | null | undefined,
@@ -52,4 +69,27 @@ export function canUseTemplate(
   if (template.minPlan === "free") return true;
   if (template.minPlan === "growth") return plan === "growth" || plan === "pro";
   return plan === "pro";
+}
+
+/** Resolves theme and downgrades template when the saved choice exceeds the current plan. */
+export function resolveShopThemeForPlan(
+  themeJson: TenantThemeJson | null | undefined,
+  shopName: string,
+  subscriptionPlan?: string | null
+): ResolvedShopTheme {
+  const storedId = themeJson?.templateId
+    ? normalizeShopTemplateId(themeJson.templateId)
+    : undefined;
+  const requestedId =
+    storedId && isShopTemplateId(storedId) ? storedId : DEFAULT_TEMPLATE_ID;
+
+  const templateId = canUseTemplate(requestedId, subscriptionPlan)
+    ? requestedId
+    : fallbackTemplateId(subscriptionPlan);
+
+  if (templateId === requestedId) {
+    return resolveShopTheme(themeJson, shopName);
+  }
+
+  return resolveShopTheme({ ...themeJson, templateId }, shopName);
 }

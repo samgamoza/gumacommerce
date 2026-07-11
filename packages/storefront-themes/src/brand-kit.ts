@@ -1,5 +1,6 @@
 import { SHOP_TEMPLATES } from "./templates";
 import { canUseTemplate } from "./resolve-theme";
+import { matchStorePattern } from "./patterns";
 import type { ShopTemplateId, TenantThemeJson } from "./types";
 
 /**
@@ -75,7 +76,7 @@ export const SHOP_VIBES: ShopVibe[] = [
     emoji: "🧁",
     label: "Cute & cozy",
     description: "Soft pastels and IG-worthy warmth",
-    templates: ["blush-bakery", "clean-guma", "y2k-chrome"],
+    templates: ["simply-sweet", "blush-bakery", "clean-guma", "y2k-chrome"],
     paletteIds: ["bubblegum", "halo-halo", "dragonfruit", "taho-caramel", "coral-reef"],
   },
   {
@@ -148,7 +149,7 @@ function pick<T>(items: readonly T[], seed: number, salt: number): T {
 }
 
 const CATEGORY_VIBE_HINTS: Array<{ match: RegExp; vibe: ShopVibeId }> = [
-  { match: /bakery|pastry|cake|dessert|sweet/i, vibe: "cute" },
+  { match: /bakery|pastry|cake|dessert|sweet|home.?baking|vlog|recipe/i, vibe: "cute" },
   { match: /fashion|apparel|clothing|streetwear/i, vibe: "minimal" },
   { match: /beauty|skincare|cosmetic/i, vibe: "premium" },
   { match: /electronic|gadget|tech|gaming/i, vibe: "electric" },
@@ -166,6 +167,7 @@ export interface DeriveBrandKitInput {
 }
 
 export interface DerivedBrandKit extends TenantThemeJson {
+  patternId: import("./types").StorePatternId;
   templateId: ShopTemplateId;
   primaryColor: string;
   accentColor: string;
@@ -198,9 +200,15 @@ export function deriveBrandKit(input: DeriveBrandKitInput): DerivedBrandKit {
 
   const promo = pick(PROMO_COPY, seed, 4);
   const taglineFn = pick(TAGLINE_PATTERNS, seed, 5);
+  const patternId = matchStorePattern({
+    category,
+    vibe: vibe.id,
+    templateId,
+  });
 
   return {
     templateId,
+    patternId,
     primaryColor: palette.primary,
     accentColor: palette.accent,
     paletteId: palette.id,

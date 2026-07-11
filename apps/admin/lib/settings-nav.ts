@@ -19,6 +19,24 @@ export const SETTINGS_SECTIONS = [
     description: "Your Guma Commerce plan",
   },
   {
+    href: "/settings/wallet",
+    label: "Wallet & payouts",
+    icon: "💰",
+    description: "Balance, withdrawals, and fund requests",
+  },
+  {
+    href: "/settings/kyc",
+    label: "KYC verification",
+    icon: "🪪",
+    description: "Identity verification for payouts",
+  },
+  {
+    href: "/settings/account",
+    label: "Password & security",
+    icon: "🔐",
+    description: "Login, password, and account access",
+  },
+  {
     href: "/settings/whatsapp-agent",
     label: "WhatsApp Agent",
     icon: "💬",
@@ -29,6 +47,12 @@ export const SETTINGS_SECTIONS = [
     label: "Tracking",
     icon: "📊",
     description: "Pixels and analytics IDs",
+  },
+  {
+    href: "/settings/support",
+    label: "Help & support",
+    icon: "🆘",
+    description: "Contact Guma Commerce support",
   },
 ] as const;
 

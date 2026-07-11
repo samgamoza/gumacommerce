@@ -1,9 +1,18 @@
 import { TrendingUp } from "lucide-react"
+import type { Product } from "@/lib/store-data"
 import { popular } from "@/lib/store-data"
 import { ProductCard } from "@/components/v0-store/product-card"
 import { SectionHeading } from "@/components/v0-store/section-heading"
 
-export function PopularProducts() {
+export function PopularProducts({
+  items = popular,
+  onAdd,
+}: {
+  items?: Product[]
+  onAdd?: (product: Product) => void
+}) {
+  if (items.length === 0) return null
+
   return (
     <section id="popular" className="mx-auto max-w-6xl px-4 py-10">
       <SectionHeading
@@ -16,8 +25,8 @@ export function PopularProducts() {
         }
       />
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-6">
-        {popular.map((p) => (
-          <ProductCard key={p.id} product={p} />
+        {items.map((p) => (
+          <ProductCard key={p.id} product={p} onAdd={onAdd} />
         ))}
       </div>
     </section>

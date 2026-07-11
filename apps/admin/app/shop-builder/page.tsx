@@ -1,10 +1,10 @@
-import { AdminShell } from "@/components/admin-shell";
+import { PatternAdminShell } from "@/components/pattern-admin-shell";
 import { ShopBuilder } from "@/components/shop-builder";
 
 export default function ShopBuilderPage() {
   return (
-    <AdminShell title="Shop Builder">
+    <PatternAdminShell title="Shop Builder">
       <ShopBuilder />
-    </AdminShell>
+    </PatternAdminShell>
   );
 }

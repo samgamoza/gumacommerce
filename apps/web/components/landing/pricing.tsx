@@ -11,7 +11,7 @@ const plans = [
     price: "₱0",
     period: "/month",
     desc: "Perfect for starting out",
-    features: ["30 orders/month", "5 AI generations", "Guma Commerce subdomain", "GCash & COD"],
+    features: ["30 orders/month", "5 AI generations", "Free shop chatbot", "Guma Commerce subdomain", "GCash & COD"],
     cta: "Start free",
     href: `${adminUrl}/signup`,
     highlighted: false,
@@ -24,6 +24,7 @@ const plans = [
     features: [
       "Unlimited orders",
       "100 AI generations",
+      "Live selling on your storefront",
       "Daily agents & SMS reminders",
       "Priority support",
       "All payment methods",

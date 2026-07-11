@@ -9,6 +9,7 @@ import {
   canUseTemplate,
   isShopTemplateId,
   resolveShopTheme,
+  resolveStorePattern,
 } from "@guma-commerce/storefront-themes";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
@@ -39,12 +40,14 @@ export async function GET() {
 
     const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3000";
     const theme = resolveShopTheme(settings.themeJson, settings.name);
+    const patternId = resolveStorePattern(settings.themeJson);
 
     return NextResponse.json({
       ok: true,
       shop: dashboard,
       storefront: settings,
       theme,
+      patternId,
       urls: {
         storefront: `${storefrontUrl}/${dashboard.tenant.slug}`,
         preview: `${storefrontUrl}/${dashboard.tenant.slug}?preview=1`,

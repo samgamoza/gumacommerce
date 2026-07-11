@@ -1,6 +1,11 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { getDb } from "../client";
 import {
+  creditSaleForOrder,
+  releaseOrderSaleCredit,
+  reverseSaleCreditForOrder,
+} from "./wallet";
+import {
   deliveries,
   orderItems,
   orderStatusHistory,
@@ -361,6 +366,10 @@ export async function markOrderPaidByIntent(
     transitioned = true;
   }
 
+  if (transitioned) {
+    await creditSaleForOrder(order.id);
+  }
+
   return {
     ok: true,
     orderNumber: order.orderNumber,
@@ -496,6 +505,12 @@ export async function updateOrderStatusForTenant(params: {
     actorId: params.actorId,
   });
 
+  if (codCollected) {
+    await creditSaleForOrder(order.id, { immediateAvailable: true });
+  } else if (isDelivered) {
+    await releaseOrderSaleCredit(order.id);
+  }
+
   return params.status;
 }
 
@@ -575,6 +590,8 @@ export async function markOrderRefunded(params: {
       note: params.note ?? "Refund issued by seller",
       actorId: params.actorId,
     });
+
+    await reverseSaleCreditForOrder(params.orderId);
   });
 }
 

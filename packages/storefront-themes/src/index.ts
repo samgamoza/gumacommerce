@@ -8,7 +8,11 @@ export {
   listShopTemplatesByTier,
   normalizeShopTemplateId,
 } from "./templates";
-export { canUseTemplate, resolveShopTheme } from "./resolve-theme";
+export {
+  canUseTemplate,
+  resolveShopTheme,
+  resolveShopThemeForPlan,
+} from "./resolve-theme";
 export {
   BRAND_KIT_COMBINATIONS,
   BRAND_PALETTES,
@@ -22,7 +26,21 @@ export {
   type ShopVibeId,
 } from "./brand-kit";
 export {
+  SIMPLY_SWEET_HERO_STYLES,
+  SIMPLY_SWEET_SECTION_FLAGS,
+  SIMPLY_SWEET_VARIATION_COUNT,
+  STORE_PATTERN_MAP,
+  STORE_PATTERNS,
+  getStorePattern,
+  isStorePatternId,
+  matchStorePattern,
+  resolvePatternThemeDefaults,
+  resolveStorePattern,
+} from "./patterns";
+export {
   SHOP_TEMPLATE_IDS,
+  STORE_PATTERN_IDS,
+  type DashboardRenderer,
   type ResolvedShopTheme,
   type ShopDisplayFont,
   type ShopCardStyle,
@@ -32,5 +50,8 @@ export {
   type ShopTemplateDefinition,
   type ShopTemplateId,
   type ShopTemplateTier,
+  type StorePatternDefinition,
+  type StorePatternId,
+  type StorefrontRenderer,
   type TenantThemeJson,
 } from "./types";

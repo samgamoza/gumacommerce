@@ -1,6 +1,6 @@
 "use client";
 
-import { AdminShell } from "@/components/admin-shell";
+import { PatternAdminShell } from "@/components/pattern-admin-shell";
 
 export function SettingsPageLayout({
   title,
@@ -12,10 +12,10 @@ export function SettingsPageLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AdminShell title={title}>
+    <PatternAdminShell title={title}>
       <p className="mb-6 text-sm text-gray-500">{description}</p>
       {children}
-    </AdminShell>
+    </PatternAdminShell>
   );
 }
 

@@ -26,6 +26,7 @@ function mergeSettings(
       ? { ...current?.shopAssistant, ...patch.shopAssistant }
       : current?.shopAssistant,
     agents: patch.agents ? { ...current?.agents, ...patch.agents } : current?.agents,
+    wallet: patch.wallet ? { ...current?.wallet, ...patch.wallet } : current?.wallet,
   };
 }
 

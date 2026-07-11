@@ -166,4 +166,46 @@ export {
   type AuditEntry,
   type AuditLogItem,
 } from "./queries/platform";
+export {
+  getWalletSummary,
+  listWalletLedger,
+  listTenantPayouts,
+  requestTenantPayout,
+  runWalletSettlement,
+  processQueuedPayouts,
+  resolveWalletSettings,
+  creditSaleForOrder,
+  WalletError,
+  type TenantWalletSummary,
+  type WalletLedgerItem,
+  type TenantPayoutItem,
+  type TenantWalletSettings,
+} from "./queries/wallet";
+export {
+  PLATFORM_FEE_PERCENT,
+  PLATFORM_FEE_FIXED_PHP,
+  computePlatformFeeCentavos,
+  computeSellerNetCentavos,
+  walletClearanceHours,
+  minAutoPayoutCentavos,
+} from "./wallet-fees";
+export {
+  getLatestKycSession,
+  getActiveKycSession,
+  getOrCreateActiveKycSession,
+  getKycSessionByToken,
+  getKycSessionById,
+  updateKycSession,
+  upsertKycDocument,
+  submitKycSession,
+  validateKycSubmission,
+  getKycDocumentStorageKey,
+  getKycDocumentByToken,
+  KycValidationError,
+  type KycSessionRecord,
+  type KycDocumentRecord,
+  type KycStatus,
+  type KycIdPath,
+  type KycDocType,
+} from "./queries/kyc";
 export * from "./schema/index";

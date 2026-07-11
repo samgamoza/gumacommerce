@@ -2,6 +2,7 @@ export const SHOP_TEMPLATE_IDS = [
   "clean-guma",
   "mono-market",
   "blush-bakery",
+  "simply-sweet",
   "neon-bazaar",
   "street-cart",
   "magazine-rack",
@@ -9,6 +10,11 @@ export const SHOP_TEMPLATE_IDS = [
   "y2k-chrome",
   "holo-grid",
 ] as const;
+
+export const STORE_PATTERN_IDS = ["classic", "simply-sweet"] as const;
+export type StorePatternId = (typeof STORE_PATTERN_IDS)[number];
+export type StorefrontRenderer = "themed" | "experience" | "sweet-kitchen";
+export type DashboardRenderer = "guma" | "sweet-kitchen";
 
 export type ShopTemplateId = (typeof SHOP_TEMPLATE_IDS)[number];
 export type ShopTemplateTier = "basic" | "standard" | "advanced";
@@ -21,12 +27,28 @@ export type ShopDisplayFont = "bricolage" | "system" | "mono-accent";
 
 export interface TenantThemeJson {
   templateId?: string;
+  /** Paired storefront + dashboard experience (e.g. Simply Sweet kitchen + vlog shops). */
+  patternId?: StorePatternId;
   primaryColor?: string;
   accentColor?: string;
   displayFont?: ShopDisplayFont;
+  paletteId?: string;
+  vibe?: string;
   tagline?: string;
   promoTitle?: string;
   promoSubtitle?: string;
+}
+
+export interface StorePatternDefinition {
+  id: StorePatternId;
+  label: string;
+  description: string;
+  tags: string[];
+  /** Categories / niches where this pattern is a strong default. */
+  categoryHints: RegExp[];
+  templateId: ShopTemplateId;
+  storefrontRenderer: StorefrontRenderer;
+  dashboardRenderer: DashboardRenderer;
 }
 
 export interface ShopTemplateDefinition {

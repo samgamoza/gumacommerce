@@ -2,10 +2,12 @@
 
 import Image from "next/image"
 import { Eye, Heart, Radio, ShoppingBag } from "lucide-react"
+import { useContext } from "react"
+import type { Product } from "@/lib/store-data"
 import { products, formatPrice } from "@/lib/store-data"
-import { useCart } from "@/components/v0-store/cart-provider"
+import { CartContext } from "@/components/v0-store/cart-provider"
 
-const liveProduct = products.find((p) => p.id === "serum")!
+const defaultLiveProduct = products.find((p) => p.id === "serum")!
 
 const upcoming = [
   { time: "6:00 PM", host: "Maya", topic: "Skincare Haul", tag: "Beauty" },
@@ -13,8 +15,18 @@ const upcoming = [
   { time: "Tomorrow", host: "Bea", topic: "Fashion Finds", tag: "Fashion" },
 ]
 
-export function LiveSelling() {
-  const { add } = useCart()
+export function LiveSelling({
+  product = defaultLiveProduct,
+  shopName = "Guma AI-commerce",
+  onAdd,
+}: {
+  product?: Product | null
+  shopName?: string
+  onAdd?: (product: Product) => void
+}) {
+  const cart = useContext(CartContext)
+  const add = onAdd ?? cart?.add
+  if (!product) return null
 
   return (
     <section id="live" className="mx-auto max-w-6xl px-4 py-10">
@@ -57,8 +69,8 @@ export function LiveSelling() {
               <div className="flex items-center gap-3 rounded-2xl bg-white/95 p-2.5 backdrop-blur">
                 <div className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-muted">
                   <Image
-                    src={liveProduct.image || "/placeholder.svg"}
-                    alt={liveProduct.name}
+                    src={product.image || "/placeholder.svg"}
+                    alt={product.name}
                     fill
                     sizes="56px"
                     className="object-cover"
@@ -66,18 +78,18 @@ export function LiveSelling() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-foreground">
-                    {liveProduct.name}
+                    {product.name}
                   </p>
                   <p className="font-display text-base font-bold text-primary">
-                    {formatPrice(liveProduct.price)}{" "}
+                    {formatPrice(product.price)}{" "}
                     <span className="text-xs font-normal text-muted-foreground line-through">
-                      {liveProduct.originalPrice && formatPrice(liveProduct.originalPrice)}
+                      {product.originalPrice && formatPrice(product.originalPrice)}
                     </span>
                   </p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => add(liveProduct)}
+                  onClick={() => add?.(product)}
                   className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-transform active:scale-95"
                 >
                   <ShoppingBag className="size-4" /> Grab
@@ -89,7 +101,9 @@ export function LiveSelling() {
 
         {/* Upcoming schedule */}
         <div className="flex flex-col rounded-3xl border border-border bg-card p-5">
-          <h3 className="font-display text-lg font-bold text-card-foreground">Upcoming streams</h3>
+          <h3 className="font-display text-lg font-bold text-card-foreground">
+            {shopName} live
+          </h3>
           <p className="mb-4 text-sm text-muted-foreground">Set a reminder in Messenger</p>
           <ul className="flex flex-col gap-3">
             {upcoming.map((s) => (

@@ -5,10 +5,7 @@ import {
   getStorefrontTenant,
 } from "@/lib/get-storefront-tenant";
 import { adminUrl } from "@/lib/utils";
-import { ShopShell } from "@/components/storefront/shop-shell";
-import { ShopifyCatalog } from "@/components/storefront/shopify-catalog";
-import { PremiumStorefrontSections } from "@/components/storefront/premium/premium-storefront-sections";
-import { ThemedStorefrontHome } from "@/components/storefront/themed-home";
+import { TenantStorefrontHome } from "@/components/storefront/tenant-storefront-home";
 
 const UTM_LABELS: Record<string, string> = {
   instagram: "Instagram",
@@ -63,23 +60,14 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
     notFound();
   }
 
-  // Classic templates use the standard catalog shell; every other template
-  // renders its own fully themed layout (bento, editorial, immersive, ...).
-  if (tenant.shopTheme.layout !== "classic") {
-    const utmSource = query.utm_source ?? "";
-    return (
-      <ThemedStorefrontHome
-        tenant={tenant}
-        utmLabel={UTM_LABELS[utmSource] ?? (utmSource || undefined)}
-      />
-    );
-  }
+  const utmSource = query.utm_source ?? "";
 
   return (
-    <ShopShell tenant={tenant}>
-      <PremiumStorefrontSections tenant={tenant} />
-      <ShopifyCatalog tenant={tenant} activeCategorySlug={query.category} />
-    </ShopShell>
+    <TenantStorefrontHome
+      tenant={tenant}
+      activeCategorySlug={query.category}
+      utmLabel={UTM_LABELS[utmSource] ?? (utmSource || undefined)}
+    />
   );
 }
 

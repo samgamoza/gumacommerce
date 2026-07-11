@@ -10,7 +10,7 @@ import {
   Video,
   Wand2,
 } from "lucide-react";
-import { AdminShell } from "@/components/admin-shell";
+import { PatternAdminShell } from "@/components/pattern-admin-shell";
 import { Button, Card } from "@guma-commerce/ui";
 
 const CAMPAIGN_MODULES = [
@@ -129,7 +129,7 @@ export function AiStudioCampaign() {
   }
 
   return (
-    <AdminShell title="AI Studio">
+    <PatternAdminShell title="AI Studio">
       <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-zinc-950 via-violet-950 to-black p-8 text-white shadow-2xl">
         <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-fuchsia-500/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-16 left-10 h-48 w-48 rounded-full bg-cyan-400/10 blur-3xl" />
@@ -239,6 +239,6 @@ export function AiStudioCampaign() {
           </pre>
         </Card>
       )}
-    </AdminShell>
+    </PatternAdminShell>
   );
 }

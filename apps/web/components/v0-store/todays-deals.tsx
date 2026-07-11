@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Zap } from "lucide-react"
+import type { Product } from "@/lib/store-data"
 import { deals } from "@/lib/store-data"
 import { ProductCard } from "@/components/v0-store/product-card"
 
@@ -48,7 +49,15 @@ function Countdown() {
   )
 }
 
-export function TodaysDeals() {
+export function TodaysDeals({
+  items = deals,
+  onAdd,
+}: {
+  items?: Product[]
+  onAdd?: (product: Product) => void
+}) {
+  if (items.length === 0) return null
+
   return (
     <section className="bg-primary/5 py-10">
       <div className="mx-auto max-w-6xl px-4">
@@ -70,8 +79,8 @@ export function TodaysDeals() {
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          {deals.map((p) => (
-            <ProductCard key={p.id} product={p} />
+          {items.map((p) => (
+            <ProductCard key={p.id} product={p} onAdd={onAdd} />
           ))}
         </div>
       </div>

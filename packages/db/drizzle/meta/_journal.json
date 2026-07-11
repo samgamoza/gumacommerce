@@ -17,10 +17,17 @@
       "breakpoints": true
     },
     {
-      "idx": 2,
+      "idx": 3,
       "version": "7",
-      "when": 1783249404693,
-      "tag": "0002_nosy_ikaris",
+      "when": 1783300000000,
+      "tag": "0003_tenant_wallet",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1783400000000,
+      "tag": "0004_kyc_verification",
       "breakpoints": true
     }
   ]

@@ -1,4 +1,4 @@
-import { resolveShopTheme } from "@guma-commerce/storefront-themes";
+import { resolveShopThemeForPlan, resolveStorePattern } from "@guma-commerce/storefront-themes";
 import { getPendingTenantBySlug, getTenantStorefrontBySlug } from "@guma-commerce/db";
 import {
   DEMO_TENANT,
@@ -6,6 +6,7 @@ import {
   type DemoTenant,
   getTenant as getDemoTenant,
 } from "./demo-data";
+import { getModelStoreTenant, MODEL_STORE_SLUG } from "./model-store-tenant";
 import { resolveStorefrontSettings } from "./storefront-settings";
 
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -19,6 +20,8 @@ const CATEGORY_EMOJI: Record<string, string> = {
 };
 
 export async function getStorefrontTenant(slug: string): Promise<DemoTenant | null> {
+  if (slug === MODEL_STORE_SLUG) return getModelStoreTenant();
+
   const demo = getDemoTenant(slug);
   if (demo) return demo;
 
@@ -40,8 +43,13 @@ export async function getStorefrontTenant(slug: string): Promise<DemoTenant | nu
       tags: [],
     }));
 
-  const shopTheme = resolveShopTheme(tenant.themeJson, tenant.name);
+  const shopTheme = resolveShopThemeForPlan(
+    tenant.themeJson,
+    tenant.name,
+    tenant.subscriptionPlan
+  );
   const storeSettings = resolveStorefrontSettings(tenant.settingsJson, tenant.currency ?? "PHP");
+  const patternId = resolveStorePattern(tenant.themeJson);
 
   return {
     slug: tenant.slug,
@@ -56,6 +64,7 @@ export async function getStorefrontTenant(slug: string): Promise<DemoTenant | nu
       accentColor: shopTheme.accentColor,
     },
     shopTheme,
+    patternId,
     shopCategories: tenant.shopCategories,
     coverUrl: tenant.coverUrl ?? undefined,
     codEnabled: storeSettings.codEnabled,

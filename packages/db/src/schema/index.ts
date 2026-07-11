@@ -77,6 +77,41 @@ export const contentPlatformEnum = pgEnum("content_platform", [
   "facebook",
   "whatsapp",
 ]);
+export const walletLedgerTypeEnum = pgEnum("wallet_ledger_type", [
+  "sale_credit",
+  "clearance_release",
+  "payout",
+  "refund_debit",
+  "adjustment",
+]);
+export const walletLedgerStatusEnum = pgEnum("wallet_ledger_status", [
+  "pending",
+  "available",
+  "completed",
+  "cancelled",
+]);
+export const payoutStatusEnum = pgEnum("payout_status", [
+  "queued",
+  "processing",
+  "completed",
+  "failed",
+]);
+export const payoutMethodEnum = pgEnum("payout_method", ["gcash", "maya", "bank"]);
+export const kycStatusEnum = pgEnum("kyc_status", [
+  "draft",
+  "in_progress",
+  "submitted",
+  "approved",
+  "rejected",
+]);
+export const kycIdPathEnum = pgEnum("kyc_id_path", ["primary", "secondary"]);
+export const kycDocTypeEnum = pgEnum("kyc_doc_type", [
+  "primary_id",
+  "secondary_id_1",
+  "secondary_id_2",
+  "selfie",
+]);
+
 export const agentRunStatusEnum = pgEnum("agent_run_status", [
   "running",
   "completed",
@@ -97,6 +132,8 @@ export const tenants = pgTable(
     coverUrl: text("cover_url"),
     themeJson: jsonb("theme_json").$type<{
       templateId?: string;
+      /** Paired storefront + seller-dashboard pattern (e.g. simply-sweet). */
+      patternId?: "classic" | "simply-sweet";
       primaryColor?: string;
       accentColor?: string;
       fontFamily?: string;
@@ -405,6 +442,129 @@ export const paymentTransactions = pgTable(
   (table) => [
     uniqueIndex("payment_intent_idx").on(table.gatewayIntentId),
     index("payment_order_idx").on(table.orderId),
+  ]
+);
+
+// ─── Tenant wallet & payouts ─────────────────────────────────────────────────
+
+export const tenantWallets = pgTable(
+  "tenant_wallets",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .references(() => tenants.id, { onDelete: "cascade" })
+      .notNull(),
+    availableBalance: decimal("available_balance", { precision: 12, scale: 2 })
+      .default("0")
+      .notNull(),
+    pendingBalance: decimal("pending_balance", { precision: 12, scale: 2 })
+      .default("0")
+      .notNull(),
+    totalWithdrawn: decimal("total_withdrawn", { precision: 12, scale: 2 })
+      .default("0")
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("tenant_wallets_tenant_idx").on(table.tenantId)]
+);
+
+export const tenantPayouts = pgTable(
+  "tenant_payouts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .references(() => tenants.id)
+      .notNull(),
+    amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+    fee: decimal("fee", { precision: 12, scale: 2 }).default("0").notNull(),
+    method: payoutMethodEnum("method").notNull(),
+    destinationAccount: varchar("destination_account", { length: 64 }).notNull(),
+    destinationName: varchar("destination_name", { length: 120 }).notNull(),
+    status: payoutStatusEnum("status").default("queued").notNull(),
+    autoTriggered: boolean("auto_triggered").default(false).notNull(),
+    processedAt: timestamp("processed_at", { withTimezone: true }),
+    failureReason: text("failure_reason"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("tenant_payouts_tenant_idx").on(table.tenantId, table.createdAt),
+    index("tenant_payouts_status_idx").on(table.status, table.createdAt),
+  ]
+);
+
+export const walletLedgerEntries = pgTable(
+  "wallet_ledger_entries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .references(() => tenants.id)
+      .notNull(),
+    orderId: uuid("order_id").references(() => orders.id),
+    payoutId: uuid("payout_id").references(() => tenantPayouts.id),
+    type: walletLedgerTypeEnum("type").notNull(),
+    status: walletLedgerStatusEnum("status").notNull(),
+    grossAmount: decimal("gross_amount", { precision: 12, scale: 2 }).notNull(),
+    feeAmount: decimal("fee_amount", { precision: 12, scale: 2 }).default("0").notNull(),
+    netAmount: decimal("net_amount", { precision: 12, scale: 2 }).notNull(),
+    description: text("description"),
+    availableAt: timestamp("available_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("wallet_ledger_tenant_idx").on(table.tenantId, table.createdAt),
+    uniqueIndex("wallet_ledger_order_sale_idx").on(table.orderId, table.type),
+    index("wallet_ledger_pending_idx").on(table.status, table.availableAt),
+  ]
+);
+
+// ─── KYC verification ────────────────────────────────────────────────────────
+
+export const kycVerificationSessions = pgTable(
+  "kyc_verification_sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .references(() => tenants.id, { onDelete: "cascade" })
+      .notNull(),
+    token: varchar("token", { length: 64 }).notNull(),
+    status: kycStatusEnum("status").default("draft").notNull(),
+    idPath: kycIdPathEnum("id_path"),
+    primaryIdType: varchar("primary_id_type", { length: 64 }),
+    secondaryIdType1: varchar("secondary_id_type_1", { length: 64 }),
+    secondaryIdType2: varchar("secondary_id_type_2", { length: 64 }),
+    rejectionReason: text("rejection_reason"),
+    submittedAt: timestamp("submitted_at", { withTimezone: true }),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("kyc_sessions_token_idx").on(table.token),
+    index("kyc_sessions_tenant_idx").on(table.tenantId, table.createdAt),
+  ]
+);
+
+export const kycDocuments = pgTable(
+  "kyc_documents",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sessionId: uuid("session_id")
+      .references(() => kycVerificationSessions.id, { onDelete: "cascade" })
+      .notNull(),
+    tenantId: uuid("tenant_id")
+      .references(() => tenants.id)
+      .notNull(),
+    docType: kycDocTypeEnum("doc_type").notNull(),
+    idCategory: varchar("id_category", { length: 64 }),
+    storageKey: varchar("storage_key", { length: 512 }).notNull(),
+    mimeType: varchar("mime_type", { length: 64 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("kyc_documents_session_type_idx").on(table.sessionId, table.docType),
+    index("kyc_documents_tenant_idx").on(table.tenantId),
   ]
 );
 

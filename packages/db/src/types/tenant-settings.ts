@@ -45,6 +45,16 @@ export interface TenantAgentSettings {
   lastReminderDate?: string;
 }
 
+export interface TenantWalletSettings {
+  autoPayoutEnabled?: boolean;
+  payoutMethod?: "gcash" | "maya" | "bank";
+  payoutAccount?: string;
+  payoutAccountName?: string;
+  kycVerified?: boolean;
+  kycStatus?: "none" | "draft" | "in_progress" | "submitted" | "approved" | "rejected";
+  kycVerifiedAt?: string;
+}
+
 export interface TenantSettingsJson {
   codEnabled?: boolean;
   autoAcceptOrders?: boolean;
@@ -55,6 +65,7 @@ export interface TenantSettingsJson {
   tracking?: TenantTrackingSettings;
   shopAssistant?: TenantShopAssistantSettings;
   agents?: TenantAgentSettings;
+  wallet?: TenantWalletSettings;
 }
 
 export interface TenantSettingsRecord {
@@ -94,5 +105,6 @@ export interface UpdateTenantSettingsInput {
     tracking?: Partial<TenantTrackingSettings>;
     shopAssistant?: Partial<TenantShopAssistantSettings>;
     agents?: Partial<TenantAgentSettings>;
+    wallet?: Partial<TenantWalletSettings>;
   };
 }

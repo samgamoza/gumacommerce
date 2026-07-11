@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Badge, Button, Card, formatPrice } from "@guma-commerce/ui";
 import type { SetupStep, TenantDashboardData } from "@guma-commerce/db";
+import { DashboardModulesGrid } from "@/components/dashboard-modules-grid";
 
 interface ShopResponse {
   ok: boolean;
@@ -332,6 +333,8 @@ export function DashboardView({ displayName }: { displayName: string }) {
           )}
         </div>
       </Card>
+
+      <DashboardModulesGrid />
     </div>
   );
 }

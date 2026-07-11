@@ -48,8 +48,8 @@ export function FeatureGate({
         <PlanTierBadge tier={required} />
         <p className="max-w-xs text-sm font-medium">
           {required === "pro"
-            ? "Live selling, AI chat & advanced layouts"
-            : "Flash deals, reviews & Growth templates"}
+            ? "Advanced templates & campaign automation"
+            : "Live selling, flash deals, reviews & Growth templates"}
         </p>
         <a
           href={upgradeHref}

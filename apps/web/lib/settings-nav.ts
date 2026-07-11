@@ -1,8 +1,4 @@
-export const STOREFRONT_SETTINGS_LINKS = [
-  { href: "/settings/shop", label: "Shop" },
-  { href: "/settings/delivery-shipping", label: "Delivery & Shipping" },
-  { href: "/settings/notifications", label: "Notifications" },
-  { href: "/settings/subscription", label: "Subscription" },
-  { href: "/settings/whatsapp-agent", label: "WhatsApp Agent" },
-  { href: "/settings/tracking", label: "Tracking" },
-] as const;
+/** @deprecated Use storefront-owner-nav.ts for the full owner menu */
+export {
+  OWNER_SETTINGS_LINKS as STOREFRONT_SETTINGS_LINKS,
+} from "./storefront-owner-nav";

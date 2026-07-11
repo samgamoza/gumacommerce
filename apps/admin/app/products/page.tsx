@@ -1,10 +1,10 @@
-import { AdminShell } from "@/components/admin-shell";
+import { PatternAdminShell } from "@/components/pattern-admin-shell";
 import { ProductsManager } from "@/components/products-manager";
 
 export default function ProductsPage() {
   return (
-    <AdminShell title="Products">
+    <PatternAdminShell title="Products">
       <ProductsManager />
-    </AdminShell>
+    </PatternAdminShell>
   );
 }
