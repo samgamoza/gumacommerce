@@ -43,6 +43,10 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: monorepoRoot,
   images: {
     remotePatterns: [{ protocol: "https", hostname: "**" }],
+    localPatterns: [
+      { pathname: "/uploads/**" },
+      { pathname: "/**" },
+    ],
   },
 };
 

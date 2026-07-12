@@ -23,7 +23,7 @@ type TenantContext = {
 };
 
 function storefrontBase(): string {
-  return process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3000";
+  return process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3010";
 }
 
 function extractPostBody(output: unknown): { body: string; title?: string; mediaBrief?: string } {

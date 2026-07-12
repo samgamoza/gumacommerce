@@ -12,6 +12,7 @@ export interface TenantStorefrontSettings {
   subscriptionPlan: string | null;
   themeJson: {
     templateId?: string;
+    patternId?: string;
     primaryColor?: string;
     accentColor?: string;
     fontFamily?: string;
@@ -22,6 +23,10 @@ export interface TenantStorefrontSettings {
     promoTitle?: string;
     promoSubtitle?: string;
   } | null;
+  themeDraftJson?: TenantStorefrontSettings["themeJson"];
+  themePublishedJson?: TenantStorefrontSettings["themeJson"];
+  customizationVersion?: number;
+  storeDnaJson?: unknown;
 }
 
 export interface UpdateTenantStorefrontInput {
@@ -52,6 +57,10 @@ export async function getTenantStorefrontSettings(
       coverUrl: tenants.coverUrl,
       subscriptionPlan: tenants.subscriptionPlan,
       themeJson: tenants.themeJson,
+      themeDraftJson: tenants.themeDraftJson,
+      themePublishedJson: tenants.themePublishedJson,
+      customizationVersion: tenants.customizationVersion,
+      storeDnaJson: tenants.storeDnaJson,
     })
     .from(tenants)
     .where(eq(tenants.id, tenantId))
@@ -68,9 +77,10 @@ export async function updateTenantStorefront(
   const [existing] = await db.select().from(tenants).where(eq(tenants.id, tenantId)).limit(1);
   if (!existing) return null;
 
-  const currentTheme = existing.themeJson ?? {};
-  const nextTheme = {
-    ...currentTheme,
+  // Appearance / Shop Builder edits go to draft (Constitution: Draft → Approve → Publish)
+  const currentDraft = existing.themeDraftJson ?? existing.themeJson ?? {};
+  const nextDraft = {
+    ...currentDraft,
     ...(input.templateId !== undefined ? { templateId: input.templateId } : {}),
     ...(input.patternId !== undefined ? { patternId: input.patternId } : {}),
     ...(input.primaryColor !== undefined ? { primaryColor: input.primaryColor } : {}),
@@ -85,7 +95,8 @@ export async function updateTenantStorefront(
   await db
     .update(tenants)
     .set({
-      themeJson: nextTheme,
+      themeDraftJson: nextDraft as typeof existing.themeDraftJson,
+      themeJson: nextDraft as typeof existing.themeJson,
       ...(input.coverUrl !== undefined ? { coverUrl: input.coverUrl } : {}),
       ...(input.logoUrl !== undefined ? { logoUrl: input.logoUrl } : {}),
       updatedAt: new Date(),

@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { DemoProduct, DemoTenant } from "@/lib/demo-data";
 import { useCart } from "@/lib/cart";
+import { StorefrontProductImage } from "@/components/storefront/storefront-product-image";
 import { formatMinistorePrice } from "./ministore-utils";
 
 function MinistoreProductCard({ tenantSlug, product }: { tenantSlug: string; product: DemoProduct }) {
@@ -30,7 +30,7 @@ function MinistoreProductCard({ tenantSlug, product }: { tenantSlug: string; pro
     <article className="ministore-product-card">
       <div className="ministore-product-img">
         <Link href={productHref}>
-          <Image src={product.image} alt={product.title} fill sizes="260px" />
+          <StorefrontProductImage src={product.image} alt={product.title} fill sizes="260px" />
         </Link>
         <div className="ministore-product-overlay">
           <button type="button" className="ministore-add-btn" onClick={handleAdd} disabled={!ready || adding}>

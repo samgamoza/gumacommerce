@@ -1,5 +1,9 @@
 import { resolveShopThemeForPlan, resolveStorePattern, emojiForShopCategory } from "@guma-commerce/storefront-themes";
-import { getPendingTenantBySlug, getTenantStorefrontBySlug } from "@guma-commerce/db";
+import {
+  getPendingTenantBySlug,
+  getTenantStorefrontBySlug,
+  getTenantStorefrontPreviewBySlug,
+} from "@guma-commerce/db";
 import {
   DEMO_TENANT,
   type DemoProduct,
@@ -9,15 +13,9 @@ import {
 import { getModelStoreTenant, MODEL_STORE_SLUG } from "./model-store-tenant";
 import { resolveStorefrontSettings } from "./storefront-settings";
 
-export async function getStorefrontTenant(slug: string): Promise<DemoTenant | null> {
-  if (slug === MODEL_STORE_SLUG) return getModelStoreTenant();
-
-  const demo = getDemoTenant(slug);
-  if (demo) return demo;
-
-  const tenant = await getTenantStorefrontBySlug(slug);
-  if (!tenant) return null;
-
+function mapDbTenantToDemo(
+  tenant: NonNullable<Awaited<ReturnType<typeof getTenantStorefrontBySlug>>>
+): DemoTenant {
   const mappedProducts: DemoProduct[] = tenant.products
     .filter((product) => product.status === "active")
     .map((product) => ({
@@ -61,7 +59,33 @@ export async function getStorefrontTenant(slug: string): Promise<DemoTenant | nu
     storeSettings,
     products: mappedProducts,
     subscriptionPlan: tenant.subscriptionPlan,
+    seo: tenant.seoPublishedJson ?? null,
   };
+}
+
+export async function getStorefrontTenant(slug: string): Promise<DemoTenant | null> {
+  if (slug === MODEL_STORE_SLUG) return getModelStoreTenant();
+
+  const demo = getDemoTenant(slug);
+  if (demo) return demo;
+
+  const tenant = await getTenantStorefrontBySlug(slug);
+  if (!tenant) return null;
+
+  return mapDbTenantToDemo(tenant);
+}
+
+/** Launch / Shop Builder preview — includes pending shops + draft theme. */
+export async function getStorefrontTenantPreview(slug: string): Promise<DemoTenant | null> {
+  if (slug === MODEL_STORE_SLUG) return getModelStoreTenant();
+
+  const demo = getDemoTenant(slug);
+  if (demo) return demo;
+
+  const tenant = await getTenantStorefrontPreviewBySlug(slug);
+  if (!tenant) return null;
+
+  return mapDbTenantToDemo(tenant);
 }
 
 export async function getStorefrontProduct(

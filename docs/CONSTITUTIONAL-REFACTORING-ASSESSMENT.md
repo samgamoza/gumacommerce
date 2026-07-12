@@ -2,10 +2,10 @@
 
 **Version:** 1.0  
 **Date:** 2026-07-12  
-**Status:** Pre-implementation — awaiting approval  
+**Status:** Phase 0–3 + Crown Jewel Approvals MVP landed (2026-07-12)  
 **Constitution source:** Cursor Master Prompt — GUMA ai-Commerce Constitutional Refactoring  
 **Codebase:** `D:\All Apps\gumacommerce`  
-**Companion docs:** `docs/COMPREHENSIVE-HANDOFF-2026-07-12.md`, Handbook v1.2
+**Companion docs:** `docs/CONSTITUTION.md`, `docs/ARCHITECTURE.md`, `docs/COMPREHENSIVE-HANDOFF-2026-07-12.md`, Handbook v1.2
 
 ---
 

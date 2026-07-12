@@ -65,9 +65,15 @@ Return JSON:
 export const PRODUCT_LISTING_PROMPT = (vars: Record<string, string>) => `
 Task: Create a complete product listing for Philippine mobile social commerce.
 
-Product name: ${vars.product_name ?? ""}
+Shop brand: ${vars.brand_name ?? ""}
+Shop category (STRICT): ${vars.category ?? "General"}
+Product name / notes: ${vars.product_name ?? ""}
 Raw notes: ${vars.seller_notes ?? ""}
-Category: ${vars.category ?? "General"}
+
+Rules:
+- Stay inside the shop category. If category is Printing & Signage, write for print/signage products (tarpaulin, cards, stickers, acrylic, etc.) — NEVER invent food, cakes, drinks, or unrelated niches.
+- If the seller notes conflict with the category, reinterpret them as a product that fits the category or ask via customization_questions — do not switch verticals.
+- Use Philippine peso pricing and Taglish-friendly, mobile-first copy.
 
 Return JSON:
 {

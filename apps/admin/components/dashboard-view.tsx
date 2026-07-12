@@ -301,7 +301,7 @@ export function DashboardView({ displayName }: { displayName: string }) {
         </div>
         {!isLive && (
           <p className="mt-2 text-xs text-amber-700">
-            Link goes live after you activate your shop (add a product + verify email first).
+            Link goes live after you add at least one active product (or tap Activate shop).
           </p>
         )}
         <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">

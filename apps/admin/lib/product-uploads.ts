@@ -1,4 +1,5 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { put } from "@vercel/blob";
@@ -25,8 +26,25 @@ function blobPathname(tenantId: string, filename: string): string {
   return `products/${tenantId}/${filename}`;
 }
 
+/** Resolve apps/web/public/uploads/products regardless of process.cwd() (admin vs turbo root). */
+function resolveWebUploadsRoot(): string {
+  const candidates = [
+    path.join(process.cwd(), "apps/web/public/uploads/products"),
+    path.join(process.cwd(), "../web/public/uploads/products"),
+    path.join(process.cwd(), "../../apps/web/public/uploads/products"),
+    path.join(__dirname, "../../../web/public/uploads/products"),
+  ];
+  for (const candidate of candidates) {
+    const normalized = path.normalize(candidate);
+    if (existsSync(path.dirname(normalized))) {
+      return normalized;
+    }
+  }
+  return path.normalize(candidates[1]!);
+}
+
 export function getProductUploadDir(tenantId: string): string {
-  return path.join(process.cwd(), "../web/public/uploads/products", tenantId);
+  return path.join(resolveWebUploadsRoot(), tenantId);
 }
 
 export function getProductUploadPublicUrl(tenantId: string, filename: string): string {

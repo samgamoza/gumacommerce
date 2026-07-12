@@ -29,6 +29,34 @@
       "when": 1783400000000,
       "tag": "0004_kyc_verification",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1783600000000,
+      "tag": "0005_launch_theme_draft",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783700000000,
+      "tag": "0006_domain_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1783800000000,
+      "tag": "0007_change_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1783900000000,
+      "tag": "0008_seo_draft_publish",
+      "breakpoints": true
     }
   ]
 }

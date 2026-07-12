@@ -64,7 +64,10 @@ pnpm db:seed
 
 Deploy `apps/web` and `apps/admin` to Vercel. See **[docs/DEPLOY-VERCEL.md](docs/DEPLOY-VERCEL.md)** for pre-beta checklist, env vars, and cron setup.
 
-**Agent handoff:** **[docs/COMPREHENSIVE-HANDOFF-2026-07-12.md](docs/COMPREHENSIVE-HANDOFF-2026-07-12.md)** — full repo summary, templates, handbook alignment, and roadmap. Older session notes: **[docs/AGENT-HANDOFF.md](docs/AGENT-HANDOFF.md)**.
+**Agent handoff:** **[docs/COMPREHENSIVE-HANDOFF-2026-07-12.md](docs/COMPREHENSIVE-HANDOFF-2026-07-12.md)** — full repo summary.  
+**Constitution:** **[docs/CONSTITUTION.md](docs/CONSTITUTION.md)** · **Architecture:** **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** · Session notes: **[docs/AGENT-HANDOFF.md](docs/AGENT-HANDOFF.md)**.
+
+**GUMA Launch (new):** after signup → http://localhost:3001/launch
 
 Set environment variables from `.env.example`.
 

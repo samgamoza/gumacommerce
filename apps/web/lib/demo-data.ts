@@ -31,6 +31,7 @@ export interface DemoTenant {
   products: DemoProduct[];
   subscriptionPlan?: string | null;
   patternId?: StorePatternId;
+  seo?: import("@guma-commerce/db").TenantSeoJson | null;
 }
 
 export const DEMO_TENANT: DemoTenant = {

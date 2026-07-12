@@ -291,6 +291,23 @@ export function ShopBuilder() {
     setSaved(true);
   }
 
+  async function handlePublishDraft() {
+    setSaving(true);
+    setError(null);
+    const res = await fetch("/api/launch", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "publish" }),
+    });
+    const data = await res.json();
+    setSaving(false);
+    if (!data.ok) {
+      setError(data.error ?? "Could not publish.");
+      return;
+    }
+    setSaved(true);
+  }
+
   if (loading) {
     return <p className="text-sm text-gray-500">Loading shop builder…</p>;
   }
@@ -302,12 +319,15 @@ export function ShopBuilder() {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xl">🎨</span>
-              <h2 className="text-lg font-semibold">Shop Builder</h2>
-              <Badge className="bg-emerald-100 text-emerald-800">New</Badge>
+              <h2 className="text-lg font-semibold">Appearance</h2>
+              <Badge className="bg-emerald-100 text-emerald-800">Draft</Badge>
             </div>
             <p className="mt-1 max-w-2xl text-sm text-gray-600">
-              Pick a storefront template from Basic to Advanced. Each design changes layout,
-              typography, cards, and hero style — so every shop feels unique, not just the URL.
+              Edits save as a <strong>draft</strong>. Publish from{" "}
+              <a href="/launch" className="font-medium text-emerald-700 underline">
+                GUMA Launch
+              </a>{" "}
+              (or Publish below) before buyers see changes. New shops should complete Launch first.
             </p>
           </div>
           {urls && (
@@ -583,7 +603,15 @@ export function ShopBuilder() {
               </label>
               <div className="md:col-span-2">
                 <Button type="submit" disabled={saving}>
-                  {saving ? "Saving…" : "Save customization"}
+                  {saving ? "Saving…" : "Save draft"}
+                </Button>
+                <Button
+                  type="button"
+                  disabled={saving}
+                  className="bg-emerald-700 hover:bg-emerald-800"
+                  onClick={() => void handlePublishDraft()}
+                >
+                  Publish to storefront
                 </Button>
               </div>
             </form>

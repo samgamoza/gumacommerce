@@ -1,4 +1,4 @@
-import { count, eq, sql } from "drizzle-orm";
+import { and, count, eq, sql } from "drizzle-orm";
 import { getDb } from "../client";
 import { categories, orders, products, tenants, users } from "../schema/index";
 
@@ -93,10 +93,13 @@ export async function getTenantDashboard(tenantId: string, userId: string): Prom
     },
     {
       id: "branding",
-      label: "Design your shop",
-      completed: Boolean(tenant.themeJson?.templateId),
-      href: "/shop-builder",
-      action: tenant.themeJson?.templateId ? undefined : "Open builder",
+      label: "Launch your storefront",
+      completed: Boolean(tenant.themePublishedJson?.templateId || tenant.themeJson?.templateId),
+      href: "/launch",
+      action:
+        tenant.themePublishedJson?.templateId || tenant.themeJson?.templateId
+          ? undefined
+          : "Open Launch",
     },
     {
       id: "product",
@@ -122,7 +125,7 @@ export async function getTenantDashboard(tenantId: string, userId: string): Prom
   const completedCount = steps.filter((step) => step.completed).length;
   const progressPercent = Math.round((completedCount / steps.length) * 100);
   const canActivate =
-    tenant.status !== "active" && emailVerified && activeProductCount > 0;
+    tenant.status !== "active" && tenant.status !== "suspended" && activeProductCount > 0;
 
   return {
     tenant: {
@@ -147,6 +150,36 @@ export async function getTenantDashboard(tenantId: string, userId: string): Prom
   };
 }
 
+/**
+ * Flip pending → active once the shop has at least one active product.
+ * Sellers expect "View shop" to work after adding listings without a separate activate click.
+ */
+export async function tryAutoActivateTenant(tenantId: string): Promise<boolean> {
+  const db = getDb();
+  const [tenant] = await db
+    .select({ id: tenants.id, status: tenants.status })
+    .from(tenants)
+    .where(eq(tenants.id, tenantId))
+    .limit(1);
+  if (!tenant || tenant.status === "active" || tenant.status === "suspended") {
+    return false;
+  }
+
+  const [stats] = await db
+    .select({ total: count() })
+    .from(products)
+    .where(and(eq(products.tenantId, tenantId), eq(products.status, "active")));
+
+  if ((stats?.total ?? 0) < 1) return false;
+
+  await db
+    .update(tenants)
+    .set({ status: "active", updatedAt: new Date() })
+    .where(eq(tenants.id, tenantId));
+
+  return true;
+}
+
 export async function activateTenantShop(tenantId: string, userId: string): Promise<{ ok: true } | { ok: false; reason: string }> {
   const dashboard = await getTenantDashboard(tenantId, userId);
   if (!dashboard) return { ok: false, reason: "Shop not found." };
@@ -154,7 +187,7 @@ export async function activateTenantShop(tenantId: string, userId: string): Prom
   if (!dashboard.setup.canActivate) {
     return {
       ok: false,
-      reason: "Verify your email and publish at least one active product before activating.",
+      reason: "Add at least one active product before activating your shop.",
     };
   }
 

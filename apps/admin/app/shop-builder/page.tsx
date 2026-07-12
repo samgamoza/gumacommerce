@@ -1,10 +1,9 @@
-import { PatternAdminShell } from "@/components/pattern-admin-shell";
-import { ShopBuilder } from "@/components/shop-builder";
+import { redirect } from "next/navigation";
 
-export default function ShopBuilderPage() {
-  return (
-    <PatternAdminShell title="Shop Builder">
-      <ShopBuilder />
-    </PatternAdminShell>
-  );
+/**
+ * Legacy Shop Builder archived — GUMA Launch is the storefront setup path.
+ * Appearance tweaks after publish live under Launch → personalize / publish.
+ */
+export default function ShopBuilderArchiveRedirect() {
+  redirect("/launch");
 }

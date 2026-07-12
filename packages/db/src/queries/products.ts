@@ -85,6 +85,14 @@ export async function listProductsForTenant(tenantId: string): Promise<ProductLi
   return items;
 }
 
+export async function getProductForTenant(
+  tenantId: string,
+  productId: string
+): Promise<ProductListItem | null> {
+  const items = await listProductsForTenant(tenantId);
+  return items.find((p) => p.id === productId) ?? null;
+}
+
 export async function createProductForTenant(
   tenantId: string,
   input: CreateProductInput
@@ -139,6 +147,11 @@ export async function createProductForTenant(
       alt: product.title,
       sortOrder: 0,
     });
+  }
+
+  if (status === "active") {
+    const { tryAutoActivateTenant } = await import("./tenant-dashboard");
+    await tryAutoActivateTenant(tenantId);
   }
 
   return {
@@ -236,6 +249,14 @@ export async function updateProductForTenant(
       }
     }
 
+    return true;
+  }).then(async (ok) => {
+    if (!ok) return false;
+    if (input.status === "active" || input.status === undefined) {
+      // Re-check after any save that may leave an active listing on a pending shop
+      const { tryAutoActivateTenant } = await import("./tenant-dashboard");
+      await tryAutoActivateTenant(tenantId);
+    }
     return true;
   });
 }

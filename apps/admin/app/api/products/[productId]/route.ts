@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { deleteProductForTenant, updateProductForTenant } from "@guma-commerce/db";
+import { deleteProductForTenant, markChangeRequestPublished, updateProductForTenant } from "@guma-commerce/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 const patchSchema = z.object({
@@ -11,6 +11,7 @@ const patchSchema = z.object({
   status: z.enum(["draft", "active", "archived"]).optional(),
   stockQty: z.number().int().min(0).max(99999).optional(),
   imageUrl: z.string().max(2048).nullable().optional(),
+  changeRequestId: z.string().uuid().optional(),
 });
 
 const idSchema = z.string().uuid();
@@ -43,6 +44,34 @@ export async function PATCH(
     if (!updated) {
       return NextResponse.json({ ok: false, error: "Product not found." }, { status: 404 });
     }
+
+    if (body.changeRequestId) {
+      await markChangeRequestPublished({
+        id: body.changeRequestId,
+        tenantId: session.tenantId,
+        actorUserId: session.userId,
+        actorEmail: session.email ?? null,
+        productId: id,
+      });
+      try {
+        const { ensureEventsWired } = await import("@/lib/events-bootstrap");
+        ensureEventsWired();
+        const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+        await emitDomainEvent({
+          name: EVENT_NAMES.PRICING_CHANGE_APPROVED,
+          data: {
+            tenantId: session.tenantId,
+            changeRequestId: body.changeRequestId,
+            productId: id,
+            basePrice: body.basePrice !== undefined ? String(body.basePrice) : undefined,
+          },
+          idempotencyKey: `Pricing.ChangeApproved.V1:${body.changeRequestId}`,
+        });
+      } catch (err) {
+        console.error("[products PATCH] pricing event", err);
+      }
+    }
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     if (error instanceof ApiAuthError) {

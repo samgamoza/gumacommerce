@@ -35,7 +35,7 @@ const STATUS_STYLE: Record<string, string> = {
   skipped: "bg-gray-100 text-gray-600",
 };
 
-export function AgentsManager() {
+export function AgentsManager({ embedded = false }: { embedded?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState<string | null>(null);
   const [agents, setAgents] = useState<AgentSettings | null>(null);
@@ -135,20 +135,18 @@ export function AgentsManager() {
   }
 
   if (loading) {
-    return (
-      <PatternAdminShell title="Agents">
-        <p className="text-gray-500">Loading agent workspace…</p>
-      </PatternAdminShell>
-    );
+    const loadingBody = <p className="text-gray-500">Loading agent workspace…</p>;
+    if (embedded) return loadingBody;
+    return <PatternAdminShell title="Agents">{loadingBody}</PatternAdminShell>;
   }
 
-  return (
-    <PatternAdminShell title="Agents">
+  const body = (
+    <>
       <div className="mb-6 rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-950 via-indigo-950 to-black p-6 text-white">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-300">
-              Guma Commerce · Agentic Ops
+              GUMA Workspace · Automations
             </p>
             <h2 className="mt-2 text-2xl font-bold">Daily & weekly automation</h2>
             <p className="mt-2 max-w-2xl text-sm text-violet-100/90">
@@ -498,8 +496,11 @@ export function AgentsManager() {
           </ul>
         )}
       </Card>
-    </PatternAdminShell>
+    </>
   );
+
+  if (embedded) return body;
+  return <PatternAdminShell title="Agents">{body}</PatternAdminShell>;
 }
 
 function UsageMeter({

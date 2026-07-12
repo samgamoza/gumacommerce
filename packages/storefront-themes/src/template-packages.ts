@@ -1,0 +1,315 @@
+import type { ShopBusinessCategory } from "./shop-categories";
+import type { ShopVibeId } from "./brand-kit";
+import type { ShopTemplateId } from "./types";
+import { getShopTemplate } from "./templates";
+import { STOREFRONT_TEMPLATE_REGISTRY } from "./template-registry";
+
+export type ConversionFocus = "catalog" | "menu" | "booking" | "editorial";
+
+/** Template as a reusable commerce package (Constitution: not just a theme). */
+export interface TemplatePackageMetadata {
+  id: ShopTemplateId;
+  industryFit: Array<ShopBusinessCategory | string>;
+  idealProductCount: { min: number; max: number };
+  targetAudience: string[];
+  visualStyle: ShopVibeId[];
+  conversionFocus: ConversionFocus;
+  mobileScore: number;
+  liveSellingReady: boolean;
+  seoReady: boolean;
+  performanceScore: number;
+  accessibilityScore: number;
+  supportedFeatures: Array<"cart" | "categories" | "cod" | "variants" | "booking">;
+}
+
+const DEFAULT_PACKAGE: Omit<TemplatePackageMetadata, "id"> = {
+  industryFit: ["General"],
+  idealProductCount: { min: 1, max: 100 },
+  targetAudience: ["social sellers", "SMEs"],
+  visualStyle: ["fresh", "minimal"],
+  conversionFocus: "catalog",
+  mobileScore: 80,
+  liveSellingReady: false,
+  seoReady: true,
+  performanceScore: 80,
+  accessibilityScore: 75,
+  supportedFeatures: ["cart", "categories", "cod"],
+};
+
+/** Curated metadata for live template packages. Missing ids fall back to defaults + registry hints. */
+export const TEMPLATE_PACKAGES: Partial<Record<ShopTemplateId, TemplatePackageMetadata>> = {
+  "clean-guma": {
+    id: "clean-guma",
+    industryFit: ["General", "Food & Beverage", "Retail & General Merchandise"],
+    idealProductCount: { min: 1, max: 50 },
+    targetAudience: ["first-time sellers", "everyday shops"],
+    visualStyle: ["fresh", "minimal"],
+    conversionFocus: "catalog",
+    mobileScore: 92,
+    liveSellingReady: true,
+    seoReady: true,
+    performanceScore: 90,
+    accessibilityScore: 85,
+    supportedFeatures: ["cart", "categories", "cod"],
+  },
+  bloom: {
+    id: "bloom",
+    industryFit: ["Fashion & Apparel", "Retail & General Merchandise"],
+    idealProductCount: { min: 8, max: 80 },
+    targetAudience: ["fashion boutiques", "apparel brands"],
+    visualStyle: ["minimal", "premium", "bold"],
+    conversionFocus: "editorial",
+    mobileScore: 88,
+    liveSellingReady: true,
+    seoReady: true,
+    performanceScore: 85,
+    accessibilityScore: 80,
+    supportedFeatures: ["cart", "categories", "cod"],
+  },
+  sarab: {
+    id: "sarab",
+    industryFit: ["Food & Beverage", "Catering"],
+    idealProductCount: { min: 6, max: 40 },
+    targetAudience: ["restaurants", "cafes", "food stalls"],
+    visualStyle: ["fresh", "bold", "cute"],
+    conversionFocus: "menu",
+    mobileScore: 86,
+    liveSellingReady: false,
+    seoReady: true,
+    performanceScore: 84,
+    accessibilityScore: 78,
+    supportedFeatures: ["cart", "categories", "cod"],
+  },
+  furnish: {
+    id: "furnish",
+    industryFit: ["Furniture & Home"],
+    idealProductCount: { min: 6, max: 60 },
+    targetAudience: ["home decor", "furniture sellers"],
+    visualStyle: ["minimal", "premium"],
+    conversionFocus: "editorial",
+    mobileScore: 85,
+    liveSellingReady: false,
+    seoReady: true,
+    performanceScore: 83,
+    accessibilityScore: 80,
+    supportedFeatures: ["cart", "categories", "cod"],
+  },
+  zay: {
+    id: "zay",
+    industryFit: ["Retail & General Merchandise"],
+    idealProductCount: { min: 10, max: 120 },
+    targetAudience: ["multi-category retailers"],
+    visualStyle: ["fresh", "bold"],
+    conversionFocus: "catalog",
+    mobileScore: 87,
+    liveSellingReady: true,
+    seoReady: true,
+    performanceScore: 86,
+    accessibilityScore: 80,
+    supportedFeatures: ["cart", "categories", "cod"],
+  },
+  electro: {
+    id: "electro",
+    industryFit: [
+      "Electronics",
+      "Auto Shop & Services",
+      "Automotive Parts & Accessories",
+      "Car Wash & Detailing",
+      "Printing & Signage",
+    ],
+    idealProductCount: { min: 8, max: 100 },
+    targetAudience: ["gadget shops", "auto parts", "tech services"],
+    visualStyle: ["bold", "electric", "minimal"],
+    conversionFocus: "catalog",
+    mobileScore: 86,
+    liveSellingReady: true,
+    seoReady: true,
+    performanceScore: 85,
+    accessibilityScore: 78,
+    supportedFeatures: ["cart", "categories", "cod", "variants"],
+  },
+  ministore: {
+    id: "ministore",
+    industryFit: [
+      "Electronics",
+      "Retail & General Merchandise",
+      "Printing & Signage",
+      "Professional & Consulting",
+      "Auto Shop & Services",
+    ],
+    idealProductCount: { min: 6, max: 60 },
+    targetAudience: ["print shops", "gadget shops", "service retailers"],
+    visualStyle: ["minimal", "premium", "electric"],
+    conversionFocus: "editorial",
+    mobileScore: 90,
+    liveSellingReady: true,
+    seoReady: true,
+    performanceScore: 88,
+    accessibilityScore: 82,
+    supportedFeatures: ["cart", "categories", "cod"],
+  },
+  "mono-market": {
+    id: "mono-market",
+    industryFit: [
+      "Printing & Signage",
+      "Professional & Consulting",
+      "Fashion & Apparel",
+      "Retail & General Merchandise",
+    ],
+    idealProductCount: { min: 4, max: 60 },
+    targetAudience: ["print studios", "agencies", "modern boutiques"],
+    visualStyle: ["minimal", "premium"],
+    conversionFocus: "editorial",
+    mobileScore: 90,
+    liveSellingReady: false,
+    seoReady: true,
+    performanceScore: 88,
+    accessibilityScore: 84,
+    supportedFeatures: ["cart", "categories", "cod"],
+  },
+  kaira: {
+    id: "kaira",
+    industryFit: ["Fashion & Apparel"],
+    idealProductCount: { min: 8, max: 80 },
+    targetAudience: ["fashion brands", "boutiques"],
+    visualStyle: ["premium", "minimal", "cute"],
+    conversionFocus: "editorial",
+    mobileScore: 88,
+    liveSellingReady: true,
+    seoReady: true,
+    performanceScore: 86,
+    accessibilityScore: 80,
+    supportedFeatures: ["cart", "categories", "cod"],
+  },
+  foodmart: {
+    id: "foodmart",
+    industryFit: ["Grocery & Supermarket", "Organic & Farm Produce"],
+    idealProductCount: { min: 12, max: 200 },
+    targetAudience: ["grocers", "wet market sellers"],
+    visualStyle: ["fresh", "bold"],
+    conversionFocus: "catalog",
+    mobileScore: 84,
+    liveSellingReady: false,
+    seoReady: true,
+    performanceScore: 82,
+    accessibilityScore: 76,
+    supportedFeatures: ["cart", "categories", "cod"],
+  },
+  stylish: {
+    id: "stylish",
+    industryFit: ["Shoes & Footwear", "Fashion & Apparel"],
+    idealProductCount: { min: 8, max: 80 },
+    targetAudience: ["footwear brands"],
+    visualStyle: ["bold", "premium", "electric"],
+    conversionFocus: "catalog",
+    mobileScore: 87,
+    liveSellingReady: true,
+    seoReady: true,
+    performanceScore: 85,
+    accessibilityScore: 78,
+    supportedFeatures: ["cart", "categories", "cod"],
+  },
+  mellow: {
+    id: "mellow",
+    industryFit: ["Hotels & Resorts", "Travel & Tours"],
+    idealProductCount: { min: 3, max: 30 },
+    targetAudience: ["hotels", "homestays", "tour operators"],
+    visualStyle: ["premium", "minimal"],
+    conversionFocus: "booking",
+    mobileScore: 85,
+    liveSellingReady: false,
+    seoReady: true,
+    performanceScore: 84,
+    accessibilityScore: 80,
+    supportedFeatures: ["cart", "booking", "cod"],
+  },
+  organic: {
+    id: "organic",
+    industryFit: ["Organic & Farm Produce"],
+    idealProductCount: { min: 6, max: 80 },
+    targetAudience: ["farm shops", "organic sellers"],
+    visualStyle: ["fresh", "cute"],
+    conversionFocus: "catalog",
+    mobileScore: 86,
+    liveSellingReady: false,
+    seoReady: true,
+    performanceScore: 84,
+    accessibilityScore: 80,
+    supportedFeatures: ["cart", "categories", "cod"],
+  },
+  fruitables: {
+    id: "fruitables",
+    industryFit: ["Organic & Farm Produce", "Grocery & Supermarket"],
+    idealProductCount: { min: 8, max: 100 },
+    targetAudience: ["produce markets", "fruit & veg shops"],
+    visualStyle: ["fresh", "cute", "bold"],
+    conversionFocus: "catalog",
+    mobileScore: 87,
+    liveSellingReady: false,
+    seoReady: true,
+    performanceScore: 85,
+    accessibilityScore: 80,
+    supportedFeatures: ["cart", "categories", "cod"],
+  },
+  waggy: {
+    id: "waggy",
+    industryFit: ["Pet Supplies & Lovers"],
+    idealProductCount: { min: 6, max: 80 },
+    targetAudience: ["pet shops", "pet lovers"],
+    visualStyle: ["cute", "fresh", "bold"],
+    conversionFocus: "catalog",
+    mobileScore: 88,
+    liveSellingReady: true,
+    seoReady: true,
+    performanceScore: 86,
+    accessibilityScore: 80,
+    supportedFeatures: ["cart", "categories", "cod"],
+  },
+  "simply-sweet": {
+    id: "simply-sweet",
+    industryFit: ["Catering", "Food & Beverage"],
+    idealProductCount: { min: 4, max: 40 },
+    targetAudience: ["bakeries", "dessert shops"],
+    visualStyle: ["cute", "fresh"],
+    conversionFocus: "menu",
+    mobileScore: 89,
+    liveSellingReady: false,
+    seoReady: true,
+    performanceScore: 87,
+    accessibilityScore: 82,
+    supportedFeatures: ["cart", "categories", "cod"],
+  },
+  "neon-bazaar": {
+    id: "neon-bazaar",
+    industryFit: ["General", "Retail & General Merchandise", "Food & Beverage"],
+    idealProductCount: { min: 4, max: 50 },
+    targetAudience: ["social sellers", "night-market vibes"],
+    visualStyle: ["electric", "bold"],
+    conversionFocus: "catalog",
+    mobileScore: 90,
+    liveSellingReady: true,
+    seoReady: true,
+    performanceScore: 88,
+    accessibilityScore: 78,
+    supportedFeatures: ["cart", "categories", "cod"],
+  },
+};
+
+export function getTemplatePackage(id: ShopTemplateId): TemplatePackageMetadata {
+  const curated = TEMPLATE_PACKAGES[id];
+  if (curated) return curated;
+
+  const template = getShopTemplate(id);
+  const registry = STOREFRONT_TEMPLATE_REGISTRY.find((e) => e.id === id);
+
+  return {
+    ...DEFAULT_PACKAGE,
+    id,
+    industryFit: registry
+      ? ["General"]
+      : DEFAULT_PACKAGE.industryFit,
+    visualStyle: DEFAULT_PACKAGE.visualStyle,
+    conversionFocus: DEFAULT_PACKAGE.conversionFocus,
+    mobileScore: template.tier === "advanced" ? 88 : DEFAULT_PACKAGE.mobileScore,
+  };
+}

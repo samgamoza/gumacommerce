@@ -1,6 +1,6 @@
 import Link from "next/link";
-import Image from "next/image";
 import type { DemoProduct, DemoTenant } from "@/lib/demo-data";
+import { StorefrontProductImage } from "@/components/storefront/storefront-product-image";
 
 function formatPrice(amount: number): string {
   return new Intl.NumberFormat("en-PH", {
@@ -119,7 +119,7 @@ function ShopifyProductTile({
     <Link href={`/${tenant.slug}/products/${product.slug}`} className="group block">
       <article>
         <div className="relative aspect-square overflow-hidden rounded-2xl bg-neutral-100 md:rounded-3xl">
-          <Image
+          <StorefrontProductImage
             src={product.image}
             alt={product.title}
             fill

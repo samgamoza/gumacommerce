@@ -1,10 +1,9 @@
 /** Storefront owner menu links → admin app routes */
 
 export const OWNER_SHOP_LINKS = [
-  { href: "/", label: "Dashboard" },
+  { href: "/launch", label: "GUMA Launch" },
   { href: "/products", label: "Products" },
   { href: "/categories", label: "Categories" },
-  { href: "/shop-builder", label: "Shop Builder" },
   { href: "/orders", label: "Orders" },
 ] as const;
 

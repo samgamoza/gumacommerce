@@ -75,7 +75,33 @@ export {
   getBundleCatalogEntry,
   listBundleByCategory,
   listBundleByStatus,
+  listPriorityPortQueue,
   type BundleTemplateCatalogEntry,
   type BundleTemplateStatus,
   type StorefrontFit,
 } from "./bundle-catalog";
+export {
+  buildStoreDNA,
+  type LaunchStep,
+  type ProductCountHint,
+  type SellingChannel,
+  type StoreDNA,
+  type StoreGoal,
+} from "./store-dna";
+export {
+  TEMPLATE_PACKAGES,
+  getTemplatePackage,
+  type ConversionFocus,
+  type TemplatePackageMetadata,
+} from "./template-packages";
+export {
+  recommendTemplates,
+  listLibraryMatchesForDna,
+  type RankedTemplate,
+  type TemplateScoreBreakdown,
+} from "./recommend-templates";
+export {
+  TEMPLATE_PREVIEW_IMAGES,
+  previewImageForTemplate,
+  previewImageForCategory,
+} from "./template-previews";

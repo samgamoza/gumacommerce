@@ -95,7 +95,7 @@ export function SignupWizard() {
         return;
       }
 
-      router.push(data.redirectTo ?? "/onboarding");
+      router.push(data.redirectTo ?? "/launch");
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");
@@ -213,7 +213,7 @@ export function SignupWizard() {
               <select
                 id="category"
                 value={form.category}
-                onChange={(e) => updateField("category", e.target.value)}
+                onChange={(e) => updateField("category", e.target.value as typeof form.category)}
                 className={authInputClassName}
               >
                 {CATEGORIES.map((category) => (

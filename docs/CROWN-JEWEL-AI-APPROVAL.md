@@ -1,7 +1,7 @@
 # Crown Jewel — AI Permissions + Draft → Approve → Publish + Audit
 
 **Date:** 2026-07-12
-**Status:** Implementation blueprint (governed by `ADR-0001-handbook-adoption.md` D5/D7)
+**Status:** Implementation blueprint — **Phases 1–3 MVP landed**; **Phase 4 catalog + pricing domains live** (seo/checkout still open).  
 **Handbook source:** v1.2 §5 (AI Permission Framework & Approval Workflow), §10 (Audit)
 
 > For the implementing agent (Cursor et al.): this is the **highest-leverage Handbook feature** and the safety backbone of an "AI publishes your store" product. Build it by **extending existing patterns**, not inventing new ones. Every schema/enum/route below is chosen to match what already ships so the result is cohesive.
@@ -177,7 +177,7 @@ Today: **Shop Builder** (`apps/admin/app/shop-builder`), **AI Studio** (`/ai-stu
 
 **Phase 3 — Workstation.** Unified UI with diff + approve/reject; `admin_only` routes to platform console. *Accept:* a seller sees the AI's proposed diff and approves/rejects; a `free`-plan `ai.bulk.catalog` request is blocked to `admin_only`.
 
-**Phase 4 — Breadth.** Extend domains (pricing, catalog, seo, checkout) reusing the same table/flow. *Accept:* no new tables added; only new `domain`/`scope` values.
+**Phase 4 — Breadth.** Extend domains (pricing, catalog, seo, checkout) reusing the same table/flow. *Accept:* no new tables added; only new `domain`/`scope` values. **Catalog:** landed — AI product generate → `change_requests` (domain `catalog`) → Products save or Approvals publish → `Catalog.ChangeApproved.V1`. **Pricing:** landed — AI suggest price → `change_requests` (domain `pricing`) → Products save or Approvals apply → `Pricing.ChangeApproved.V1`. SEO/checkout still open.
 
 ---
 

@@ -21,6 +21,7 @@ import { useTenantPlan } from "@/components/plan/use-tenant-plan";
 import { DASHBOARD_NAV, type DashboardNavItem } from "@/lib/dashboard-nav";
 import { SETTINGS_SECTIONS } from "@/lib/settings-nav";
 import { planAtLeast, upgradeHref, type SubscriptionPlan } from "@/lib/plan-access";
+import { storefrontBaseUrl } from "@/lib/utils";
 
 interface SessionUser {
   tenantName: string;
@@ -115,7 +116,7 @@ export function AdminShell({
     setGateTarget({ item });
   }
 
-  const storefrontBase = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3000";
+  const storefrontBase = storefrontBaseUrl;
   const slug = user?.tenantSlug ?? tenant?.slug;
   const showUpgrade = plan !== "pro";
 

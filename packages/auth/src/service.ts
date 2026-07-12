@@ -1,6 +1,11 @@
 import { eq, sql } from "drizzle-orm";
-import { getDb, tenants, users } from "@guma-commerce/db";
-import { deriveBrandKit } from "@guma-commerce/storefront-themes";
+import {
+  getDb,
+  needsGumaLaunch,
+  tenants,
+  users,
+} from "@guma-commerce/db";
+import { deriveBrandKit, buildStoreDNA } from "@guma-commerce/storefront-themes";
 import { hashPassword, validatePasswordStrength, verifyPassword } from "./password";
 import {
   createEmailVerificationToken,
@@ -28,6 +33,36 @@ function normalizePhone(phone?: string): string | undefined {
   if (digits.startsWith("0") && digits.length === 11) return `+63${digits.slice(1)}`;
   if (digits.length === 10) return `+63${digits}`;
   return phone.trim();
+}
+
+function seedTenantTheme(input: {
+  shopName: string;
+  shopSlug: string;
+  category?: string;
+  vibe?: string;
+}) {
+  const brandKit = deriveBrandKit({
+    shopName: input.shopName,
+    slug: input.shopSlug,
+    category: input.category,
+    vibe: input.vibe,
+    subscriptionPlan: "free",
+  });
+
+  const storeDna = buildStoreDNA({
+    businessName: input.shopName,
+    category: input.category,
+    vibe: brandKit.vibe,
+    locale: "taglish",
+    launchStep: "dna",
+    goals: ["launch_fast"],
+    sellingChannels: ["social"],
+  });
+
+  return {
+    themeDraft: brandKit,
+    storeDna,
+  };
 }
 
 function toSessionUser(
@@ -128,12 +163,11 @@ export async function registerSeller(input: RegisterSellerInput): Promise<{
 
   const passwordHash = await hashPassword(input.password);
 
-  const brandKit = deriveBrandKit({
+  const { themeDraft, storeDna } = seedTenantTheme({
     shopName: input.shopName,
-    slug: shopSlug,
+    shopSlug,
     category: input.category,
     vibe: input.vibe,
-    subscriptionPlan: "free",
   });
 
   const result = await db.transaction(async (tx) => {
@@ -143,7 +177,9 @@ export async function registerSeller(input: RegisterSellerInput): Promise<{
         slug: shopSlug,
         name: input.shopName.trim(),
         category: input.category?.trim() || "General",
-        themeJson: brandKit,
+        themeJson: themeDraft,
+        themeDraftJson: themeDraft,
+        storeDnaJson: storeDna,
         localeDefault: "taglish",
         settingsJson: { codEnabled: true, autoAcceptOrders: false, minOrderAmount: 99 },
         subscriptionPlan: "free",
@@ -292,10 +328,16 @@ export async function authenticateGoogleUser(profile: GoogleProfile): Promise<{
     const sessionUser = toSessionUser(updated, tenant);
     const sessionToken = await createSessionToken(sessionUser);
 
+    const redirectTo = sessionUser.needsShopSetup
+      ? "/signup/shop"
+      : needsGumaLaunch(tenant)
+        ? "/launch"
+        : "/";
+
     return {
       user: sessionUser,
       sessionToken,
-      redirectTo: sessionUser.needsShopSetup ? "/signup/shop" : "/",
+      redirectTo,
     };
   }
 
@@ -357,12 +399,11 @@ export async function completeGoogleShopSetup(input: CompleteGoogleShopInput): P
     throw new AuthError("This shop URL is already taken.", "SLUG_TAKEN");
   }
 
-  const brandKit = deriveBrandKit({
+  const { themeDraft, storeDna } = seedTenantTheme({
     shopName: input.shopName,
-    slug: shopSlug,
+    shopSlug,
     category: input.category,
     vibe: input.vibe,
-    subscriptionPlan: "free",
   });
 
   const result = await db.transaction(async (tx) => {
@@ -372,7 +413,9 @@ export async function completeGoogleShopSetup(input: CompleteGoogleShopInput): P
         slug: shopSlug,
         name: input.shopName.trim(),
         category: input.category?.trim() || "General",
-        themeJson: brandKit,
+        themeJson: themeDraft,
+        themeDraftJson: themeDraft,
+        storeDnaJson: storeDna,
         localeDefault: "taglish",
         settingsJson: { codEnabled: true, autoAcceptOrders: false, minOrderAmount: 99 },
         subscriptionPlan: "free",

@@ -20,6 +20,8 @@ const PUBLIC_API_PREFIXES = [
   // Cron requests carry a Bearer CRON_SECRET, not a session cookie.
   // Each cron route validates the secret itself.
   "/api/cron/",
+  // Inngest cloud / Dev Server — signed with INNGEST_SIGNING_KEY.
+  "/api/inngest",
 ];
 
 const SHOP_SETUP_PATHS = ["/signup/shop", "/api/auth/google/complete-shop", "/api/auth/logout"];
@@ -74,7 +76,7 @@ export async function middleware(request: NextRequest) {
 
   if (isPublic) {
     if (session && (pathname === "/login" || pathname === "/signup")) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(new URL("/launch", request.url));
     }
     return NextResponse.next();
   }

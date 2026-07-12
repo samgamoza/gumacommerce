@@ -21,8 +21,8 @@ const SWEET_TABS = [
   { id: "overview", label: "Overview", href: "/", icon: LayoutDashboard },
   { id: "products", label: "Products", href: "/products", icon: Package },
   { id: "orders", label: "Orders", href: "/orders", icon: ShoppingBag },
-  { id: "ai", label: "Social & AI", href: "/ai-studio", icon: Sparkles },
-  { id: "agents", label: "Agents", href: "/agents", icon: Bot },
+  { id: "ai", label: "Workspace", href: "/workspace", icon: Sparkles },
+  { id: "agents", label: "Automations", href: "/workspace/automations", icon: Bot },
   { id: "settings", label: "Settings", href: "/settings/shop", icon: Settings },
 ] as const;
 
@@ -69,7 +69,7 @@ export function SweetDashboardShell({
     return pathname === href || pathname.startsWith(`${href}/`);
   }
 
-  const storefrontBase = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3000";
+  const storefrontBase = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3010";
   const slug = user?.tenantSlug;
 
   return (

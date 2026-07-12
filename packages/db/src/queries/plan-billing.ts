@@ -1,13 +1,9 @@
 import { eq, sql } from "drizzle-orm";
 import { getDb } from "../client";
 import { planPayments, tenants } from "../schema/index";
+import { PLAN_PERIOD_DAYS, PLAN_PRICES_PHP } from "../plans";
 
-export const PLAN_PRICES_PHP: Record<string, number> = {
-  growth: 499,
-  pro: 999,
-};
-
-export const PLAN_PERIOD_DAYS = 30;
+export { PLAN_PERIOD_DAYS, PLAN_PRICES_PHP };
 
 export interface CreatePlanPaymentInput {
   tenantId: string;

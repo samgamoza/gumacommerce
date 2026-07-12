@@ -97,7 +97,7 @@ export function GoogleShopSetupForm() {
         return;
       }
 
-      router.push(data.redirectTo ?? "/onboarding");
+      router.push(data.redirectTo ?? "/launch");
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");
@@ -166,7 +166,12 @@ export function GoogleShopSetupForm() {
           <select
             id="category"
             value={form.category}
-            onChange={(e) => setForm((current) => ({ ...current, category: e.target.value }))}
+            onChange={(e) =>
+              setForm((current) => ({
+                ...current,
+                category: e.target.value as typeof current.category,
+              }))
+            }
             className={authInputClassName}
           >
             {CATEGORIES.map((category) => (

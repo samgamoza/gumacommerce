@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createProductForTenant, listProductsForTenant } from "@guma-commerce/db";
+import { createProductForTenant, listProductsForTenant, markChangeRequestPublished, tryAutoActivateTenant } from "@guma-commerce/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 export async function GET() {
   try {
     const session = await requireTenantSession();
+    // Existing shops that already have products should go live without a separate Activate click.
+    await tryAutoActivateTenant(session.tenantId);
     const products = await listProductsForTenant(session.tenantId);
     return NextResponse.json({ ok: true, products });
   } catch (error) {
@@ -27,6 +29,7 @@ const createSchema = z.object({
   stockQty: z.number().int().min(0).max(99999).optional(),
   aiGenerated: z.boolean().optional(),
   imageUrl: z.string().max(2048).optional(),
+  changeRequestId: z.string().uuid().optional(),
 });
 
 export async function POST(request: Request) {
@@ -45,6 +48,28 @@ export async function POST(request: Request) {
       aiGenerated: body.aiGenerated ?? false,
       imageUrl: body.imageUrl,
     });
+
+    if (body.changeRequestId) {
+      await markChangeRequestPublished({
+        id: body.changeRequestId,
+        tenantId: session.tenantId,
+        actorUserId: session.userId,
+        actorEmail: session.email ?? null,
+        productId: product.id,
+      });
+      const { ensureEventsWired } = await import("@/lib/events-bootstrap");
+      ensureEventsWired();
+      const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+      await emitDomainEvent({
+        name: EVENT_NAMES.CATALOG_CHANGE_APPROVED,
+        data: {
+          tenantId: session.tenantId,
+          changeRequestId: body.changeRequestId,
+          productId: product.id,
+        },
+        idempotencyKey: `Catalog.ChangeApproved.V1:${body.changeRequestId}`,
+      });
+    }
 
     return NextResponse.json({ ok: true, product });
   } catch (error) {

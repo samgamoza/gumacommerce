@@ -1,5 +1,6 @@
-import { AiStudioCampaign } from "@/components/ai-studio-campaign";
+import { redirect } from "next/navigation";
 
-export default function AiStudioPage() {
-  return <AiStudioCampaign />;
+/** AI Studio lives under GUMA Workspace → Marketing. */
+export default function AiStudioRedirectPage() {
+  redirect("/workspace/marketing");
 }

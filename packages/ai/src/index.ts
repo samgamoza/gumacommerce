@@ -15,6 +15,14 @@ export {
   type QuotaCheckResult,
   type SubscriptionPlan,
 } from "./plan-limits";
+export {
+  SCOPE_MATRIX,
+  resolveApprovalLevel,
+  isAdminOnly,
+  canSellerApprove,
+  type AiScope,
+  type ApprovalLevel,
+} from "./permissions";
 export type {  AiTone,
   GenerateInput,
   GenerateResult,

@@ -1,5 +1,6 @@
-import { AgentsManager } from "@/components/agents-manager";
+import { redirect } from "next/navigation";
 
-export default function AgentsPage() {
-  return <AgentsManager />;
+/** Agents live under GUMA Workspace → Automations. */
+export default function AgentsRedirectPage() {
+  redirect("/workspace/automations");
 }

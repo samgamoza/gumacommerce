@@ -9,6 +9,7 @@ import {
   verifyUserEmail,
 } from "@guma-commerce/auth";
 import { getSessionFromRequest } from "@guma-commerce/auth";
+import { resolveSellerHomePath } from "@guma-commerce/db";
 
 const bodySchema = z.object({
   token: z.string().min(10).optional(),
@@ -29,7 +30,12 @@ export async function POST(request: Request) {
       }
 
       const sessionToken = await createSessionToken(user);
-      const response = NextResponse.json({ ok: true, user, redirectTo: "/" });
+      const redirectTo = await resolveSellerHomePath({
+        tenantId: user.tenantId,
+        emailVerified: true,
+        preferLaunchWhenUnverified: true,
+      });
+      const response = NextResponse.json({ ok: true, user, redirectTo });
       response.headers.set("Set-Cookie", sessionCookieHeader(sessionToken));
       return response;
     }

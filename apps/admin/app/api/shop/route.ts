@@ -3,15 +3,18 @@ import { z } from "zod";
 import {
   getTenantDashboard,
   getTenantStorefrontSettings,
+  tryAutoActivateTenant,
   updateTenantStorefront,
 } from "@guma-commerce/db";
 import {
   canUseTemplate,
   isShopTemplateId,
+  matchStorePattern,
   resolveShopTheme,
   resolveStorePattern,
 } from "@guma-commerce/storefront-themes";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
+import { storefrontBaseUrl } from "@/lib/utils";
 
 const updateSchema = z.object({
   templateId: z.string().min(1).max(64).optional(),
@@ -29,6 +32,7 @@ const updateSchema = z.object({
 export async function GET() {
   try {
     const session = await requireTenantSession();
+    await tryAutoActivateTenant(session.tenantId);
     const [dashboard, settings] = await Promise.all([
       getTenantDashboard(session.tenantId, session.userId),
       getTenantStorefrontSettings(session.tenantId),
@@ -38,9 +42,12 @@ export async function GET() {
       return NextResponse.json({ ok: false, error: "Shop not found." }, { status: 404 });
     }
 
-    const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3000";
-    const theme = resolveShopTheme(settings.themeJson, settings.name);
-    const patternId = resolveStorePattern(settings.themeJson);
+    const storefrontUrl = storefrontBaseUrl;
+    const theme = resolveShopTheme(
+      settings.themeDraftJson ?? settings.themeJson,
+      settings.name
+    );
+    const patternId = resolveStorePattern(settings.themeDraftJson ?? settings.themeJson);
 
     return NextResponse.json({
       ok: true,
@@ -106,8 +113,11 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ ok: false, error: "Shop not found." }, { status: 404 });
     }
 
-    const theme = resolveShopTheme(updated.themeJson, updated.name);
-    const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3000";
+    const theme = resolveShopTheme(
+      updated.themeDraftJson ?? updated.themeJson,
+      updated.name
+    );
+    const storefrontUrl = storefrontBaseUrl;
 
     return NextResponse.json({
       ok: true,

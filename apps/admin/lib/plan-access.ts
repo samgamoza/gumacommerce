@@ -3,9 +3,9 @@ import type { SubscriptionPlan } from "@guma-commerce/ai";
 export type { SubscriptionPlan };
 
 export const PLAN_DISPLAY: Record<SubscriptionPlan, string> = {
-  free: "Sulit",
-  growth: "Growth",
-  pro: "Pro",
+  free: "Free",
+  growth: "Pro",
+  pro: "Advance",
 };
 
 export const PLAN_ORDER: Record<SubscriptionPlan, number> = {
@@ -33,7 +33,7 @@ export function upgradeHref(
 }
 
 export function planBadgeLabel(required: SubscriptionPlan): string {
-  if (required === "pro") return "Pro+";
-  if (required === "growth") return "Growth+";
-  return "Sulit";
+  if (required === "pro") return "Advance+";
+  if (required === "growth") return "Pro+";
+  return "Free";
 }

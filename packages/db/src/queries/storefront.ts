@@ -21,6 +21,7 @@ export interface StorefrontTenantRecord {
   currency: string;
   subscriptionPlan: string | null;
   settingsJson: import("../types/tenant-settings").TenantSettingsJson | null;
+  seoPublishedJson: import("../types/tenant-seo").TenantSeoJson | null;
   products: Array<{
     id: string;
     slug: string;
@@ -71,6 +72,25 @@ export async function getTenantStorefrontBySlug(
   const [tenant] = await db.select().from(tenants).where(eq(tenants.slug, slug)).limit(1);
   if (!tenant || tenant.status !== "active") return null;
 
+  return mapStorefrontTenant(tenant);
+}
+
+/** Draft/preview access for Launch — allows pending shops to preview before activate. */
+export async function getTenantStorefrontPreviewBySlug(
+  slug: string
+): Promise<StorefrontTenantRecord | null> {
+  const db = getDb();
+  const [tenant] = await db.select().from(tenants).where(eq(tenants.slug, slug)).limit(1);
+  if (!tenant || (tenant.status !== "active" && tenant.status !== "pending")) return null;
+
+  return mapStorefrontTenant(tenant, { preferDraft: true });
+}
+
+async function mapStorefrontTenant(
+  tenant: typeof tenants.$inferSelect,
+  options?: { preferDraft?: boolean }
+): Promise<StorefrontTenantRecord> {
+  const db = getDb();
   const catalog = await db
     .select({
       id: products.id,
@@ -98,6 +118,10 @@ export async function getTenantStorefrontBySlug(
     .from(categories)
     .where(eq(categories.tenantId, tenant.id));
 
+  const themeJson = options?.preferDraft
+    ? tenant.themeDraftJson ?? tenant.themePublishedJson ?? tenant.themeJson
+    : tenant.themePublishedJson ?? tenant.themeJson;
+
   return {
     id: tenant.id,
     slug: tenant.slug,
@@ -105,10 +129,11 @@ export async function getTenantStorefrontBySlug(
     category: tenant.category,
     coverUrl: tenant.coverUrl,
     logoUrl: tenant.logoUrl,
-    themeJson: tenant.themeJson,
+    themeJson,
     currency: tenant.currency,
     subscriptionPlan: tenant.subscriptionPlan,
     settingsJson: tenant.settingsJson,
+    seoPublishedJson: tenant.seoPublishedJson ?? null,
     products: catalog,
     shopCategories,
   };

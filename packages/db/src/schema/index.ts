@@ -77,6 +77,23 @@ export const contentPlatformEnum = pgEnum("content_platform", [
   "facebook",
   "whatsapp",
 ]);
+export const changeRequestDomainEnum = pgEnum("change_request_domain", [
+  "theme",
+  "pricing",
+  "catalog",
+  "seo",
+  "checkout",
+  "shipping",
+]);
+export const changeRequestStatusEnum = pgEnum("change_request_status", [
+  "draft",
+  "pending_review",
+  "approved",
+  "rejected",
+  "published",
+  "rolled_back",
+]);
+export const actorTypeEnum = pgEnum("actor_type", ["user", "ai", "system"]);
 export const walletLedgerTypeEnum = pgEnum("wallet_ledger_type", [
   "sale_credit",
   "clearance_release",
@@ -146,6 +163,59 @@ export const tenants = pgTable(
       promoTitle?: string;
       promoSubtitle?: string;
     }>(),
+    /**
+     * GUMA Launch Store DNA — business profile used for template scoring.
+     * Deterministic; never requires an LLM.
+     */
+    storeDnaJson: jsonb("store_dna_json").$type<{
+      version: 1;
+      businessName: string;
+      category: string;
+      vibe: string;
+      audience?: string;
+      productCountHint?: "none" | "1-10" | "11-50" | "50+";
+      sellingChannels?: Array<"social" | "marketplace" | "in_person">;
+      goals?: Array<"launch_fast" | "brand_look" | "conversion" | "live_selling">;
+      locale: "en" | "fil" | "taglish";
+      derivedAt: string;
+      launchStep?: "dna" | "templates" | "personalize" | "preview" | "publish" | "done";
+      selectedTemplateId?: string;
+    }>(),
+    /** Working draft theme (Launch personalize + Shop Builder Appearance). */
+    themeDraftJson: jsonb("theme_draft_json").$type<{
+      templateId?: string;
+      patternId?: string;
+      primaryColor?: string;
+      accentColor?: string;
+      fontFamily?: string;
+      displayFont?: "bricolage" | "system" | "mono-accent";
+      paletteId?: string;
+      vibe?: string;
+      tagline?: string;
+      promoTitle?: string;
+      promoSubtitle?: string;
+    }>(),
+    /** Buyer-facing published theme. Storefront reads this (fallback: theme_json). */
+    themePublishedJson: jsonb("theme_published_json").$type<{
+      templateId?: string;
+      patternId?: string;
+      primaryColor?: string;
+      accentColor?: string;
+      fontFamily?: string;
+      displayFont?: "bricolage" | "system" | "mono-accent";
+      paletteId?: string;
+      vibe?: string;
+      tagline?: string;
+      promoTitle?: string;
+      promoSubtitle?: string;
+    }>(),
+    customizationVersion: integer("customization_version").default(1).notNull(),
+    /** Working SEO draft (Workspace SEO editor / AI suggest). */
+    seoDraftJson: jsonb("seo_draft_json").$type<import("../types/tenant-seo").TenantSeoJson>(),
+    /** Buyer-facing published SEO. Storefront metadata/robots/sitemap read this. */
+    seoPublishedJson: jsonb("seo_published_json").$type<
+      import("../types/tenant-seo").TenantSeoJson
+    >(),
     localeDefault: localeEnum("locale_default").default("taglish"),
     currency: varchar("currency", { length: 3 }).default("PHP").notNull(),
     timezone: varchar("timezone", { length: 64 }).default("Asia/Manila").notNull(),
@@ -718,6 +788,8 @@ export const platformAuditLog = pgTable(
   "platform_audit_log",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id").references(() => tenants.id),
+    actorType: actorTypeEnum("actor_type").default("user"),
     actorId: uuid("actor_id").references(() => users.id),
     actorEmail: varchar("actor_email", { length: 255 }),
     action: varchar("action", { length: 80 }).notNull(),
@@ -731,6 +803,57 @@ export const platformAuditLog = pgTable(
     index("platform_audit_actor_idx").on(table.actorId),
     index("platform_audit_created_idx").on(table.createdAt),
     index("platform_audit_entity_idx").on(table.entityType, table.entityId),
+    index("platform_audit_tenant_idx").on(table.tenantId, table.createdAt),
+  ]
+);
+
+/** AI / seller proposed changes — draft → approve → publish (Crown Jewel). */
+export const changeRequests = pgTable(
+  "change_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .references(() => tenants.id)
+      .notNull(),
+    domain: changeRequestDomainEnum("domain").notNull(),
+    status: changeRequestStatusEnum("status").default("draft").notNull(),
+    scope: varchar("scope", { length: 60 }).notNull(),
+    approvalLevel: varchar("approval_level", { length: 20 }).notNull(),
+    proposedByType: actorTypeEnum("proposed_by_type").notNull(),
+    proposedByUserId: uuid("proposed_by_user_id").references(() => users.id),
+    aiGenerationId: uuid("ai_generation_id").references(() => aiGenerations.id),
+    summary: varchar("summary", { length: 255 }),
+    beforeJson: jsonb("before_json").$type<Record<string, unknown> | null>(),
+    afterJson: jsonb("after_json").$type<Record<string, unknown> | null>(),
+    reviewedBy: uuid("reviewed_by").references(() => users.id),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    reviewNote: text("review_note"),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("change_requests_tenant_idx").on(table.tenantId),
+    index("change_requests_status_idx").on(table.status),
+    index("change_requests_tenant_status_idx").on(table.tenantId, table.status),
+  ]
+);
+
+/** Append-only domain event log (Phase 2 — Inngest + local replay). */
+export const domainEvents = pgTable(
+  "domain_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id").references(() => tenants.id),
+    eventName: varchar("event_name", { length: 120 }).notNull(),
+    idempotencyKey: varchar("idempotency_key", { length: 255 }).notNull(),
+    correlationId: varchar("correlation_id", { length: 64 }),
+    payloadJson: jsonb("payload_json").$type<Record<string, unknown>>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("domain_events_idempotency_uidx").on(table.idempotencyKey),
+    index("domain_events_tenant_idx").on(table.tenantId, table.createdAt),
+    index("domain_events_name_idx").on(table.eventName, table.createdAt),
   ]
 );
 

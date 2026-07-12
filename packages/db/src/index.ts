@@ -2,6 +2,7 @@ export { db, getDb, closeDb, type Database } from "./client";
 export { getDatabaseUrl, isNeonDatabase } from "./env";
 export {
   getTenantStorefrontBySlug,
+  getTenantStorefrontPreviewBySlug,
   getPendingTenantBySlug,
   type StorefrontTenantRecord,
   type PendingTenantRecord,
@@ -9,6 +10,7 @@ export {
 export {
   getTenantDashboard,
   activateTenantShop,
+  tryAutoActivateTenant,
   type TenantDashboardData,
   type SetupStep,
 } from "./queries/tenant-dashboard";
@@ -27,6 +29,7 @@ export {
 } from "./queries/tenant-settings";
 export {
   listProductsForTenant,
+  getProductForTenant,
   createProductForTenant,
   updateProductForTenant,
   deleteProductForTenant,
@@ -74,6 +77,11 @@ export {
   type TenantOrderListItem,
 } from "./queries/orders";
 export {
+  persistDomainEvent,
+  listDomainEventsForTenant,
+  type DomainEventRow,
+} from "./queries/domain-events";
+export {
   PLAN_PRICES_PHP,
   PLAN_PERIOD_DAYS,
   createPlanPayment,
@@ -81,6 +89,61 @@ export {
   type CreatePlanPaymentInput,
   type MarkPlanPaymentPaidResult,
 } from "./queries/plan-billing";
+export {
+  SELLER_PLANS,
+  PLATFORM_PLANS as PLAN_CATALOG,
+  getSellerPlan,
+  normalizePlanId,
+  planPriceMonthly,
+  type PlanDefinition,
+  type SubscriptionPlanId,
+} from "./plans";
+export {
+  getLaunchTenantState,
+  updateStoreDna,
+  saveThemeDraft,
+  publishThemeDraft,
+  resolvePublishedThemeJson,
+  needsGumaLaunch,
+  resolveSellerHomePath,
+  type LaunchTenantState,
+  type ThemeJson,
+  type StoreDnaJson,
+} from "./queries/launch";
+export {
+  createChangeRequest,
+  submitChangeRequest,
+  approveChangeRequest,
+  rejectChangeRequest,
+  getChangeRequest,
+  listChangeRequestsForTenant,
+  writeTenantAudit,
+  listTenantAudit,
+  publishThemeChangeRequest,
+  publishCatalogChangeRequest,
+  publishPricingChangeRequest,
+  publishSeoChangeRequest,
+  rollbackSeoChangeRequest,
+  markChangeRequestPublished,
+  publishStorefrontWithApproval,
+  rollbackThemeChangeRequest,
+  type ChangeRequestRow,
+  type ChangeRequestDomain,
+  type ChangeRequestStatus,
+  type ActorType,
+  type CatalogListingProposal,
+  type PricingProposal,
+} from "./queries/change-requests";
+export {
+  getTenantSeoState,
+  saveTenantSeoDraft,
+  publishTenantSeo,
+  buildDefaultSeo,
+  normalizeSeoJson,
+  EMPTY_SEO,
+  type TenantSeoJson,
+  type TenantSeoState,
+} from "./queries/seo";
 export {
   savePushSubscription,
   deletePushSubscription,

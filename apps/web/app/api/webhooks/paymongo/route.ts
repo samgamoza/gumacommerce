@@ -110,11 +110,39 @@ export async function POST(request: Request) {
             planResult.tenantId,
             planResult.plan
           );
+          if (planResult.tenantId && planResult.plan) {
+            const { ensureEventsWired } = await import("@/lib/events-bootstrap");
+            ensureEventsWired();
+            const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+            await emitDomainEvent({
+              name: EVENT_NAMES.MERCHANT_UPGRADED,
+              data: {
+                tenantId: planResult.tenantId,
+                plan: planResult.plan,
+              },
+              idempotencyKey: `Merchant.Upgraded.V1:${planResult.tenantId}:${intentId}`,
+            });
+          }
         } else if (!planResult.ok) {
           console.warn("[PayMongo Webhook] No matching payment for intent", intentId);
         }
       } else if (result.transitioned) {
         // Only on the first transition, so webhook retries don't re-notify the seller.
+        if (result.tenantId && result.orderNumber) {
+          const { ensureEventsWired } = await import("@/lib/events-bootstrap");
+          ensureEventsWired();
+          const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+          await emitDomainEvent({
+            name: EVENT_NAMES.ORDER_PAYMENT_SUCCEEDED,
+            data: {
+              tenantId: result.tenantId,
+              orderNumber: result.orderNumber,
+              total: result.total,
+              gatewayIntentId: intentId,
+            },
+            idempotencyKey: `Order.PaymentSucceeded.V1:${intentId}`,
+          });
+        }
         await Promise.all([
           notifySellerPaymentReceived(result).catch((error) =>
             console.error("[PayMongo Webhook] Seller SMS failed:", error)

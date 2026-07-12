@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import {
   getPendingStorefrontTenant,
   getStorefrontTenant,
+  getStorefrontTenantPreview,
 } from "@/lib/get-storefront-tenant";
 import { adminUrl } from "@/lib/utils";
 import { TenantStorefrontHome } from "@/components/storefront/tenant-storefront-home";
@@ -23,7 +24,11 @@ interface PageProps {
 export default async function StorefrontPage({ params, searchParams }: PageProps) {
   const { tenantSlug } = await params;
   const query = await searchParams;
-  const tenant = await getStorefrontTenant(tenantSlug);
+  const isPreview = query.preview === "1";
+
+  const tenant = isPreview
+    ? await getStorefrontTenantPreview(tenantSlug)
+    : await getStorefrontTenant(tenantSlug);
 
   if (!tenant) {
     const pending = await getPendingStorefrontTenant(tenantSlug);
@@ -47,10 +52,10 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
               This shop is being set up and isn&apos;t live yet. Check back soon!
             </p>
             <Link
-              href={`${adminUrl}/shop-builder`}
+              href={`${adminUrl}/launch`}
               className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition hover:bg-emerald-700"
             >
-              Design your shop
+              Continue GUMA Launch
             </Link>
           </div>
         </div>
@@ -63,11 +68,18 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
   const utmSource = query.utm_source ?? "";
 
   return (
-    <TenantStorefrontHome
-      tenant={tenant}
-      activeCategorySlug={query.category}
-      utmLabel={UTM_LABELS[utmSource] ?? (utmSource || undefined)}
-    />
+    <>
+      {isPreview && (
+        <div className="sticky top-0 z-50 bg-amber-500 px-4 py-2 text-center text-sm font-semibold text-amber-950">
+          Draft preview — not live to buyers until you publish &amp; activate
+        </div>
+      )}
+      <TenantStorefrontHome
+        tenant={tenant}
+        activeCategorySlug={query.category}
+        utmLabel={UTM_LABELS[utmSource] ?? (utmSource || undefined)}
+      />
+    </>
   );
 }
 

@@ -41,7 +41,7 @@ export type ShopDisplayFont = "bricolage" | "system" | "mono-accent";
 export interface TenantThemeJson {
   templateId?: string;
   /** Paired storefront + dashboard experience (e.g. Simply Sweet kitchen + vlog shops). */
-  patternId?: StorePatternId;
+  patternId?: StorePatternId | string;
   primaryColor?: string;
   accentColor?: string;
   displayFont?: ShopDisplayFont;

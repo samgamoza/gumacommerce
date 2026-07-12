@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { productAiPromptPack } from "@/lib/product-ai-prompts";
 import { Badge, Button, Card, formatPrice } from "@guma-commerce/ui";
 
 interface ProductRow {
@@ -35,13 +36,6 @@ interface ShopContext {
   category: string | null;
 }
 
-const EXAMPLE_PROMPTS = [
-  "Mango bravo cake, party size, around ₱399",
-  "Ube cheese pandesal dozen, fresh daily, ₱180",
-  "Custom tarpaulin printing 2x3 ft, 3-day turnaround",
-  "Iced Spanish latte 16oz, perfect for summer",
-];
-
 const EMPTY_DRAFT: ProductDraft = {
   title: "",
   slug: "",
@@ -57,11 +51,17 @@ const EMPTY_DRAFT: ProductDraft = {
 };
 
 const STOREFRONT_URL =
-  process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3000";
+  process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3010";
 
 function productImageSrc(url: string): string {
   if (!url) return "";
-  return url.startsWith("http") ? url : `${STOREFRONT_URL}${url}`;
+  if (url.startsWith("http")) return url;
+  // Local disk uploads live under apps/web/public — preview via admin proxy
+  // so the Products UI works even if the storefront isn't running.
+  if (url.startsWith("/uploads/products/")) {
+    return `/api/products/media?path=${encodeURIComponent(url)}`;
+  }
+  return `${STOREFRONT_URL}${url}`;
 }
 
 function stripHtml(html: string): string {
@@ -87,6 +87,10 @@ export function ProductsManager() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [changeRequestId, setChangeRequestId] = useState<string | null>(null);
+  const [requiresReview, setRequiresReview] = useState(false);
+  const [pricingNote, setPricingNote] = useState<string | null>(null);
+  const [suggestingPrice, setSuggestingPrice] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -110,6 +114,8 @@ export function ProductsManager() {
     load();
   }, [load]);
 
+  const promptPack = productAiPromptPack(shop?.category, shop?.name);
+
   function openCreateForm() {
     setShowForm(true);
     setError(null);
@@ -120,6 +126,9 @@ export function ProductsManager() {
     setPriceHint("");
     setEditingId(null);
     setNotice(null);
+    setChangeRequestId(null);
+    setRequiresReview(false);
+    setPricingNote(null);
   }
 
   function closeCreateForm() {
@@ -133,6 +142,9 @@ export function ProductsManager() {
     setOriginalImageUrl(null);
     setEnhancing(false);
     setEditingId(null);
+    setChangeRequestId(null);
+    setRequiresReview(false);
+    setPricingNote(null);
   }
 
   function startEdit(product: ProductRow) {
@@ -142,6 +154,9 @@ export function ProductsManager() {
     setAiModel(null);
     setError(null);
     setNotice(null);
+    setChangeRequestId(null);
+    setRequiresReview(false);
+    setPricingNote(null);
     setOriginalImageUrl(product.imageUrl);
     setDraft({
       title: product.title,
@@ -229,6 +244,8 @@ export function ProductsManager() {
     });
     setAiModel(data.model ?? "ai");
     setManualMode(false);
+    setChangeRequestId(data.changeRequestId ?? null);
+    setRequiresReview(Boolean(data.requiresReview));
   }
 
   function startManualEntry() {
@@ -236,6 +253,8 @@ export function ProductsManager() {
     setDraft({ ...EMPTY_DRAFT });
     setAiModel(null);
     setError(null);
+    setChangeRequestId(null);
+    setRequiresReview(false);
   }
 
   async function handleImageSelect(event: React.ChangeEvent<HTMLInputElement>) {
@@ -306,6 +325,39 @@ export function ProductsManager() {
     setOriginalImageUrl(null);
   }
 
+  async function handleSuggestPrice() {
+    if (!editingId) return;
+    setError(null);
+    setSuggestingPrice(true);
+    try {
+      const res = await fetch(`/api/products/${editingId}/suggest-price`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        setError(data.error ?? "Could not suggest a price.");
+        return;
+      }
+      const suggestion = data.suggestion;
+      setDraft((current) =>
+        current
+          ? {
+              ...current,
+              basePrice: String(suggestion.basePrice),
+              compareAtPrice: suggestion.compareAtPrice
+                ? String(suggestion.compareAtPrice)
+                : current.compareAtPrice,
+            }
+          : current
+      );
+      setChangeRequestId(data.changeRequestId ?? null);
+      setRequiresReview(Boolean(data.requiresReview));
+      setPricingNote(suggestion.rationale ?? "AI suggested a new price — review and save.");
+    } finally {
+      setSuggestingPrice(false);
+    }
+  }
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!draft) return;
@@ -340,6 +392,7 @@ export function ProductsManager() {
             status: draft.status,
             stockQty: Number(draft.stockQty) || 0,
             imageUrl: draft.imageUrl || null,
+            changeRequestId: changeRequestId ?? undefined,
           }),
         })
       : await fetch("/api/products", {
@@ -356,6 +409,7 @@ export function ProductsManager() {
             stockQty: Number(draft.stockQty) || 0,
             aiGenerated: Boolean(aiModel),
             imageUrl: draft.imageUrl || undefined,
+            changeRequestId: changeRequestId ?? undefined,
           }),
         });
 
@@ -400,8 +454,9 @@ export function ProductsManager() {
                 <Badge className="bg-emerald-100 text-emerald-800">New</Badge>
               </div>
               <p className="mt-1 text-sm text-gray-600">
-                Tell us what you sell — name, size, price, occasion. AI generates title,
-                description, and suggested pricing for your shop.
+                Describe a {shop?.category ? shop.category.toLowerCase() : "shop"} product —
+                name, size, specs, price. AI writes title, description, and pricing for{" "}
+                <strong>{shop?.name ?? "your shop"}</strong>.
               </p>
             </div>
             {showEmptyComposer && (
@@ -425,13 +480,13 @@ export function ProductsManager() {
                   value={aiPrompt}
                   onChange={(e) => setAiPrompt(e.target.value)}
                   rows={3}
-                  placeholder="e.g. Mango bravo cake, good for birthdays, serves 8-10 people, ₱399"
+                  placeholder={promptPack.placeholder}
                   className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </label>
 
               <div className="flex flex-wrap gap-2">
-                {EXAMPLE_PROMPTS.map((example) => (
+                {promptPack.examples.map((example) => (
                   <button
                     key={example}
                     type="button"
@@ -453,7 +508,7 @@ export function ProductsManager() {
                     min="1"
                     value={priceHint}
                     onChange={(e) => setPriceHint(e.target.value)}
-                    placeholder="399"
+                    placeholder={promptPack.priceHintPlaceholder}
                     className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm"
                   />
                 </label>
@@ -480,12 +535,25 @@ export function ProductsManager() {
                   {editingId ? "Edit product" : "Review & edit listing"}
                 </h4>
                 {aiModel && <Badge>AI · {aiModel === "mock" ? "demo mode" : "generated"}</Badge>}
+                {changeRequestId && (
+                  <Badge>{requiresReview ? "Needs review" : "Change request"}</Badge>
+                )}
               </div>
+
+              {changeRequestId && requiresReview && (
+                <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                  This AI listing is tracked as a change request. Saving publishes it to your catalog
+                  and closes the request. You can also review pending catalog requests in{" "}
+                  <a href="/workspace/approvals" className="font-medium underline">
+                    Workspace → Approvals
+                  </a>
+                  .
+                </p>
+              )}
 
               {error && <p className="text-sm text-red-600">{error}</p>}
 
-              {manualMode && (
-                <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <div className="rounded-xl border border-gray-200 bg-white p-4">
                   <span className="mb-2 block text-sm font-medium text-gray-700">
                     Product photo
                   </span>
@@ -496,7 +564,7 @@ export function ProductsManager() {
                         <img
                           src={productImageSrc(draft.imageUrl)}
                           alt={draft.title || "Product preview"}
-                          className="h-36 w-36 rounded-xl border border-gray-100 object-cover"
+                          className="h-36 w-36 rounded-xl border border-gray-100 object-cover bg-gray-50"
                         />
                         <div className="space-y-2">
                           <p className="text-sm text-gray-600">
@@ -576,7 +644,6 @@ export function ProductsManager() {
                     </label>
                   )}
                 </div>
-              )}
 
               <label className="block">
                 <span className="mb-1 block text-sm font-medium text-gray-700">Product name</span>
@@ -657,6 +724,22 @@ export function ProductsManager() {
                 </label>
               </div>
 
+              {editingId && (
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={suggestingPrice}
+                    onClick={() => void handleSuggestPrice()}
+                  >
+                    {suggestingPrice ? "Suggesting…" : "Suggest price with AI"}
+                  </Button>
+                  {pricingNote && (
+                    <p className="text-sm text-amber-800">{pricingNote}</p>
+                  )}
+                </div>
+              )}
+
               <label className="block sm:max-w-xs">
                 <span className="mb-1 block text-sm font-medium text-gray-700">Status</span>
                 <select
@@ -716,9 +799,17 @@ export function ProductsManager() {
                 <button
                   type="button"
                   onClick={() => {
+                    if (editingId) {
+                      closeCreateForm();
+                      return;
+                    }
                     setDraft(null);
                     setManualMode(false);
                     setAiModel(null);
+                    setChangeRequestId(null);
+                    setRequiresReview(false);
+                    setOriginalImageUrl(null);
+                    setError(null);
                   }}
                   className="px-3 text-sm text-gray-500 underline"
                 >

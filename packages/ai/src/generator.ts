@@ -3,20 +3,43 @@ import { MASTER_SYSTEM_PROMPT, TEMPLATE_PROMPTS } from "./templates/index";
 import { resolveEffectiveModel, callLlm } from "./providers/llm";
 import { MAX_TOKENS_BY_TASK, normalizePlan, resolveBudgetAwareModel } from "./plan-limits";
 
+function extractProductHintFromPrompt(userPrompt: string): string {
+  const sellerDesc = userPrompt.match(/Seller description:\s*([\s\S]+?)(?:\s*Target price|\s*$)/i);
+  if (sellerDesc?.[1]) {
+    return sellerDesc[1].replace(/\.\s*$/, "").trim();
+  }
+
+  const cleaned = userPrompt
+    .replace(/^Shop\s+"[^"]+"\s+sells\s+[^.]*\.\s*/i, "")
+    .replace(/^Write a product listing ONLY for this category\.\s*/i, "")
+    .replace(/^Seller description:\s*/i, "")
+    .trim();
+
+  return cleaned.split(/[,.\n]/)[0]?.trim() || cleaned.slice(0, 80) || "New product";
+}
+
 function mockProductListing(userPrompt: string, category: string): Record<string, unknown> {
   const priceMatch = userPrompt.match(/₱?\s*(\d{2,6})/);
   const suggestedPrice = priceMatch ? Number(priceMatch[1]) : 299;
-  const title = userPrompt.split(/[,.\n]/)[0]?.trim().slice(0, 80) || "New product";
+  const hint = extractProductHintFromPrompt(userPrompt);
+  const title = hint.slice(0, 80);
   const slug = title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 64);
 
+  const cat = category.toLowerCase();
+  const blurb = /food|beverage|bakery|catering/.test(cat)
+    ? `made for ${cat} customers`
+    : /print|signage/.test(cat)
+      ? `print-ready for ${category} buyers`
+      : `built for ${category} shoppers`;
+
   return {
     title,
     slug: slug || "new-product",
-    description_html: `<p><strong>${title}</strong> — made fresh for ${category.toLowerCase()} customers.</p>`,
+    description_html: `<p><strong>${title}</strong> — ${blurb}.</p>`,
     short_description: `${title} — order now via your Guma Commerce shop.`,
     suggested_price: suggestedPrice,
     tags: slug.split("-").filter(Boolean).slice(0, 4),

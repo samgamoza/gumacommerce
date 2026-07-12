@@ -24,9 +24,11 @@ export default function OnboardingPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.ok) setUser(data.user);
+        // Handbook flow: Launch is the primary onboarding surface.
+        if (data.ok) router.replace("/launch");
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [router]);
 
   async function resendVerification() {
     setResendMessage(null);
@@ -52,7 +54,7 @@ export default function OnboardingPage() {
   }
 
   const storefrontUrl =
-    process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3000";
+    process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3010";
 
   return (
     <PatternAdminShell title="Welcome to Guma Commerce">
@@ -115,10 +117,10 @@ export default function OnboardingPage() {
           </ul>
 
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/">
-              <Button>Go to dashboard</Button>
+            <Link href="/launch">
+              <Button>Continue GUMA Launch</Button>
             </Link>
-            <a href={`${storefrontUrl}/${user?.tenantSlug}`} target="_blank" rel="noreferrer">
+            <a href={`${storefrontUrl}/${user?.tenantSlug}?preview=1`} target="_blank" rel="noreferrer">
               <Button variant="secondary">Preview storefront</Button>
             </a>
           </div>

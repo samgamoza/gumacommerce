@@ -5,6 +5,27 @@ import { FormEvent, useState } from "react";
 import type { DemoTenant } from "@/lib/demo-data";
 import { zayBrandMark } from "./zay-utils";
 
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function dedupeCategories(
+  categories: Array<{ id: string; name: string; slug: string }>
+): Array<{ id: string; name: string; slug: string }> {
+  const seen = new Set<string>();
+  const unique: Array<{ id: string; name: string; slug: string }> = [];
+  for (const cat of categories) {
+    const key = cat.slug || cat.id || cat.name;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(cat);
+  }
+  return unique.slice(0, 6);
+}
+
 export function ZayFooter({ tenant }: { tenant: DemoTenant }) {
   const brand = zayBrandMark(tenant.name);
   const [email, setEmail] = useState("");
@@ -15,8 +36,12 @@ export function ZayFooter({ tenant }: { tenant: DemoTenant }) {
       : null;
   const contactEmail = `${tenant.slug.replace(/-/g, "")}@gumacommerce.app`;
   const categories = tenant.shopCategories.length
-    ? tenant.shopCategories
-    : [...new Set(tenant.products.map((p) => ({ id: p.categorySlug ?? p.category, name: p.category, slug: p.categorySlug ?? p.category })))].slice(0, 6);
+    ? dedupeCategories(tenant.shopCategories)
+    : [...new Set(tenant.products.map((p) => p.category).filter(Boolean))].slice(0, 6).map((name, i) => ({
+        id: `cat-${i}-${slugify(name)}`,
+        name,
+        slug: slugify(name),
+      }));
 
   function handleSubscribe(e: FormEvent) {
     e.preventDefault();
@@ -47,8 +72,8 @@ export function ZayFooter({ tenant }: { tenant: DemoTenant }) {
           <div>
             <h2 className="!text-[#cfd6e1]">Products</h2>
             <ul className="zay-footer-links">
-              {categories.map((cat) => (
-                <li key={cat.id}>
+              {categories.map((cat, index) => (
+                <li key={`${cat.id}-${cat.slug}-${index}`}>
                   <a href="#featured">{cat.name}</a>
                 </li>
               ))}

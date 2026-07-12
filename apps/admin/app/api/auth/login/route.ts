@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { AuthError, loginUser, sessionCookieHeader } from "@guma-commerce/auth";
+import { resolveSellerHomePath } from "@guma-commerce/db";
 import { clientIpFrom, rateLimit } from "@guma-commerce/services";
 
 const loginSchema = z.object({
@@ -24,10 +25,16 @@ export async function POST(request: Request) {
     const body = loginSchema.parse(await request.json());
     const { user, sessionToken } = await loginUser(body);
 
+    const redirectTo = await resolveSellerHomePath({
+      tenantId: user.tenantId,
+      emailVerified: user.emailVerified,
+      preferLaunchWhenUnverified: true,
+    });
+
     const response = NextResponse.json({
       ok: true,
       user,
-      redirectTo: user.emailVerified ? "/" : "/onboarding",
+      redirectTo,
     });
 
     response.headers.set("Set-Cookie", sessionCookieHeader(sessionToken));

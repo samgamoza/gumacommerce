@@ -22,6 +22,10 @@ export const SHOP_BUSINESS_CATEGORIES = [
 
   "Auto Shop & Services",
 
+  "Automotive Parts & Accessories",
+
+  "Car Wash & Detailing",
+
   "Printing & Signage",
 
   "Camping & Adventures",
@@ -116,6 +120,10 @@ export const SHOP_CATEGORY_EMOJI: Record<ShopBusinessCategory, string> = {
 
   "Auto Shop & Services": "🔧",
 
+  "Automotive Parts & Accessories": "🚗",
+
+  "Car Wash & Detailing": "✨",
+
   "Printing & Signage": "🖨️",
 
   "Camping & Adventures": "⛺",
@@ -199,6 +207,8 @@ export function emojiForShopCategory(category: string | null | undefined): strin
     (key.includes("Beauty") ? "💄" : undefined) ??
 
     (key.includes("Barber") || key.includes("Hair") ? "💈" : undefined) ??
+
+    (key.includes("Auto") || key.includes("Car") || key.includes("Vehicle") ? "🔧" : undefined) ??
 
     (key.includes("Furniture") || key.includes("Home") ? "🛋️" : undefined) ??
 

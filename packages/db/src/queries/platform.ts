@@ -8,54 +8,24 @@ import {
   tenants,
   users,
 } from "../schema/index";
+import {
+  PLATFORM_PLANS as SELLER_PLATFORM_PLANS,
+  getSellerPlan,
+  planPriceMonthly,
+  type PlanDefinition,
+} from "../plans";
 
-// ─── Plan catalog ──────────────────────────────────────────────────────────
+// ─── Plan catalog (re-export single source of truth) ───────────────────────
 
-export interface PlatformPlan {
-  id: string;
-  name: string;
-  priceMonthly: number;
-  tagline: string;
-  features: string[];
-}
-
-export const PLATFORM_PLANS: PlatformPlan[] = [
-  {
-    id: "free",
-    name: "Free",
-    priceMonthly: 0,
-    tagline: "Get started",
-    features: ["1 shop", "Up to 20 products", "GCash & COD checkout"],
-  },
-  {
-    id: "starter",
-    name: "Starter",
-    priceMonthly: 499,
-    tagline: "For growing sellers",
-    features: ["Unlimited products", "AI content studio", "Custom domain"],
-  },
-  {
-    id: "growth",
-    name: "Growth",
-    priceMonthly: 1499,
-    tagline: "For busy shops",
-    features: ["Everything in Starter", "AI posting agents", "Priority support"],
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    priceMonthly: 2999,
-    tagline: "For high-volume brands",
-    features: ["Everything in Growth", "Multi-staff accounts", "Dedicated manager"],
-  },
-];
+export type PlatformPlan = Pick<PlanDefinition, "id" | "name" | "priceMonthly" | "tagline" | "features">;
+export const PLATFORM_PLANS: PlatformPlan[] = SELLER_PLATFORM_PLANS;
 
 export function getPlanById(id: string | null | undefined): PlatformPlan {
-  return PLATFORM_PLANS.find((p) => p.id === id) ?? PLATFORM_PLANS[0];
+  return getSellerPlan(id);
 }
 
 export function planPrice(id: string | null | undefined): number {
-  return getPlanById(id).priceMonthly;
+  return planPriceMonthly(id);
 }
 
 export const TENANT_STATUSES = ["active", "pending", "suspended"] as const;
@@ -646,11 +616,15 @@ export interface AuditEntry {
   entityId?: string | null;
   entityLabel?: string | null;
   metadata?: Record<string, unknown>;
+  tenantId?: string | null;
+  actorType?: "user" | "ai" | "system";
 }
 
 export async function writeAudit(entry: AuditEntry): Promise<void> {
   const db = getDb();
   await db.insert(platformAuditLog).values({
+    tenantId: entry.tenantId ?? null,
+    actorType: entry.actorType ?? "user",
     actorId: entry.actorId,
     actorEmail: entry.actorEmail,
     action: entry.action,

@@ -26,10 +26,26 @@ export async function POST(request: Request) {
       ...body,
     });
 
+    if (user.tenantId && user.tenantSlug) {
+      const { ensureEventsWired } = await import("@/lib/events-bootstrap");
+      ensureEventsWired();
+      const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+      await emitDomainEvent({
+        name: EVENT_NAMES.TENANT_CREATED,
+        data: {
+          tenantId: user.tenantId,
+          slug: user.tenantSlug,
+          name: user.tenantName ?? body.shopName,
+          plan: "free",
+        },
+        idempotencyKey: `Tenant.Created.V1:${user.tenantId}`,
+      });
+    }
+
     const response = NextResponse.json({
       ok: true,
       user,
-      redirectTo: user.emailVerified ? "/" : "/onboarding",
+      redirectTo: "/launch",
     });
     response.headers.set("Set-Cookie", sessionCookieHeader(sessionToken));
     return response;
