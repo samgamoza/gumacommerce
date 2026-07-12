@@ -26,6 +26,7 @@ export interface TenantStorefrontSettings {
 
 export interface UpdateTenantStorefrontInput {
   templateId?: string;
+  patternId?: "classic" | "simply-sweet" | "bloom" | "sarab" | "furnish" | "zay" | "electro" | "kaira" | "foodmart" | "stylish" | "mellow" | "organic" | "waggy" | "fruitables" | "ministore";
   primaryColor?: string;
   accentColor?: string;
   displayFont?: "bricolage" | "system" | "mono-accent";
@@ -71,6 +72,7 @@ export async function updateTenantStorefront(
   const nextTheme = {
     ...currentTheme,
     ...(input.templateId !== undefined ? { templateId: input.templateId } : {}),
+    ...(input.patternId !== undefined ? { patternId: input.patternId } : {}),
     ...(input.primaryColor !== undefined ? { primaryColor: input.primaryColor } : {}),
     ...(input.accentColor !== undefined ? { accentColor: input.accentColor } : {}),
     ...(input.displayFont !== undefined ? { displayFont: input.displayFont } : {}),

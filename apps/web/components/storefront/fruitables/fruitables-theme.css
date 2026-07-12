@@ -1,0 +1,609 @@
+@import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Raleway:wght@600;800&display=swap");
+
+.fruitables-root {
+  --fb-primary: #81c408;
+  --fb-secondary: #ffb524;
+  --fb-dark: #45595b;
+  --fb-light: #f4f6f8;
+  --fb-muted: #6c757d;
+  --fb-heading: "Raleway", system-ui, sans-serif;
+  --fb-body: "Open Sans", system-ui, sans-serif;
+  font-family: var(--fb-body);
+  color: var(--fb-muted);
+  background: #fff;
+}
+
+.fruitables-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+.fruitables-container-lg {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+/* Topbar */
+.fruitables-topbar {
+  display: none;
+  background: var(--fb-primary);
+  color: #fff;
+  padding: 0.85rem 1.5rem;
+  border-radius: 999px 999px 999px 40px;
+  font-size: 0.8125rem;
+}
+
+@media (min-width: 992px) {
+  .fruitables-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+}
+
+.fruitables-topbar a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.fruitables-topbar a:hover {
+  color: var(--fb-secondary);
+}
+
+/* Header */
+.fruitables-header-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #fff;
+}
+
+.fruitables-header {
+  padding: 0.75rem 0;
+}
+
+.fruitables-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.fruitables-logo {
+  font-family: var(--fb-heading);
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--fb-primary);
+  text-decoration: none;
+}
+
+.fruitables-nav {
+  display: none;
+  gap: 1.25rem;
+  font-weight: 600;
+}
+
+@media (min-width: 1200px) {
+  .fruitables-nav {
+    display: flex;
+  }
+}
+
+.fruitables-nav a {
+  color: var(--fb-dark);
+  text-decoration: none;
+}
+
+.fruitables-nav a:hover {
+  color: var(--fb-primary);
+}
+
+.fruitables-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.fruitables-icon-btn {
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--fb-secondary);
+  border-radius: 999px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fb-primary);
+  cursor: pointer;
+}
+
+.fruitables-cart-link {
+  position: relative;
+  color: var(--fb-dark);
+  text-decoration: none;
+}
+
+.fruitables-cart-badge {
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--fb-secondary);
+  color: var(--fb-dark);
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fruitables-mobile-toggle {
+  background: none;
+  border: none;
+  color: var(--fb-primary);
+}
+
+.fruitables-mobile-menu {
+  padding: 0.75rem 0 1rem;
+  border-top: 1px solid #eee;
+}
+
+.fruitables-mobile-menu a {
+  display: block;
+  padding: 0.4rem 0;
+  color: var(--fb-dark);
+  text-decoration: none;
+}
+
+/* Hero */
+.fruitables-hero {
+  background: var(--fb-light);
+  padding: 2.5rem 0;
+  margin-bottom: 2rem;
+}
+
+.fruitables-hero-grid {
+  display: grid;
+  gap: 2rem;
+  align-items: center;
+}
+
+@media (min-width: 992px) {
+  .fruitables-hero-grid {
+    grid-template-columns: 1.2fr 1fr;
+  }
+}
+
+.fruitables-hero-eyebrow {
+  color: var(--fb-secondary);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.fruitables-hero h1 {
+  font-family: var(--fb-heading);
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--fb-primary);
+  margin: 0 0 1.5rem;
+}
+
+.fruitables-hero-search {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 520px;
+  border: 2px solid var(--fb-secondary);
+  border-radius: 999px;
+  padding: 0.9rem 0.35rem 0.9rem 1.25rem;
+  background: #fff;
+  color: var(--fb-dark);
+  text-decoration: none;
+}
+
+.fruitables-hero-search span:first-child {
+  color: var(--fb-muted);
+}
+
+.fruitables-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 2px solid var(--fb-secondary);
+  border-radius: 999px;
+  background: var(--fb-primary);
+  color: #fff;
+  font-weight: 600;
+  padding: 0.55rem 1.25rem;
+}
+
+.fruitables-hero-image {
+  position: relative;
+  aspect-ratio: 4/3;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: var(--fb-secondary);
+}
+
+.fruitables-hero-image img {
+  object-fit: cover;
+}
+
+.fruitables-hero-tag {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  background: var(--fb-primary);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
+
+/* Features strip */
+.fruitables-features {
+  padding: 2rem 0 3rem;
+}
+
+.fruitables-feature-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 992px) {
+  .fruitables-feature-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.fruitables-feature {
+  background: var(--fb-light);
+  border-radius: 1rem;
+  padding: 1.5rem 1rem;
+  text-align: center;
+}
+
+.fruitables-feature-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: var(--fb-secondary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.fruitables-feature h5 {
+  font-family: var(--fb-heading);
+  color: var(--fb-dark);
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.fruitables-feature p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+/* Products */
+.fruitables-section {
+  padding: 2.5rem 0;
+}
+
+.fruitables-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.fruitables-section-head h2 {
+  font-family: var(--fb-heading);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 800;
+  color: var(--fb-dark);
+  margin: 0;
+}
+
+.fruitables-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.fruitables-tab {
+  border: none;
+  background: var(--fb-light);
+  color: var(--fb-dark);
+  border-radius: 999px;
+  padding: 0.5rem 1.25rem;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.fruitables-tab.active {
+  background: var(--fb-secondary);
+}
+
+.fruitables-product-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .fruitables-product-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .fruitables-product-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.fruitables-product-card {
+  border: 2px solid var(--fb-secondary);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.fruitables-product-img {
+  position: relative;
+  aspect-ratio: 1;
+}
+
+.fruitables-product-img img {
+  object-fit: cover;
+}
+
+.fruitables-product-badge {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  background: var(--fb-secondary);
+  color: var(--fb-dark);
+  padding: 0.2rem 0.6rem;
+  border-radius: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.fruitables-product-body {
+  padding: 1rem;
+  border-top: 2px solid var(--fb-secondary);
+}
+
+.fruitables-product-body h4 {
+  font-family: var(--fb-heading);
+  color: var(--fb-dark);
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+}
+
+.fruitables-product-body p {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.fruitables-product-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.fruitables-product-price {
+  font-weight: 700;
+  color: var(--fb-dark);
+  margin: 0;
+}
+
+.fruitables-add-btn {
+  border: 2px solid var(--fb-secondary);
+  background: #fff;
+  color: var(--fb-primary);
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.fruitables-add-btn:hover {
+  background: var(--fb-secondary);
+}
+
+/* Promo cards */
+.fruitables-promos {
+  display: grid;
+  gap: 1rem;
+  padding: 2rem 0;
+}
+
+@media (min-width: 768px) {
+  .fruitables-promos {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.fruitables-promo {
+  border-radius: 0.75rem;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+}
+
+.fruitables-promo-img {
+  position: relative;
+  aspect-ratio: 4/3;
+}
+
+.fruitables-promo-img img {
+  object-fit: cover;
+}
+
+.fruitables-promo-label {
+  margin: -1.5rem 1rem 0;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.fruitables-promo-label h5 {
+  margin: 0 0 0.25rem;
+  font-family: var(--fb-heading);
+}
+
+.fruitables-promo-label h3 {
+  margin: 0;
+  font-family: var(--fb-heading);
+  font-weight: 800;
+}
+
+/* Vegetable scroll */
+.fruitables-scroll {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scroll-snap-type: x mandatory;
+}
+
+.fruitables-scroll .fruitables-product-card {
+  min-width: 260px;
+  scroll-snap-align: start;
+}
+
+/* Banner */
+.fruitables-banner {
+  background: var(--fb-secondary);
+  padding: 2.5rem 0;
+  margin: 2rem 0;
+}
+
+.fruitables-banner-grid {
+  display: grid;
+  gap: 2rem;
+  align-items: center;
+}
+
+@media (min-width: 992px) {
+  .fruitables-banner-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.fruitables-banner h2 {
+  font-family: var(--fb-heading);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 0.5rem;
+}
+
+.fruitables-banner .subtitle {
+  font-family: var(--fb-heading);
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  color: var(--fb-dark);
+  margin: 0 0 1rem;
+}
+
+.fruitables-banner-btn {
+  display: inline-block;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  padding: 0.75rem 1.75rem;
+  color: var(--fb-dark);
+  font-weight: 600;
+  text-decoration: none;
+  background: transparent;
+}
+
+.fruitables-banner-image {
+  position: relative;
+  aspect-ratio: 1;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.fruitables-banner-image img {
+  object-fit: contain;
+}
+
+/* Footer */
+.fruitables-footer {
+  background: var(--fb-light);
+  padding: 3rem 0 2rem;
+  margin-top: 2rem;
+}
+
+.fruitables-footer-grid {
+  display: grid;
+  gap: 2rem;
+}
+
+@media (min-width: 768px) {
+  .fruitables-footer-grid {
+    grid-template-columns: 2fr 1fr 1fr;
+  }
+}
+
+.fruitables-footer h5 {
+  font-family: var(--fb-heading);
+  color: var(--fb-dark);
+  margin: 0 0 1rem;
+}
+
+.fruitables-footer ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fruitables-footer li {
+  margin-bottom: 0.45rem;
+}
+
+.fruitables-footer a {
+  color: var(--fb-muted);
+  text-decoration: none;
+  font-size: 0.875rem;
+}
+
+.fruitables-footer a:hover {
+  color: var(--fb-primary);
+}
+
+.fruitables-footer-bottom {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.8125rem;
+}

@@ -60,7 +60,7 @@ export const SHOP_VIBES: ShopVibe[] = [
     emoji: "🌿",
     label: "Fresh & friendly",
     description: "Clean, trustworthy, everyday shopping",
-    templates: ["clean-guma", "blush-bakery", "mono-market"],
+    templates: ["clean-guma", "bloom", "blush-bakery", "mono-market"],
     paletteIds: ["guma-green", "sampaguita", "calamansi", "island-blue", "electric-lime"],
   },
   {
@@ -68,7 +68,7 @@ export const SHOP_VIBES: ShopVibe[] = [
     emoji: "◻️",
     label: "Minimal & sharp",
     description: "High contrast, zero clutter, premium type",
-    templates: ["mono-market", "magazine-rack", "clean-guma"],
+    templates: ["bloom", "mono-market", "magazine-rack", "clean-guma"],
     paletteIds: ["ink-slate", "espresso", "guma-green", "island-blue"],
   },
   {
@@ -84,7 +84,7 @@ export const SHOP_VIBES: ShopVibe[] = [
     emoji: "🔥",
     label: "Bold & loud",
     description: "Street-market energy with big CTAs",
-    templates: ["street-cart", "clean-guma", "neon-bazaar"],
+    templates: ["street-cart", "sarab", "clean-guma", "neon-bazaar"],
     paletteIds: ["manila-sunset", "mango-royale", "coral-reef", "calamansi", "dragonfruit"],
   },
   {
@@ -92,7 +92,7 @@ export const SHOP_VIBES: ShopVibe[] = [
     emoji: "✨",
     label: "Premium & sleek",
     description: "Editorial layouts for curated brands",
-    templates: ["magazine-rack", "glass-future", "mono-market"],
+    templates: ["magazine-rack", "furnish", "glass-future", "mono-market"],
     paletteIds: ["ube-cream", "orchid-noir", "ink-slate", "espresso", "cyber-grape"],
   },
   {
@@ -150,10 +150,17 @@ function pick<T>(items: readonly T[], seed: number, salt: number): T {
 
 const CATEGORY_VIBE_HINTS: Array<{ match: RegExp; vibe: ShopVibeId }> = [
   { match: /bakery|pastry|cake|dessert|sweet|home.?baking|vlog|recipe/i, vibe: "cute" },
-  { match: /fashion|apparel|clothing|streetwear/i, vibe: "minimal" },
-  { match: /beauty|skincare|cosmetic/i, vibe: "premium" },
+  { match: /catering|events?|party.?food|banquet/i, vibe: "bold" },
+  { match: /furniture|furnish|home.?decor|interior|sofa|living room/i, vibe: "premium" },
+  { match: /beauty|skincare|cosmetic|salon|spa|nail|hair/i, vibe: "premium" },
   { match: /electronic|gadget|tech|gaming/i, vibe: "electric" },
+  { match: /auto|automotive|car|motor|mechanic|tire/i, vibe: "electric" },
+  { match: /print|signage|banner|sticker|lanyard/i, vibe: "minimal" },
+  { match: /camp|outdoor|adventure|hike|trek|travel gear/i, vibe: "bold" },
+  { match: /wholesale|b2b|bulk|distributor|reseller/i, vibe: "minimal" },
+  { match: /retail|merchandise|general store|sari-sari|convenience/i, vibe: "minimal" },
   { match: /food|beverage|snack|drink/i, vibe: "bold" },
+  { match: /catering|restaurant|fast.?food|kitchen/i, vibe: "bold" },
   { match: /handmade|craft|gift/i, vibe: "cute" },
 ];
 

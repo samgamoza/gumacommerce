@@ -1,0 +1,341 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+
+.furnish-root {
+  --furnish-primary: #111100;
+  --furnish-secondary: #d47f31;
+  --furnish-gray-100: #ecebe9;
+  --furnish-gray-600: #837a6d;
+  --furnish-gray-900: #211f1c;
+  font-family: "Poppins", sans-serif;
+  color: var(--furnish-gray-600);
+  background: #fff;
+}
+
+.furnish-container {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.furnish-nav {
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.furnish-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0;
+}
+
+.furnish-brand {
+  display: flex;
+  flex-direction: column;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.12rem;
+  color: var(--furnish-gray-900);
+}
+
+.furnish-brand span:last-child {
+  letter-spacing: 0.08rem;
+  color: var(--furnish-gray-600);
+}
+
+.furnish-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.furnish-cart-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 600;
+  color: var(--furnish-gray-900);
+}
+
+.furnish-cart-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--furnish-secondary);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.furnish-hero {
+  padding: 3rem 0 4rem;
+  background: var(--furnish-gray-100);
+}
+
+.furnish-hero-grid {
+  display: grid;
+  gap: 2rem;
+  align-items: center;
+}
+
+@media (min-width: 992px) {
+  .furnish-hero-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.furnish-hero-sale {
+  font-style: italic;
+  color: var(--furnish-secondary);
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.furnish-hero-title {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--furnish-gray-900);
+  margin-bottom: 1rem;
+}
+
+.furnish-hero-desc {
+  color: var(--furnish-gray-600);
+  line-height: 1.7;
+  margin-bottom: 1.5rem;
+  max-width: 28rem;
+}
+
+.furnish-hero-price {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--furnish-gray-900);
+  margin-bottom: 1.25rem;
+}
+
+.furnish-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--furnish-primary);
+  color: #fff;
+  border: none;
+  padding: 0.85rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.furnish-btn:hover {
+  opacity: 0.88;
+  color: #fff;
+}
+
+.furnish-btn-outline {
+  background: transparent;
+  border: 1px solid var(--furnish-gray-900);
+  color: var(--furnish-gray-900);
+}
+
+.furnish-hero-visual {
+  text-align: center;
+}
+
+.furnish-hero-visual img {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.furnish-section {
+  padding: 4rem 0;
+}
+
+.furnish-section-title {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 400;
+  color: var(--furnish-gray-900);
+  margin-bottom: 0.75rem;
+}
+
+.furnish-section-lead {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  max-width: 36rem;
+}
+
+.furnish-product-grid {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: 1fr;
+  margin-top: 2.5rem;
+}
+
+@media (min-width: 576px) {
+  .furnish-product-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 992px) {
+  .furnish-product-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.furnish-product-card img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: var(--furnish-gray-100);
+}
+
+.furnish-product-card h3 {
+  margin-top: 1rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--furnish-gray-900);
+}
+
+.furnish-product-card h3 a:hover {
+  color: var(--furnish-secondary);
+}
+
+.furnish-price-row {
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+.furnish-price-old {
+  text-decoration: line-through;
+  font-weight: 600;
+  margin-right: 0.5rem;
+  opacity: 0.55;
+}
+
+.furnish-price-new {
+  font-weight: 600;
+  color: var(--furnish-gray-900);
+}
+
+.furnish-product-actions {
+  margin-top: 0.75rem;
+  display: flex;
+  justify-content: center;
+}
+
+.furnish-quote {
+  padding: 4rem 0;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.furnish-quote::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 17, 0, 0.45);
+}
+
+.furnish-quote-card {
+  position: relative;
+  z-index: 1;
+  background: #fff;
+  padding: 2rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  max-width: 640px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.furnish-newsletter {
+  padding: 4rem 0;
+  text-align: center;
+}
+
+.furnish-newsletter form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 480px;
+  margin: 1.5rem auto 0;
+}
+
+@media (min-width: 576px) {
+  .furnish-newsletter form {
+    flex-direction: row;
+  }
+}
+
+.furnish-newsletter input {
+  flex: 1;
+  border: 1px solid var(--furnish-gray-100);
+  padding: 0.85rem 1rem;
+  font-size: 0.9375rem;
+}
+
+.furnish-footer {
+  background: var(--furnish-gray-900);
+  color: var(--furnish-gray-600);
+  padding: 4rem 0 0;
+}
+
+.furnish-footer .furnish-brand {
+  color: #fff;
+}
+
+.furnish-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.furnish-footer-links a {
+  color: var(--furnish-gray-600);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.furnish-footer-links a:hover {
+  color: #fff;
+}
+
+.furnish-footer-headline {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-weight: 400;
+  color: #fff;
+  margin-top: 2rem;
+}
+
+.furnish-footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 3rem;
+  padding: 1.5rem 0;
+  font-size: 0.8125rem;
+}
+
+.furnish-footer-bottom strong {
+  color: #fff;
+}

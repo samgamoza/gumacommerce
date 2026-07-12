@@ -1,4 +1,11 @@
 export {
+  DEFAULT_SHOP_BUSINESS_CATEGORY,
+  SHOP_BUSINESS_CATEGORIES,
+  SHOP_CATEGORY_EMOJI,
+  emojiForShopCategory,
+  type ShopBusinessCategory,
+} from "./shop-categories";
+export {
   SHOP_TEMPLATES,
   SHOP_TEMPLATE_MAP,
   TIER_DESCRIPTIONS,
@@ -55,3 +62,20 @@ export {
   type StorefrontRenderer,
   type TenantThemeJson,
 } from "./types";
+export {
+  getTemplateRegistryEntry,
+  STOREFRONT_TEMPLATE_REGISTRY,
+  type StorefrontTemplateRegistryEntry,
+} from "./template-registry";
+export {
+  BUNDLE_2023_CATALOG,
+  BUNDLE_2023_LICENSE,
+  BUNDLE_2023_SOURCE,
+  BUNDLE_2023_STATS,
+  getBundleCatalogEntry,
+  listBundleByCategory,
+  listBundleByStatus,
+  type BundleTemplateCatalogEntry,
+  type BundleTemplateStatus,
+  type StorefrontFit,
+} from "./bundle-catalog";

@@ -1,0 +1,582 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Upright:wght@300;400;500;600;700&family=Sora:wght@100..800&display=swap");
+
+.mellow-root {
+  --ml-primary: #d16806;
+  --ml-accent: #1a1a1a;
+  --ml-secondary: #f9f6f3;
+  --ml-muted: #777f81;
+  --ml-heading: "Cormorant Upright", Georgia, serif;
+  --ml-body: "Sora", system-ui, sans-serif;
+  font-family: var(--ml-body);
+  color: #353535;
+  background: #fff;
+  letter-spacing: 0.02em;
+}
+
+.mellow-container {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+.mellow-container-fluid {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Header */
+.mellow-topbar {
+  background: var(--ml-secondary);
+  padding: 0.5rem 0;
+  font-size: 0.8125rem;
+}
+
+.mellow-topbar-inner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.mellow-topbar-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: var(--ml-muted);
+}
+
+.mellow-topbar-info li {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.mellow-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #fff;
+  border-bottom: 1px solid #eae5dd;
+}
+
+.mellow-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 0;
+}
+
+.mellow-logo {
+  font-family: var(--ml-heading);
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--ml-accent);
+  text-decoration: none;
+}
+
+.mellow-nav {
+  display: none;
+  gap: 1.5rem;
+}
+
+@media (min-width: 992px) {
+  .mellow-nav {
+    display: flex;
+  }
+}
+
+.mellow-nav a {
+  color: var(--ml-accent);
+  text-decoration: none;
+  font-size: 0.9375rem;
+}
+
+.mellow-nav a:hover {
+  color: var(--ml-primary);
+}
+
+.mellow-cart-link {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--ml-accent);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.mellow-mobile-toggle {
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  color: var(--ml-accent);
+}
+
+.mellow-mobile-menu {
+  border-top: 1px solid #eae5dd;
+  padding: 1rem 0;
+}
+
+.mellow-mobile-menu a {
+  display: block;
+  padding: 0.4rem 0;
+  color: var(--ml-accent);
+  text-decoration: none;
+}
+
+/* Hero */
+.mellow-hero {
+  padding: 1rem 0 2rem;
+}
+
+.mellow-hero-panel {
+  position: relative;
+  min-height: 70vh;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+}
+
+.mellow-hero-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.15) 55%, transparent 100%);
+}
+
+.mellow-hero-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 2rem;
+  width: 100%;
+  padding: 2.5rem 1.5rem;
+}
+
+@media (min-width: 992px) {
+  .mellow-hero-grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    padding: 3rem 2.5rem;
+  }
+}
+
+.mellow-hero-copy h1 {
+  font-family: var(--ml-heading);
+  font-size: clamp(2rem, 5vw, 3.75rem);
+  font-weight: 400;
+  line-height: 1.1;
+  color: #fff;
+  margin: 0 0 1rem;
+}
+
+.mellow-booking-card {
+  background: #fff;
+  border-radius: 1.25rem;
+  padding: 2rem;
+  max-width: 420px;
+  margin-left: auto;
+}
+
+.mellow-booking-card h3 {
+  font-family: var(--ml-heading);
+  font-size: 1.75rem;
+  font-weight: 500;
+  margin: 0 0 1.25rem;
+  color: var(--ml-accent);
+}
+
+.mellow-field {
+  margin-bottom: 1rem;
+}
+
+.mellow-field label {
+  display: block;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.35rem;
+  color: var(--ml-muted);
+}
+
+.mellow-field input {
+  width: 100%;
+  border: 1px solid #dcdcdc;
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  font-family: inherit;
+  font-size: 0.9375rem;
+}
+
+.mellow-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.5rem;
+  background: var(--ml-primary);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.mellow-btn:hover {
+  opacity: 0.9;
+}
+
+.mellow-btn-outline {
+  background: transparent;
+  color: var(--ml-accent);
+  border: 1px solid var(--ml-accent);
+}
+
+/* Sections */
+.mellow-section {
+  padding: 4rem 0;
+}
+
+.mellow-section-title {
+  font-family: var(--ml-heading);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 400;
+  text-align: center;
+  color: var(--ml-accent);
+  margin: 0 0 2rem;
+  line-height: 1.15;
+}
+
+.mellow-about-grid {
+  display: grid;
+  gap: 2rem;
+}
+
+@media (min-width: 992px) {
+  .mellow-about-grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+.mellow-about-copy {
+  padding: 1.5rem;
+}
+
+.mellow-about-copy p {
+  line-height: 1.75;
+  color: #353535;
+}
+
+.mellow-about-images {
+  display: grid;
+  gap: 1rem;
+}
+
+.mellow-about-images img {
+  width: 100%;
+  border-radius: 1.25rem;
+  object-fit: cover;
+}
+
+/* Stats */
+.mellow-stats {
+  padding: 2rem 0 3rem;
+}
+
+.mellow-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .mellow-stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.mellow-stat {
+  text-align: center;
+}
+
+.mellow-stat-value {
+  font-family: var(--ml-heading);
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 400;
+  color: var(--ml-primary);
+  line-height: 1;
+  margin: 0;
+}
+
+.mellow-stat-label {
+  margin: 0.5rem 0 0;
+  text-transform: capitalize;
+  color: var(--ml-muted);
+}
+
+/* Rooms */
+.mellow-rooms-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.mellow-room-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .mellow-room-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .mellow-room-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.mellow-room-card {
+  border-radius: 1.25rem;
+  overflow: hidden;
+  background: #111;
+}
+
+.mellow-room-img {
+  position: relative;
+  aspect-ratio: 4/3;
+}
+
+.mellow-room-img img {
+  object-fit: cover;
+}
+
+.mellow-room-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, transparent 55%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 1.25rem;
+  color: #fff;
+}
+
+.mellow-room-overlay h4 {
+  font-family: var(--ml-heading);
+  font-size: 1.5rem;
+  font-weight: 400;
+  margin: 0 0 0.35rem;
+  color: #fff;
+}
+
+.mellow-room-overlay p {
+  font-size: 0.8125rem;
+  margin: 0 0 0.75rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.5;
+}
+
+.mellow-room-meta {
+  text-align: center;
+  padding: 1rem 0 0.25rem;
+}
+
+.mellow-room-meta h4 {
+  font-family: var(--ml-heading);
+  font-size: 1.35rem;
+  font-weight: 400;
+  margin: 0 0 0.35rem;
+  color: var(--ml-accent);
+}
+
+.mellow-room-meta h4 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.mellow-room-price {
+  color: var(--ml-primary);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.mellow-room-price span {
+  font-weight: 400;
+  color: var(--ml-muted);
+  font-size: 0.875rem;
+}
+
+.mellow-room-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.mellow-room-actions button,
+.mellow-room-actions a {
+  flex: 1;
+  text-align: center;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 999px;
+  text-decoration: none;
+}
+
+.mellow-add-btn {
+  background: var(--ml-primary);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+.mellow-view-btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+/* Gallery */
+.mellow-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .mellow-gallery-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.mellow-gallery-grid img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: 1.25rem;
+}
+
+/* Services */
+.mellow-services-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .mellow-services-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .mellow-services-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.mellow-service-card {
+  background: var(--ml-secondary);
+  border-radius: 1.25rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.mellow-service-icon {
+  color: var(--ml-primary);
+  margin-bottom: 1rem;
+}
+
+.mellow-service-card h4 {
+  font-family: var(--ml-heading);
+  font-size: 1.5rem;
+  font-weight: 400;
+  margin: 0 0 0.75rem;
+  color: var(--ml-accent);
+}
+
+.mellow-service-card p {
+  font-size: 0.875rem;
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* Footer */
+.mellow-footer {
+  background: var(--ml-secondary);
+  padding: 3rem 0 2rem;
+  margin-top: 1rem;
+}
+
+.mellow-footer-grid {
+  display: grid;
+  gap: 2rem;
+}
+
+@media (min-width: 768px) {
+  .mellow-footer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 992px) {
+  .mellow-footer-grid {
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+  }
+}
+
+.mellow-footer h5 {
+  font-family: var(--ml-heading);
+  font-size: 1.25rem;
+  margin: 0 0 1rem;
+  color: var(--ml-accent);
+}
+
+.mellow-footer ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mellow-footer li {
+  margin-bottom: 0.45rem;
+}
+
+.mellow-footer a {
+  color: var(--ml-muted);
+  text-decoration: none;
+  font-size: 0.875rem;
+}
+
+.mellow-footer a:hover {
+  color: var(--ml-primary);
+}
+
+.mellow-footer-bottom {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #eae5dd;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.8125rem;
+  color: var(--ml-muted);
+}

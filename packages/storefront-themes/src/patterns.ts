@@ -32,6 +32,187 @@ export const STORE_PATTERNS: StorePatternDefinition[] = [
     storefrontRenderer: "sweet-kitchen",
     dashboardRenderer: "sweet-kitchen",
   },
+  {
+    id: "bloom",
+    label: "Bloom Retail",
+    description:
+      "Fashion & retail storefront with glass header, product grid, and newsletter footer — ported from Bloomtpl (ThemeWagon).",
+    tags: ["fashion", "retail", "apparel", "footwear", "sneakers", "catalog"],
+    categoryHints: [
+      /fashion|apparel|clothing|streetwear|footwear|sneaker|shoe/i,
+      /retail|merchandise|boutique|store/i,
+    ],
+    templateId: "bloom",
+    storefrontRenderer: "bloom",
+    dashboardRenderer: "guma",
+  },
+  {
+    id: "sarab",
+    label: "Sarab Restaurant",
+    description:
+      "Fast food & restaurant storefront with menu grid, hero spotlight, and promo marquee — ported from Sarab (ThemeWagon).",
+    tags: ["restaurant", "fast food", "catering", "menu", "food"],
+    categoryHints: [
+      /food|beverage|catering|restaurant|fast.?food|kitchen|bakery/i,
+    ],
+    templateId: "sarab",
+    storefrontRenderer: "sarab",
+    dashboardRenderer: "guma",
+  },
+  {
+    id: "furnish",
+    label: "Furnish Home",
+    description:
+      "Furniture & home decor catalog with editorial hero, collection grid, and newsletter — ported from Furnish (ThemeWagon).",
+    tags: ["furniture", "home", "interior", "decor", "living room"],
+    categoryHints: [
+      /furniture|furnish|home.?decor|interior|sofa|couch|chair|living/i,
+      /home.?improvement|bedroom|office.?furniture/i,
+    ],
+    templateId: "furnish",
+    storefrontRenderer: "furnish",
+    dashboardRenderer: "guma",
+  },
+  {
+    id: "zay",
+    label: "Zay Shop",
+    description:
+      "Classic general retail storefront with top bar, hero carousel, category highlights, and featured product cards — ported from Zay Shop (TemplateMo).",
+    tags: ["retail", "general", "catalog", "marketplace", "shop"],
+    categoryHints: [
+      /retail|general.?merchandise|wholesale|store|shop|market/i,
+      /electronics|gadget|accessory|accessories/i,
+    ],
+    templateId: "zay",
+    storefrontRenderer: "zay",
+    dashboardRenderer: "guma",
+  },
+  {
+    id: "electro",
+    label: "Electro",
+    description:
+      "Electronics storefront with category sidebar, hero carousel, service strip, and tabbed product grid — ported from Electro Bootstrap (HTML Codex).",
+    tags: ["electronics", "gadgets", "phones", "laptops", "tech"],
+    categoryHints: [
+      /electronics|electronic|gadget|computer|laptop|mobile|phone|tablet|smart/i,
+      /tech|appliance|camera|audio|wearable/i,
+    ],
+    templateId: "electro",
+    storefrontRenderer: "electro",
+    dashboardRenderer: "guma",
+  },
+  {
+    id: "kaira",
+    label: "Kaira Fashion",
+    description:
+      "Editorial fashion storefront with collection carousel, category banners, product rows, and newsletter — ported from Kaira (TemplatesJungle).",
+    tags: ["fashion", "apparel", "clothing", "boutique", "style"],
+    categoryHints: [
+      /fashion|apparel|clothing|boutique|streetwear|dress|wear/i,
+      /beauty|salon|accessories|handbag|jewelry/i,
+    ],
+    templateId: "kaira",
+    storefrontRenderer: "kaira",
+    dashboardRenderer: "guma",
+  },
+  {
+    id: "foodmart",
+    label: "FoodMart Grocery",
+    description:
+      "Grocery storefront with search header, hero banners, category carousel, and tabbed product grid — ported from FoodMart (TemplatesJungle).",
+    tags: ["grocery", "supermarket", "food", "mart", "sari-sari"],
+    categoryHints: [
+      /grocery|supermarket|sari.?sari|convenience|mart|provision/i,
+      /food.?mart|pantry|fresh.?market|wet.?market/i,
+    ],
+    templateId: "foodmart",
+    storefrontRenderer: "foodmart",
+    dashboardRenderer: "guma",
+  },
+  {
+    id: "stylish",
+    label: "Stylish Footwear",
+    description:
+      "Shoe & apparel brand storefront with promo top bar, hero banners, coupon strip, hover product cards, and collection blocks — ported from Stylish (TemplatesJungle).",
+    tags: ["shoes", "footwear", "sneakers", "apparel", "streetwear"],
+    categoryHints: [
+      /shoe|footwear|sneaker|sneakers|boot|loafer|sandal|athletic.?wear/i,
+      /apparel.?brand|streetwear|sportswear|running.?shoe/i,
+    ],
+    templateId: "stylish",
+    storefrontRenderer: "stylish",
+    dashboardRenderer: "guma",
+  },
+  {
+    id: "mellow",
+    label: "Mellow Hotel",
+    description:
+      "Hotel & resort storefront with contact top bar, booking hero, about strip, room cards, gallery, and amenities — ported from Mellow (TemplatesJungle).",
+    tags: ["hotel", "resort", "hospitality", "accommodation", "staycation"],
+    categoryHints: [
+      /hotel|resort|hospitality|accommodation|staycation|inn|lodge|villa/i,
+      /bed.?and.?breakfast|bnb|hostel|guest.?house/i,
+    ],
+    templateId: "mellow",
+    storefrontRenderer: "mellow",
+    dashboardRenderer: "guma",
+  },
+  {
+    id: "organic",
+    label: "Organic Farm",
+    description:
+      "Organic & farm produce storefront with search header, hero banner, category carousel, tabbed product grid, and promo strip — ported from Organic (TemplatesJungle).",
+    tags: ["organic", "farm", "produce", "vegetables", "healthy", "natural"],
+    categoryHints: [
+      /organic|farm.?fresh|farm.?produce|produce|vegetable|fruit.?stand/i,
+      /farmer.?market|harvest|natural.?food|health.?food/i,
+    ],
+    templateId: "organic",
+    storefrontRenderer: "organic",
+    dashboardRenderer: "guma",
+  },
+  {
+    id: "waggy",
+    label: "Waggy Pet Shop",
+    description:
+      "Pet lover storefront with search header, hero banner, icon categories, tabbed product grid, promo strip, and services — ported from Waggy (TemplatesJungle).",
+    tags: ["pet", "pets", "dog", "cat", "animal", "pet supplies"],
+    categoryHints: [
+      /pet|pets|pet.?shop|pet.?store|pet.?supplies|pet.?lover/i,
+      /dog|cat|bird|fish|aquarium|animal/i,
+    ],
+    templateId: "waggy",
+    storefrontRenderer: "waggy",
+    dashboardRenderer: "guma",
+  },
+  {
+    id: "fruitables",
+    label: "Fruitables",
+    description:
+      "Fruits & vegetables storefront with top bar, hero search, feature strip, tabbed product grid, promo cards, vegetable carousel, and banner — ported from Fruitables (HTML Codex).",
+    tags: ["fruit", "vegetable", "produce", "organic", "fresh", "grocery"],
+    categoryHints: [
+      /fruit|vegetable|fruits|vegetables|fruitables|fresh.?produce/i,
+      /green.?grocers|wet.?market|produce.?shop|farm.?stand/i,
+    ],
+    templateId: "fruitables",
+    storefrontRenderer: "fruitables",
+    dashboardRenderer: "guma",
+  },
+  {
+    id: "ministore",
+    label: "MiniStore",
+    description:
+      "Gadgets & tech storefront with sticky header, hero billboard, service strip, mobile product carousel, smart watch row, and sale banner — ported from MiniStore.",
+    tags: ["electronics", "gadgets", "phones", "watches", "tech"],
+    categoryHints: [
+      /ministore|gadget|tech.?store|smart.?watch|wearable/i,
+      /electronics|electronic|computer|laptop|mobile|phone|tablet|smart/i,
+    ],
+    templateId: "ministore",
+    storefrontRenderer: "ministore",
+    dashboardRenderer: "guma",
+  },
 ];
 
 export const STORE_PATTERN_MAP = Object.fromEntries(
@@ -101,15 +282,28 @@ export function matchStorePattern(input: {
 }): StorePatternId {
   const templateId = input.templateId?.trim();
   if (templateId === "simply-sweet") return "simply-sweet";
+  if (templateId === "bloom") return "bloom";
+  if (templateId === "sarab") return "sarab";
+  if (templateId === "furnish") return "furnish";
+  if (templateId === "zay") return "zay";
+  if (templateId === "electro") return "electro";
+  if (templateId === "kaira") return "kaira";
+  if (templateId === "foodmart") return "foodmart";
+  if (templateId === "stylish") return "stylish";
+  if (templateId === "mellow") return "mellow";
+  if (templateId === "organic") return "organic";
+  if (templateId === "waggy") return "waggy";
+  if (templateId === "fruitables") return "fruitables";
+  if (templateId === "ministore") return "ministore";
 
   const category = input.category?.trim() ?? "";
   if (category) {
-    const sweet = STORE_PATTERNS.find(
+    const matched = STORE_PATTERNS.find(
       (pattern) =>
-        pattern.id === "simply-sweet" &&
+        pattern.id !== "classic" &&
         pattern.categoryHints.some((hint) => hint.test(category))
     );
-    if (sweet) return "simply-sweet";
+    if (matched) return matched.id;
   }
 
   if (input.vibe === "cute" && /bakery|pastry|sweet|baking|dessert/i.test(category)) {

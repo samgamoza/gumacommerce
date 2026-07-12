@@ -1,0 +1,522 @@
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&family=Open+Sans:wght@400;700&display=swap");
+
+.foodmart-root {
+  --fm-primary: #ffc43f;
+  --fm-accent: #6995b1;
+  --fm-light: #fff9eb;
+  --fm-muted: #6c757d;
+  --fm-text: #212529;
+  font-family: "Open Sans", sans-serif;
+  color: var(--fm-text);
+  background: #fff;
+}
+
+.foodmart-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+.foodmart-header-top {
+  display: grid;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+@media (min-width: 992px) {
+  .foodmart-header-top {
+    grid-template-columns: 1fr 2fr 1fr;
+  }
+}
+
+.foodmart-logo {
+  font-family: "Nunito", sans-serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--fm-text);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.foodmart-logo-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  background: var(--fm-primary);
+  font-size: 1.25rem;
+}
+
+.foodmart-search {
+  display: none;
+  align-items: center;
+  background: #f8f9fa;
+  border-radius: 999px;
+  padding: 0.35rem 0.35rem 0.35rem 1rem;
+  gap: 0.5rem;
+}
+
+@media (min-width: 992px) {
+  .foodmart-search {
+    display: flex;
+  }
+}
+
+.foodmart-search select {
+  border: none;
+  background: transparent;
+  font-size: 0.875rem;
+  color: var(--fm-muted);
+  max-width: 130px;
+}
+
+.foodmart-search input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.9375rem;
+  min-width: 0;
+}
+
+.foodmart-search button {
+  border: none;
+  background: var(--fm-primary);
+  border-radius: 999px;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.foodmart-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.foodmart-support {
+  display: none;
+  text-align: right;
+}
+
+@media (min-width: 1200px) {
+  .foodmart-support {
+    display: block;
+  }
+}
+
+.foodmart-support small {
+  color: var(--fm-muted);
+  font-size: 0.8125rem;
+}
+
+.foodmart-support strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.foodmart-cart-btn {
+  border: none;
+  background: transparent;
+  text-align: right;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+}
+
+.foodmart-cart-btn small {
+  color: var(--fm-muted);
+}
+
+.foodmart-cart-total {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.foodmart-nav-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 0;
+}
+
+.foodmart-nav-bar select {
+  border: 1px solid #eee;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  background: #fff;
+}
+
+.foodmart-nav-links {
+  display: none;
+  gap: 1.25rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex: 1;
+}
+
+@media (min-width: 992px) {
+  .foodmart-nav-links {
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+.foodmart-nav-links a {
+  color: var(--fm-text);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.foodmart-nav-links a:hover {
+  color: var(--fm-accent);
+}
+
+.foodmart-mobile-toggle {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  padding: 0.25rem;
+}
+
+.foodmart-mobile-menu {
+  width: 100%;
+  padding-bottom: 0.75rem;
+}
+
+.foodmart-mobile-menu a {
+  display: block;
+  padding: 0.35rem 0;
+  color: var(--fm-text);
+  text-decoration: none;
+}
+
+.foodmart-hero-section {
+  padding: 1.5rem 0;
+  background: #fafafa;
+}
+
+.foodmart-hero-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 992px) {
+  .foodmart-hero-grid {
+    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+
+  .foodmart-hero-main {
+    grid-row: span 2;
+  }
+}
+
+.foodmart-hero-card {
+  border-radius: 1rem;
+  overflow: hidden;
+  padding: 1.5rem;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.foodmart-hero-main {
+  background: #d1ecf1;
+}
+
+.foodmart-hero-side-a {
+  background: #d4edda;
+}
+
+.foodmart-hero-side-b {
+  background: #f8d7da;
+}
+
+.foodmart-hero-kicker {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--fm-accent);
+  margin-bottom: 0.5rem;
+}
+
+.foodmart-hero-title {
+  font-family: "Nunito", sans-serif;
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  line-height: 1.2;
+}
+
+.foodmart-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--fm-primary);
+  color: var(--fm-text);
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.foodmart-btn:hover {
+  filter: brightness(0.95);
+  color: var(--fm-text);
+}
+
+.foodmart-btn-outline {
+  background: transparent;
+  border: 2px solid var(--fm-text);
+}
+
+.foodmart-section {
+  padding: 2.5rem 0;
+}
+
+.foodmart-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.foodmart-section-head h2 {
+  font-family: "Nunito", sans-serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.foodmart-link {
+  color: var(--fm-accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.foodmart-categories {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(120px, 140px);
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.foodmart-category-card {
+  text-align: center;
+  text-decoration: none;
+  color: var(--fm-text);
+  background: var(--fm-light);
+  border-radius: 1rem;
+  padding: 1rem 0.75rem;
+}
+
+.foodmart-category-card span {
+  display: block;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.foodmart-category-card h3 {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.foodmart-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.foodmart-tab {
+  border: none;
+  background: #f8f9fa;
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.foodmart-tab.active {
+  background: var(--fm-primary);
+}
+
+.foodmart-product-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (min-width: 768px) {
+  .foodmart-product-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .foodmart-product-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+.foodmart-product-card {
+  position: relative;
+  border: 1px solid #eee;
+  border-radius: 1rem;
+  padding: 1rem;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.foodmart-badge {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  background: #198754;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.25rem;
+}
+
+.foodmart-product-card img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.foodmart-product-card h3 {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  margin: 0 0 0.35rem;
+  line-height: 1.3;
+}
+
+.foodmart-product-card h3 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.foodmart-product-meta {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--fm-muted);
+  margin-bottom: 0.35rem;
+}
+
+.foodmart-product-price {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--fm-accent);
+  margin-bottom: 0.75rem;
+}
+
+.foodmart-product-price del {
+  font-size: 0.875rem;
+  color: var(--fm-muted);
+  margin-right: 0.35rem;
+}
+
+.foodmart-add-btn {
+  width: 100%;
+  justify-content: center;
+  font-size: 0.8125rem;
+}
+
+.foodmart-promo {
+  background: var(--fm-light);
+  border-radius: 1rem;
+  padding: 2.5rem;
+  text-align: center;
+  margin: 2rem 0;
+}
+
+.foodmart-promo h2 {
+  font-family: "Nunito", sans-serif;
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  margin-bottom: 1rem;
+}
+
+.foodmart-promo .highlight {
+  color: var(--fm-primary);
+}
+
+.foodmart-footer {
+  background: #f8f9fa;
+  padding: 3rem 0 0;
+  margin-top: 2rem;
+}
+
+.foodmart-footer-grid {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .foodmart-footer-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.foodmart-footer h5 {
+  font-family: "Nunito", sans-serif;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.foodmart-footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.foodmart-footer-links li {
+  margin-bottom: 0.5rem;
+}
+
+.foodmart-footer-links a {
+  color: var(--fm-muted);
+  text-decoration: none;
+}
+
+.foodmart-footer-bar {
+  border-top: 1px solid #dee2e6;
+  margin-top: 2rem;
+  padding: 1rem 0;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--fm-muted);
+}

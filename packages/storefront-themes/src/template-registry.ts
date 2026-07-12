@@ -1,0 +1,152 @@
+import type { ShopTemplateId, StorePatternId } from "@guma-commerce/storefront-themes";
+
+export interface StorefrontTemplateRegistryEntry {
+  id: ShopTemplateId;
+  patternId: StorePatternId;
+  label: string;
+  version: string;
+  source: string;
+  license: string;
+  categoryHints: RegExp[];
+  storefrontPath: string;
+}
+
+/** Drop-in templates filed from external sources (ThemeWagon, etc.). */
+export const STOREFRONT_TEMPLATE_REGISTRY: StorefrontTemplateRegistryEntry[] = [
+  {
+    id: "bloom",
+    patternId: "bloom",
+    label: "Bloom Retail",
+    version: "1.0.0",
+    source: "reference/bloomtpl-1.0.0/bloomtpl-1.0.0 (ThemeWagon / Bloomtpl, MIT)",
+    license: "MIT",
+    categoryHints: [/fashion|apparel|retail|footwear|sneaker/i],
+    storefrontPath: "apps/web/components/storefront/bloom",
+  },
+  {
+    id: "sarab",
+    patternId: "sarab",
+    label: "Sarab Restaurant",
+    version: "1.0.0",
+    source: "reference/sarab-1.0.0/sarab (ThemeWagon / Bestwpware, MIT)",
+    license: "MIT",
+    categoryHints: [/food|beverage|catering|restaurant|fast.?food/i],
+    storefrontPath: "apps/web/components/storefront/sarab",
+  },
+  {
+    id: "furnish",
+    patternId: "furnish",
+    label: "Furnish Home",
+    version: "1.0.0",
+    source: "reference/furnish-1.0.0/furnish-1.0.0 (ThemeWagon / CodesCandy, MIT)",
+    license: "MIT",
+    categoryHints: [/furniture|home.?decor|interior|living|sofa/i],
+    storefrontPath: "apps/web/components/storefront/furnish",
+  },
+  {
+    id: "zay",
+    patternId: "zay",
+    label: "Zay Shop",
+    version: "559",
+    source: "reference/zay-shop/templatemo_559_zay_shop (TemplateMo, free)",
+    license: "TemplateMo free license",
+    categoryHints: [/retail|general.?merchandise|wholesale|electronics|gadget/i],
+    storefrontPath: "apps/web/components/storefront/zay",
+  },
+  {
+    id: "electro",
+    patternId: "electro",
+    label: "Electro",
+    version: "1.0.0",
+    source: "reference/electro-bootstrap-1.0.0/Electro-Bootstrap-1.0.0 (HTML Codex, free)",
+    license: "HTML Codex free license",
+    categoryHints: [/electronics|electronic|gadget|computer|laptop|mobile|phone|tablet|smart|tech/i],
+    storefrontPath: "apps/web/components/storefront/electro",
+  },
+  {
+    id: "kaira",
+    patternId: "kaira",
+    label: "Kaira Fashion",
+    version: "1.0.0",
+    source: "reference/kaira-1.0.0/kaira-1.0.0 (TemplatesJungle, free)",
+    license: "TemplatesJungle free license",
+    categoryHints: [/fashion|apparel|clothing|boutique|streetwear|dress|wear/i],
+    storefrontPath: "apps/web/components/storefront/kaira",
+  },
+  {
+    id: "foodmart",
+    patternId: "foodmart",
+    label: "FoodMart Grocery",
+    version: "1.0.0",
+    source: "reference/foodmart-1.0.0/FoodMart-1.0.0 (TemplatesJungle, free)",
+    license: "TemplatesJungle free license",
+    categoryHints: [/grocery|supermarket|sari.?sari|convenience|mart|provision|food.?mart/i],
+    storefrontPath: "apps/web/components/storefront/foodmart",
+  },
+  {
+    id: "stylish",
+    patternId: "stylish",
+    label: "Stylish Footwear",
+    version: "1.0.0",
+    source: "reference/stylish-1.0.0/stylish-1.0.0 (TemplatesJungle, free)",
+    license: "TemplatesJungle free license",
+    categoryHints: [/shoe|footwear|sneaker|sneakers|boot|loafer|sandal|athletic.?wear|apparel.?brand|streetwear/i],
+    storefrontPath: "apps/web/components/storefront/stylish",
+  },
+  {
+    id: "mellow",
+    patternId: "mellow",
+    label: "Mellow Hotel",
+    version: "1.0.0",
+    source: "reference/mellow-1.0.0/mellow-1.0.0 (TemplatesJungle, free)",
+    license: "TemplatesJungle free license",
+    categoryHints: [/hotel|resort|hospitality|accommodation|staycation|inn|lodge|villa|bnb|hostel/i],
+    storefrontPath: "apps/web/components/storefront/mellow",
+  },
+  {
+    id: "organic",
+    patternId: "organic",
+    label: "Organic Farm",
+    version: "1.0.0",
+    source: "reference/organic-1.0.0/organic-1.0.0 (TemplatesJungle, free)",
+    license: "TemplatesJungle free license",
+    categoryHints: [/organic|farm.?fresh|farm.?produce|produce|vegetable|fruit.?stand|farmer.?market|harvest|natural.?food/i],
+    storefrontPath: "apps/web/components/storefront/organic",
+  },
+  {
+    id: "waggy",
+    patternId: "waggy",
+    label: "Waggy Pet Shop",
+    version: "1.0.0",
+    source: "reference/waggy-1.0.0/waggy-1.0.0 (TemplatesJungle, free)",
+    license: "TemplatesJungle free license",
+    categoryHints: [/pet|pets|pet.?shop|pet.?store|pet.?supplies|pet.?lover|dog|cat|bird|fish|aquarium|animal/i],
+    storefrontPath: "apps/web/components/storefront/waggy",
+  },
+  {
+    id: "fruitables",
+    patternId: "fruitables",
+    label: "Fruitables",
+    version: "1.0.0",
+    source: "reference/fruitables-1.0.0/fruitables-1.0.0 (HTML Codex, free)",
+    license: "HTML Codex free license",
+    categoryHints: [/fruit|vegetable|fruits|vegetables|fruitables|fresh.?produce|green.?grocers|wet.?market|produce.?shop|farm.?stand/i],
+    storefrontPath: "apps/web/components/storefront/fruitables",
+  },
+  {
+    id: "ministore",
+    patternId: "ministore",
+    label: "MiniStore",
+    version: "1.0.0",
+    source: "reference/MiniStore-1.0.0/MiniStore-1.0.0 (TemplatesJungle / Moksha, free)",
+    license: "TemplatesJungle free license",
+    categoryHints: [/ministore|gadget|tech.?store|smart.?watch|wearable|electronics|electronic|computer|laptop|mobile|phone|tablet|smart/i],
+    storefrontPath: "apps/web/components/storefront/ministore",
+  },
+];
+
+export function getTemplateRegistryEntry(
+  templateId: string
+): StorefrontTemplateRegistryEntry | undefined {
+  return STOREFRONT_TEMPLATE_REGISTRY.find((entry) => entry.id === templateId);
+}

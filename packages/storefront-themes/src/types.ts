@@ -9,11 +9,24 @@ export const SHOP_TEMPLATE_IDS = [
   "glass-future",
   "y2k-chrome",
   "holo-grid",
+  "bloom",
+  "sarab",
+  "furnish",
+  "zay",
+  "electro",
+  "kaira",
+  "foodmart",
+  "stylish",
+  "mellow",
+  "organic",
+  "waggy",
+  "fruitables",
+  "ministore",
 ] as const;
 
-export const STORE_PATTERN_IDS = ["classic", "simply-sweet"] as const;
+export const STORE_PATTERN_IDS = ["classic", "simply-sweet", "bloom", "sarab", "furnish", "zay", "electro", "kaira", "foodmart", "stylish", "mellow", "organic", "waggy", "fruitables", "ministore"] as const;
 export type StorePatternId = (typeof STORE_PATTERN_IDS)[number];
-export type StorefrontRenderer = "themed" | "experience" | "sweet-kitchen";
+export type StorefrontRenderer = "themed" | "experience" | "sweet-kitchen" | "bloom" | "sarab" | "furnish" | "zay" | "electro" | "kaira" | "foodmart" | "stylish" | "mellow" | "organic" | "waggy" | "fruitables" | "ministore";
 export type DashboardRenderer = "guma" | "sweet-kitchen";
 
 export type ShopTemplateId = (typeof SHOP_TEMPLATE_IDS)[number];

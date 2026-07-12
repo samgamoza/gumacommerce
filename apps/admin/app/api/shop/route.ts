@@ -90,7 +90,18 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const updated = await updateTenantStorefront(session.tenantId, body);
+    const updated = await updateTenantStorefront(session.tenantId, {
+      ...body,
+      ...(body.templateId
+        ? {
+            patternId: matchStorePattern({
+              templateId: body.templateId,
+              category: settings.category,
+              vibe: settings.themeJson?.vibe,
+            }),
+          }
+        : {}),
+    });
     if (!updated) {
       return NextResponse.json({ ok: false, error: "Shop not found." }, { status: 404 });
     }

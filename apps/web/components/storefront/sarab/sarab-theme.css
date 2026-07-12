@@ -1,0 +1,596 @@
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Poppins:wght@300;400;500;600;700&family=Dancing+Script:wght@700&display=swap");
+
+.sarab-root {
+  --primary: #e8281a;
+  --secondary: #f6a623;
+  --dark: #1a1a1a;
+  --green: #2d6a4f;
+  --cream: #fff8f0;
+  --cream2: #fef0dc;
+  --light: #f9f5f0;
+  --shadow: 0 8px 40px rgba(0, 0, 0, 0.1);
+  font-family: "Poppins", sans-serif;
+  color: #444;
+  background: #fff;
+  overflow-x: hidden;
+}
+
+.sarab-root h1,
+.sarab-root h2,
+.sarab-root h3 {
+  font-family: "Playfair Display", serif;
+  color: var(--dark);
+}
+
+.sarab-container {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.sarab-topbar {
+  background: #111;
+  padding: 8px 0;
+  font-size: 0.82rem;
+}
+
+.sarab-topbar-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.sarab-topbar span {
+  color: #aaa;
+  margin-right: 16px;
+}
+
+.sarab-topbar span svg {
+  color: var(--secondary);
+  margin-right: 5px;
+  vertical-align: -2px;
+}
+
+.sarab-ttag {
+  background: var(--primary);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.sarab-nav {
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 990;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.07);
+}
+
+.sarab-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+}
+
+.sarab-blogo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sarab-bico {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(232, 40, 26, 0.35);
+  flex-shrink: 0;
+}
+
+.sarab-bname {
+  font-family: "Playfair Display", serif;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--dark);
+  line-height: 1.1;
+}
+
+.sarab-bname span {
+  color: var(--primary);
+}
+
+.sarab-bsub {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #aaa;
+}
+
+.sarab-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sarab-nav-cta {
+  background: linear-gradient(135deg, var(--primary), #c01e12);
+  color: #fff;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(232, 40, 26, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: 0.3s;
+}
+
+.sarab-nav-cta:hover {
+  transform: translateY(-2px);
+  color: #fff;
+}
+
+.sarab-cart-btn {
+  position: relative;
+  padding: 8px;
+  border-radius: 8px;
+  color: #555;
+  transition: 0.3s;
+}
+
+.sarab-cart-btn:hover {
+  background: rgba(232, 40, 26, 0.08);
+  color: var(--primary);
+}
+
+.sarab-cart-count {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sarab-hero {
+  background: var(--cream);
+  position: relative;
+  overflow: hidden;
+  padding: 4rem 0;
+}
+
+.sarab-hbgtxt {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(4rem, 22vw, 12rem);
+  font-weight: 900;
+  font-family: "Playfair Display", serif;
+  color: rgba(0, 0, 0, 0.04);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.sarab-hero-grid {
+  display: grid;
+  gap: 3rem;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 992px) {
+  .sarab-hero-grid {
+    grid-template-columns: 1fr 1fr;
+    min-height: 75vh;
+  }
+}
+
+.sarab-hbadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border-radius: 30px;
+  padding: 6px 16px 6px 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  margin-bottom: 22px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.sarab-hbadge-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.sarab-htitle {
+  font-size: clamp(2.2rem, 6vw, 4.2rem);
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 18px;
+}
+
+.sarab-htitle .hl {
+  color: var(--primary);
+  position: relative;
+}
+
+.sarab-hdesc {
+  font-size: 1rem;
+  color: #666;
+  line-height: 1.8;
+  max-width: 470px;
+  margin-bottom: 30px;
+}
+
+.sarab-btn-red {
+  background: linear-gradient(135deg, var(--primary), #c01e12);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  padding: 14px 32px;
+  font-weight: 600;
+  font-size: 0.93rem;
+  box-shadow: 0 8px 24px rgba(232, 40, 26, 0.35);
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.sarab-btn-red:hover {
+  transform: translateY(-3px);
+  color: #fff;
+}
+
+.sarab-hcircle-wrap {
+  position: relative;
+  text-align: center;
+}
+
+.sarab-hcircle {
+  width: min(480px, 90vw);
+  height: min(480px, 90vw);
+  margin: 0 auto;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #fff8f0, #ffe5c8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 28px 76px rgba(232, 40, 26, 0.14);
+  overflow: hidden;
+}
+
+.sarab-hcircle img {
+  width: 90%;
+  height: 90%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.sarab-fcard {
+  position: absolute;
+  background: #fff;
+  border-radius: 11px;
+  padding: 10px 15px;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.75rem;
+}
+
+.sarab-fcard.fc1 {
+  top: 40px;
+  left: 0;
+}
+
+.sarab-fcard.fc2 {
+  bottom: 60px;
+  right: 0;
+}
+
+.sarab-fcard.fc3 {
+  top: 38%;
+  right: -10px;
+}
+
+.sarab-fcnum {
+  font-weight: 700;
+  display: block;
+  color: var(--dark);
+}
+
+.sarab-fcsm {
+  color: #999;
+  font-size: 0.68rem;
+}
+
+.sarab-mqsec {
+  background: var(--primary);
+  padding: 13px 0;
+  overflow: hidden;
+}
+
+.sarab-mqtrack {
+  display: flex;
+  gap: 38px;
+  white-space: nowrap;
+  animation: sarab-mqrun 22s linear infinite;
+}
+
+.sarab-mqitem {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  font-size: 0.86rem;
+  font-weight: 500;
+}
+
+@keyframes sarab-mqrun {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.sarab-menu {
+  background: var(--light);
+  padding: 88px 0;
+}
+
+.sarab-slbl {
+  font-family: "Dancing Script", cursive;
+  font-size: 1.35rem;
+  color: var(--primary);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.sarab-stitle {
+  font-size: clamp(1.9rem, 4vw, 2.7rem);
+  font-weight: 900;
+  line-height: 1.2;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.sarab-stitle span {
+  color: var(--primary);
+}
+
+.sarab-sline {
+  width: 58px;
+  height: 4px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  margin: 0 auto 2rem;
+}
+
+.sarab-filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 2rem;
+}
+
+.sarab-filtbtn {
+  border: 2px solid #e5e5e5;
+  background: #fff;
+  border-radius: 50px;
+  padding: 8px 20px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.sarab-filtbtn.active,
+.sarab-filtbtn:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.sarab-mgrid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 576px) {
+  .sarab-mgrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 992px) {
+  .sarab-mgrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.sarab-mcard {
+  background: #fff;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 4px 22px rgba(0, 0, 0, 0.07);
+  transition: 0.4s;
+}
+
+.sarab-mcard:hover {
+  transform: translateY(-9px);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.13);
+}
+
+.sarab-mimg {
+  position: relative;
+  height: 215px;
+  overflow: hidden;
+  background: var(--cream2);
+}
+
+.sarab-mimg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: 0.5s;
+}
+
+.sarab-mcard:hover .sarab-mimg img {
+  transform: scale(1.09);
+}
+
+.sarab-mbdg {
+  position: absolute;
+  top: 13px;
+  left: 13px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 7px;
+  padding: 3px 11px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.sarab-mbody {
+  padding: 18px;
+}
+
+.sarab-mcat {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 5px;
+}
+
+.sarab-mtit {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+  font-family: "Playfair Display", serif;
+}
+
+.sarab-mdesc {
+  font-size: 0.78rem;
+  color: #aaa;
+  margin-bottom: 13px;
+  line-height: 1.5;
+}
+
+.sarab-mfoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sarab-mprice {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--primary);
+  font-family: "Playfair Display", serif;
+}
+
+.sarab-mprice small {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: #ccc;
+  text-decoration: line-through;
+  margin-left: 5px;
+}
+
+.sarab-madd {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), #c01e12);
+  border: none;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.sarab-madd:hover {
+  transform: scale(1.15) rotate(90deg);
+}
+
+.sarab-footer {
+  background: var(--dark);
+  padding: 68px 0 0;
+  color: #777;
+}
+
+.sarab-fnm {
+  font-family: "Playfair Display", serif;
+  font-size: 1.9rem;
+  font-weight: 900;
+  color: #fff;
+}
+
+.sarab-fnm span {
+  color: var(--primary);
+}
+
+.sarab-fdesc {
+  font-size: 0.86rem;
+  line-height: 1.8;
+  margin-top: 9px;
+}
+
+.sarab-fbot {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 3rem;
+  padding: 1.25rem 0;
+  font-size: 0.82rem;
+}
+
+.sarab-fbot-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.sarab-fbot strong {
+  color: #fff;
+}

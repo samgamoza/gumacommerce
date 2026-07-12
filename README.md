@@ -7,8 +7,9 @@ AI-powered social commerce platform for Philippine sellers. Replace fragmented M
 ```
 guma-commerce/
 ├── apps/
-│   ├── web/          # Customer storefront (port 3000)
+│   ├── web/          # Customer storefront (port 3010 in dev)
 │   └── admin/        # Seller dashboard + AI studio (port 3001)
+│   └── platform/     # Super-admin console (port 3002)
 ├── packages/
 │   ├── db/           # Drizzle ORM schema + migrations
 │   ├── ai/           # AI prompt templates + generator
@@ -33,9 +34,11 @@ pnpm db:push        # or db:migrate on fresh DB
 pnpm db:seed
 ```
 
-- **Storefront:** http://localhost:3000
+- **Storefront:** http://localhost:3010
 - **Admin:** http://localhost:3001
-- **Demo shop:** http://localhost:3000/demo
+- **Platform:** http://localhost:3002
+- **Demo shop:** http://localhost:3010/demo
+- **Template demos:** http://localhost:3010/waggy-demo, `/fruitables-demo`, `/ministore-demo`, etc.
 
 ## Key features (MVP scaffold)
 
@@ -61,7 +64,7 @@ pnpm db:seed
 
 Deploy `apps/web` and `apps/admin` to Vercel. See **[docs/DEPLOY-VERCEL.md](docs/DEPLOY-VERCEL.md)** for pre-beta checklist, env vars, and cron setup.
 
-**Agent handoff:** **[docs/AGENT-HANDOFF.md](docs/AGENT-HANDOFF.md)** — system summary, architecture, recent changes, and next priorities.
+**Agent handoff:** **[docs/COMPREHENSIVE-HANDOFF-2026-07-12.md](docs/COMPREHENSIVE-HANDOFF-2026-07-12.md)** — full repo summary, templates, handbook alignment, and roadmap. Older session notes: **[docs/AGENT-HANDOFF.md](docs/AGENT-HANDOFF.md)**.
 
 Set environment variables from `.env.example`.
 

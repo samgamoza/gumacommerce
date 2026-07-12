@@ -1,4 +1,4 @@
-import { resolveShopThemeForPlan, resolveStorePattern } from "@guma-commerce/storefront-themes";
+import { resolveShopThemeForPlan, resolveStorePattern, emojiForShopCategory } from "@guma-commerce/storefront-themes";
 import { getPendingTenantBySlug, getTenantStorefrontBySlug } from "@guma-commerce/db";
 import {
   DEMO_TENANT,
@@ -8,16 +8,6 @@ import {
 } from "./demo-data";
 import { getModelStoreTenant, MODEL_STORE_SLUG } from "./model-store-tenant";
 import { resolveStorefrontSettings } from "./storefront-settings";
-
-const CATEGORY_EMOJI: Record<string, string> = {
-  "Food & Beverage": "🍽️",
-  Fashion: "👗",
-  "Fashion & Apparel": "👗",
-  "Beauty & Skincare": "💄",
-  "Handmade & Crafts": "🎨",
-  Electronics: "📱",
-  General: "🛍️",
-};
 
 export async function getStorefrontTenant(slug: string): Promise<DemoTenant | null> {
   if (slug === MODEL_STORE_SLUG) return getModelStoreTenant();
@@ -57,7 +47,7 @@ export async function getStorefrontTenant(slug: string): Promise<DemoTenant | nu
     tagline: shopTheme.tagline,
     category: tenant.category ?? "General",
     location: "Philippines",
-    logoEmoji: CATEGORY_EMOJI[tenant.category ?? "General"] ?? "🛍️",
+    logoEmoji: emojiForShopCategory(tenant.category),
     logoUrl: tenant.logoUrl ?? undefined,
     theme: {
       primaryColor: shopTheme.primaryColor,

@@ -14,15 +14,12 @@ import { PasswordInput } from "@/components/password-input";
 import { AuthDivider, GoogleSignInButton } from "@/components/google-sign-in-button";
 import { VibePicker } from "@/components/vibe-picker";
 import { shopUrlDisplayPrefix } from "@/lib/utils";
+import {
+  DEFAULT_SHOP_BUSINESS_CATEGORY,
+  SHOP_BUSINESS_CATEGORIES,
+} from "@guma-commerce/storefront-themes";
 
-const CATEGORIES = [
-  "Food & Beverage",
-  "Fashion & Apparel",
-  "Beauty & Skincare",
-  "Handmade & Crafts",
-  "Electronics",
-  "General",
-];
+const CATEGORIES = SHOP_BUSINESS_CATEGORIES;
 
 function slugify(value: string): string {
   return value
@@ -47,7 +44,7 @@ export function SignupWizard() {
     password: "",
     shopName: "",
     shopSlug: "",
-    category: "Food & Beverage",
+    category: DEFAULT_SHOP_BUSINESS_CATEGORY,
     vibe: "",
   });
 

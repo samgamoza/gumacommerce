@@ -1,0 +1,482 @@
+@import url("https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Marcellus&display=swap");
+
+.kaira-root {
+  --kaira-primary: #8c907e;
+  --kaira-accent: #111111;
+  --kaira-light: #f1f1f0;
+  --kaira-muted: #8f8f8f;
+  --kaira-heading: "Marcellus", serif;
+  --kaira-body: "Jost", sans-serif;
+  font-family: var(--kaira-body);
+  color: var(--kaira-muted);
+  background: #fff;
+  letter-spacing: 0.03em;
+}
+
+.kaira-container {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+.kaira-header {
+  border-bottom: 1px solid #eee;
+  padding: 1rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #fff;
+}
+
+.kaira-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.kaira-logo {
+  font-family: var(--kaira-heading);
+  font-size: 1.75rem;
+  font-weight: 400;
+  color: var(--kaira-accent);
+  text-decoration: none;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.kaira-nav {
+  display: none;
+  gap: 1.75rem;
+  text-transform: uppercase;
+  font-size: 0.8125rem;
+  letter-spacing: 0.12em;
+}
+
+@media (min-width: 992px) {
+  .kaira-nav {
+    display: flex;
+  }
+}
+
+.kaira-nav a {
+  color: var(--kaira-accent);
+  text-decoration: none;
+}
+
+.kaira-nav a:hover {
+  color: var(--kaira-primary);
+}
+
+.kaira-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+}
+
+.kaira-header-actions a {
+  color: var(--kaira-accent);
+  text-decoration: none;
+}
+
+.kaira-cart-link {
+  position: relative;
+}
+
+.kaira-cart-badge {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--kaira-primary);
+  color: #fff;
+  font-size: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kaira-mobile-toggle {
+  background: none;
+  border: none;
+  padding: 0.25rem;
+}
+
+.kaira-mobile-menu {
+  border-top: 1px solid #eee;
+  padding: 1rem 0;
+}
+
+.kaira-mobile-menu a {
+  display: block;
+  padding: 0.35rem 0;
+  text-transform: uppercase;
+  font-size: 0.8125rem;
+  letter-spacing: 0.1em;
+  color: var(--kaira-accent);
+  text-decoration: none;
+}
+
+.kaira-section {
+  padding: 4rem 0;
+}
+
+.kaira-section-light {
+  background: var(--kaira-light);
+}
+
+.kaira-section-title {
+  font-family: var(--kaira-heading);
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 400;
+  color: var(--kaira-accent);
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.kaira-section-lead {
+  text-align: center;
+  max-width: 36rem;
+  margin: 0 auto 2.5rem;
+  line-height: 1.7;
+}
+
+.kaira-hero-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.kaira-hero-card img {
+  width: 100%;
+  aspect-ratio: 3/4;
+  object-fit: cover;
+}
+
+.kaira-hero-card h3 {
+  font-family: var(--kaira-heading);
+  font-size: 1.125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 1rem 0 0.5rem;
+  color: var(--kaira-accent);
+}
+
+.kaira-hero-card h3 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.kaira-hero-card h3 a:hover {
+  color: var(--kaira-primary);
+}
+
+.kaira-link {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  color: var(--kaira-accent);
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+}
+
+.kaira-features {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .kaira-features {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.kaira-feature {
+  text-align: center;
+  padding: 1.5rem 1rem;
+}
+
+.kaira-feature svg {
+  color: var(--kaira-primary);
+  margin-bottom: 0.75rem;
+}
+
+.kaira-feature h4 {
+  font-family: var(--kaira-heading);
+  font-size: 1rem;
+  text-transform: capitalize;
+  color: var(--kaira-accent);
+  margin-bottom: 0.5rem;
+}
+
+.kaira-categories {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .kaira-categories {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.kaira-category {
+  position: relative;
+  overflow: hidden;
+}
+
+.kaira-category img {
+  width: 100%;
+  aspect-ratio: 3/4;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.kaira-category:hover img {
+  transform: scale(1.04);
+}
+
+.kaira-category-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 2rem;
+  background: linear-gradient(transparent 50%, rgba(0, 0, 0, 0.35));
+}
+
+.kaira-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: var(--kaira-accent);
+  border: 1px solid #fff;
+  padding: 0.65rem 1.25rem;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.kaira-btn:hover {
+  background: var(--kaira-accent);
+  color: #fff;
+  border-color: var(--kaira-accent);
+}
+
+.kaira-btn-dark {
+  background: var(--kaira-accent);
+  color: #fff;
+  border-color: var(--kaira-accent);
+}
+
+.kaira-btn-dark:hover {
+  background: var(--kaira-primary);
+  border-color: var(--kaira-primary);
+}
+
+.kaira-row-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.kaira-row-head h4 {
+  font-family: var(--kaira-heading);
+  font-size: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--kaira-accent);
+  margin: 0;
+}
+
+.kaira-product-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (min-width: 768px) {
+  .kaira-product-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.kaira-product-card {
+  position: relative;
+}
+
+.kaira-product-card img {
+  width: 100%;
+  aspect-ratio: 3/4;
+  object-fit: cover;
+}
+
+.kaira-product-card h5 {
+  font-family: var(--kaira-heading);
+  font-size: 0.9375rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0.75rem 0 0.35rem;
+}
+
+.kaira-product-card h5 a {
+  color: var(--kaira-accent);
+  text-decoration: none;
+}
+
+.kaira-product-card h5 a:hover {
+  color: var(--kaira-primary);
+}
+
+.kaira-product-price {
+  color: var(--kaira-accent);
+  font-weight: 500;
+}
+
+.kaira-product-price button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.kaira-product-price button:hover {
+  color: var(--kaira-primary);
+}
+
+.kaira-collection {
+  display: grid;
+  gap: 0;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 992px) {
+  .kaira-collection {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.kaira-collection img {
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  object-fit: cover;
+}
+
+.kaira-collection-copy {
+  background: #fff;
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.kaira-collection-copy h3 {
+  font-family: var(--kaira-heading);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  text-transform: uppercase;
+  color: var(--kaira-accent);
+  margin-bottom: 1rem;
+}
+
+.kaira-newsletter {
+  background: var(--kaira-light);
+  padding: 4rem 0;
+  text-align: center;
+}
+
+.kaira-newsletter h3 {
+  font-family: var(--kaira-heading);
+  font-size: 1.75rem;
+  text-transform: uppercase;
+  color: var(--kaira-accent);
+  margin-bottom: 1.5rem;
+}
+
+.kaira-newsletter form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.kaira-newsletter input {
+  padding: 0.85rem 1rem;
+  border: 1px solid #ddd;
+  font-size: 1rem;
+}
+
+.kaira-footer {
+  padding: 3rem 0 0;
+  border-top: 1px solid #eee;
+}
+
+.kaira-footer-grid {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .kaira-footer-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.kaira-footer h5 {
+  font-family: var(--kaira-heading);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--kaira-accent);
+  margin-bottom: 1rem;
+}
+
+.kaira-footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  text-transform: uppercase;
+  font-size: 0.8125rem;
+  letter-spacing: 0.08em;
+}
+
+.kaira-footer-links li {
+  margin-bottom: 0.5rem;
+}
+
+.kaira-footer-links a {
+  color: var(--kaira-muted);
+  text-decoration: none;
+}
+
+.kaira-footer-links a:hover {
+  color: var(--kaira-accent);
+}
+
+.kaira-footer-bar {
+  border-top: 1px solid #eee;
+  margin-top: 2rem;
+  padding: 1rem 0;
+  font-size: 0.8125rem;
+  text-align: center;
+}

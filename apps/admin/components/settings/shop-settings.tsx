@@ -25,6 +25,7 @@ import {
 } from "@/components/settings/settings-forms";
 
 import { storefrontUrl } from "@/lib/utils";
+import { SHOP_BUSINESS_CATEGORIES } from "@guma-commerce/storefront-themes";
 
 
 
@@ -121,19 +122,23 @@ export function ShopSettingsPage() {
           </SettingsField>
 
           <SettingsField label="Business category">
-
-            <input
-
+            <select
               className={inputClassName()}
-
               value={category}
-
               onChange={(e) => setCategory(e.target.value)}
-
-              placeholder="Food & Beverage"
-
-            />
-
+            >
+              {!SHOP_BUSINESS_CATEGORIES.includes(
+                category as (typeof SHOP_BUSINESS_CATEGORIES)[number]
+              ) &&
+                category && (
+                  <option value={category}>{category}</option>
+                )}
+              {SHOP_BUSINESS_CATEGORIES.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
           </SettingsField>
 
           <SettingsField label="Tagline" hint="Shown under your shop name on the storefront.">
