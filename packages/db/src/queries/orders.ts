@@ -15,6 +15,11 @@ import {
   products,
   tenants,
 } from "../schema/index";
+import {
+  computeCheckoutTotals,
+  normalizeCheckoutJson,
+  type TenantCheckoutJson,
+} from "../types/tenant-checkout";
 
 export type OrderStatus =
   | "pending_payment"
@@ -79,12 +84,21 @@ export interface CreateOrderInput {
   items: CreateOrderItemInput[];
   customer: { name: string; phone: string; email?: string };
   deliveryType: "delivery" | "pickup";
-  deliveryAddress?: { line1: string; notes?: string };
+  deliveryAddress?: {
+    line1: string;
+    city?: string;
+    barangay?: string;
+    postalCode?: string;
+    notes?: string;
+  };
   paymentMethod: string;
   /** Delivery fee in PHP, already resolved by the caller from tenant settings. */
   deliveryFee: number;
   /** Minimum order amount in PHP; 0 disables the check. */
   minOrderAmount: number;
+  /** Published checkout config for tax / coupon / automatic discount. */
+  checkoutConfig?: import("../types/tenant-checkout").TenantCheckoutJson | null;
+  couponCode?: string | null;
   notes?: string;
   sourceChannel?: string;
 }
@@ -95,9 +109,12 @@ export interface CreatedOrder {
   tenantId: string;
   status: OrderStatus;
   subtotal: string;
+  discount: string;
+  tax: string;
   deliveryFee: string;
   total: string;
   totalCentavos: number;
+  couponCode: string | null;
   items: Array<{ title: string; quantity: number; unitPrice: string; lineTotal: string }>;
 }
 
@@ -198,7 +215,23 @@ export async function createOrderForTenant(input: CreateOrderInput): Promise<Cre
 
     const deliveryFeeCentavos =
       input.deliveryType === "pickup" ? 0 : toCentavos(input.deliveryFee);
-    const totalCentavos = subtotalCentavos + deliveryFeeCentavos;
+
+    const checkoutConfig: TenantCheckoutJson = normalizeCheckoutJson(
+      input.checkoutConfig ?? {
+        minOrderAmount: input.minOrderAmount,
+      }
+    );
+
+    const totals = computeCheckoutTotals({
+      subtotal: subtotalCentavos / 100,
+      deliveryFee: deliveryFeeCentavos / 100,
+      checkout: checkoutConfig,
+      couponCode: input.couponCode,
+    });
+
+    const discountCentavos = toCentavos(totals.discount);
+    const taxCentavos = toCentavos(totals.tax);
+    const totalCentavos = toCentavos(totals.total);
 
     // COD orders are actionable immediately; online payments wait for the webhook.
     const initialStatus: OrderStatus =
@@ -225,6 +258,9 @@ export async function createOrderForTenant(input: CreateOrderInput): Promise<Cre
         guestEmail: input.customer.email,
         status: initialStatus,
         subtotal: fromCentavos(subtotalCentavos),
+        discount: fromCentavos(discountCentavos),
+        tax: fromCentavos(taxCentavos),
+        couponCode: totals.couponCode,
         deliveryFee: fromCentavos(deliveryFeeCentavos),
         total: fromCentavos(totalCentavos),
         paymentStatus: "pending",
@@ -277,9 +313,12 @@ export async function createOrderForTenant(input: CreateOrderInput): Promise<Cre
       tenantId: tenant.id,
       status: order.status as OrderStatus,
       subtotal: order.subtotal,
+      discount: order.discount ?? "0.00",
+      tax: order.tax ?? "0.00",
       deliveryFee: order.deliveryFee ?? "0.00",
       total: order.total,
       totalCentavos,
+      couponCode: totals.couponCode,
       items: lines.map((line) => ({
         title: line.title,
         quantity: line.quantity,

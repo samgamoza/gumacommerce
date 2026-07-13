@@ -22,6 +22,8 @@ export interface StorefrontTenantRecord {
   subscriptionPlan: string | null;
   settingsJson: import("../types/tenant-settings").TenantSettingsJson | null;
   seoPublishedJson: import("../types/tenant-seo").TenantSeoJson | null;
+  checkoutPublishedJson: import("../types/tenant-checkout").TenantCheckoutJson | null;
+  shippingPublishedJson: import("../types/tenant-shipping").TenantShippingJson | null;
   products: Array<{
     id: string;
     slug: string;
@@ -134,6 +136,8 @@ async function mapStorefrontTenant(
     subscriptionPlan: tenant.subscriptionPlan,
     settingsJson: tenant.settingsJson,
     seoPublishedJson: tenant.seoPublishedJson ?? null,
+    checkoutPublishedJson: tenant.checkoutPublishedJson ?? null,
+    shippingPublishedJson: tenant.shippingPublishedJson ?? null,
     products: catalog,
     shopCategories,
   };

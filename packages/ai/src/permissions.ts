@@ -1,9 +1,11 @@
-import type { SubscriptionPlan } from "./plan-limits";
+import { normalizePlanId, type SubscriptionPlan } from "@guma-commerce/plans";
 
 /** AI capability scopes — deny by default unless matrix allows. */
 export type AiScope =
   | "ai.suggest.pricing"
   | "ai.suggest.seo"
+  | "ai.suggest.checkout"
+  | "ai.suggest.shipping"
   | "ai.rewrite.description"
   | "ai.generate.theme"
   | "ai.publish.store"
@@ -21,6 +23,8 @@ export const SCOPE_MATRIX: Record<AiScope, Record<SubscriptionPlan, ApprovalLeve
   "ai.generate.theme": { free: "human_review", growth: "human_review", pro: "human_review" },
   "ai.suggest.pricing": { free: "human_review", growth: "human_review", pro: "human_review" },
   "ai.suggest.seo": { free: "human_review", growth: "human_review", pro: "human_review" },
+  "ai.suggest.checkout": { free: "human_review", growth: "human_review", pro: "human_review" },
+  "ai.suggest.shipping": { free: "human_review", growth: "human_review", pro: "human_review" },
   "ai.publish.store": { free: "human_review", growth: "human_review", pro: "human_review" },
   "ai.bulk.catalog": { free: "admin_only", growth: "human_review", pro: "human_review" },
   "ai.refund.order": { free: "admin_only", growth: "admin_only", pro: "admin_only" },
@@ -30,9 +34,7 @@ export function resolveApprovalLevel(
   scope: AiScope,
   plan: string | null | undefined
 ): ApprovalLevel {
-  const normalized: SubscriptionPlan =
-    plan === "growth" || plan === "pro" ? plan : "free";
-  return SCOPE_MATRIX[scope][normalized];
+  return SCOPE_MATRIX[scope][normalizePlanId(plan)];
 }
 
 export function isAdminOnly(scope: AiScope, plan: string | null | undefined): boolean {

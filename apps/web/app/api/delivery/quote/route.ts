@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getTenantStorefrontBySlug } from "@guma-commerce/db";
+import { resolveShippingFee } from "@guma-commerce/db/shipping";
 import { clientIpFrom, rateLimit } from "@guma-commerce/services";
 import { getLalamoveCheckoutQuote } from "@/lib/delivery-quote";
 import {
@@ -34,7 +35,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Shop not found." }, { status: 404 });
     }
 
-    const settings = resolveStorefrontSettings(tenant.settingsJson, tenant.currency ?? "PHP");
+    const settings = resolveStorefrontSettings(
+      tenant.settingsJson,
+      tenant.currency ?? "PHP",
+      tenant.checkoutPublishedJson,
+      tenant.shippingPublishedJson
+    );
     const quote = await getLalamoveCheckoutQuote(settings, body.address);
 
     if (quote) {
@@ -47,12 +53,18 @@ export async function POST(request: Request) {
       });
     }
 
+    const fee = computeDeliveryFee(body.subtotal ?? 0, settings);
+    const resolved = resolveShippingFee({
+      shipping: settings.shipping,
+      subtotal: body.subtotal ?? 0,
+    });
+
     return NextResponse.json({
       ok: true,
       live: false,
       provider: settings.delivery.provider,
-      fee: computeDeliveryFee(body.subtotal ?? 0, settings),
-      etaMinutes: null,
+      fee,
+      etaMinutes: resolved.etaMinutes?.max ?? resolved.etaMinutes?.min ?? null,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

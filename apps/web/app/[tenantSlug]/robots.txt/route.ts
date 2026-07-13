@@ -13,7 +13,6 @@ export async function GET(
 
   const seo = tenant.seo;
   const index = seo?.robots?.index !== false;
-  const follow = seo?.robots?.follow !== false;
   const base =
     process.env.NEXT_PUBLIC_STOREFRONT_URL?.replace(/\/$/, "") ?? "http://localhost:3010";
   const host = `${base}/${tenant.slug}`;
@@ -21,10 +20,9 @@ export async function GET(
   const lines = [
     "User-agent: *",
     index ? "Allow: /" : "Disallow: /",
-    follow ? "" : "Disallow: /",
     ...(seo?.robots?.extraRules ?? []),
     `Sitemap: ${host}/sitemap.xml`,
-  ].filter((line, i, arr) => line !== "" || arr[i - 1] !== "");
+  ];
 
   return new NextResponse(lines.join("\n") + "\n", {
     headers: {

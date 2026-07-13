@@ -12,6 +12,10 @@ import {
   publishSeoChangeRequest,
   rollbackThemeChangeRequest,
   rollbackSeoChangeRequest,
+  publishCheckoutChangeRequest,
+  rollbackCheckoutChangeRequest,
+  publishShippingChangeRequest,
+  rollbackShippingChangeRequest,
 } from "@guma-commerce/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
@@ -114,6 +118,26 @@ export async function POST(request: Request) {
             scope: requestRow.scope,
           },
           idempotencyKey: `Seo.ChangeApproved.V1:${requestRow.id}:approve`,
+        });
+      } else if (requestRow.domain === "checkout") {
+        await emitDomainEvent({
+          name: EVENT_NAMES.CHECKOUT_CHANGE_APPROVED,
+          data: {
+            tenantId: session.tenantId,
+            changeRequestId: requestRow.id,
+            scope: requestRow.scope,
+          },
+          idempotencyKey: `Checkout.ChangeApproved.V1:${requestRow.id}:approve`,
+        });
+      } else if (requestRow.domain === "shipping") {
+        await emitDomainEvent({
+          name: EVENT_NAMES.SHIPPING_CHANGE_APPROVED,
+          data: {
+            tenantId: session.tenantId,
+            changeRequestId: requestRow.id,
+            scope: requestRow.scope,
+          },
+          idempotencyKey: `Shipping.ChangeApproved.V1:${requestRow.id}:approve`,
         });
       } else {
         await emitDomainEvent({
@@ -234,6 +258,65 @@ export async function POST(request: Request) {
         return NextResponse.json({ ok: true, request: published, seo });
       }
 
+      if (existing.domain === "checkout") {
+        if (existing.status !== "approved") {
+          await approveChangeRequest({
+            id: body.id,
+            tenantId: session.tenantId,
+            reviewedBy: session.userId,
+            reviewNote: body.reviewNote ?? "Approved on publish",
+          });
+        }
+        const { request: published, checkout } = await publishCheckoutChangeRequest({
+          id: body.id,
+          tenantId: session.tenantId,
+          actorUserId: session.userId,
+          actorEmail: session.email ?? null,
+        });
+        const { ensureEventsWired } = await import("@/lib/events-bootstrap");
+        ensureEventsWired();
+        const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+        await emitDomainEvent({
+          name: EVENT_NAMES.CHECKOUT_PUBLISHED,
+          data: {
+            tenantId: session.tenantId,
+            changeRequestId: published.id,
+          },
+          idempotencyKey: `Checkout.Published.V1:${published.id}`,
+        });
+        return NextResponse.json({ ok: true, request: published, checkout });
+      }
+
+      if (existing.domain === "shipping") {
+        if (existing.status !== "approved") {
+          await approveChangeRequest({
+            id: body.id,
+            tenantId: session.tenantId,
+            reviewedBy: session.userId,
+            reviewNote: body.reviewNote ?? "Approved on publish",
+          });
+        }
+        const { request: published, shipping } = await publishShippingChangeRequest({
+          id: body.id,
+          tenantId: session.tenantId,
+          actorUserId: session.userId,
+          actorEmail: session.email ?? null,
+        });
+        const { ensureEventsWired } = await import("@/lib/events-bootstrap");
+        ensureEventsWired();
+        const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+        await emitDomainEvent({
+          name: EVENT_NAMES.SHIPPING_PUBLISHED,
+          data: {
+            tenantId: session.tenantId,
+            changeRequestId: published.id,
+            defaultProfileId: shipping.defaultProfileId,
+          },
+          idempotencyKey: `Shipping.Published.V1:${published.id}`,
+        });
+        return NextResponse.json({ ok: true, request: published, shipping });
+      }
+
       if (existing.domain !== "theme") {
         return NextResponse.json(
           { ok: false, error: "Publish for this domain is not supported yet." },
@@ -294,9 +377,52 @@ export async function POST(request: Request) {
         });
         return NextResponse.json({ ok: true, request: rolled });
       }
+      if (existing.domain === "checkout") {
+        const rolled = await rollbackCheckoutChangeRequest({
+          id: body.id,
+          tenantId: session.tenantId,
+          actorUserId: session.userId,
+          actorEmail: session.email ?? null,
+        });
+        const { ensureEventsWired } = await import("@/lib/events-bootstrap");
+        ensureEventsWired();
+        const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+        await emitDomainEvent({
+          name: EVENT_NAMES.CHECKOUT_ROLLED_BACK,
+          data: {
+            tenantId: session.tenantId,
+            changeRequestId: rolled.id,
+          },
+          idempotencyKey: `Checkout.RolledBack.V1:${rolled.id}`,
+        });
+        return NextResponse.json({ ok: true, request: rolled });
+      }
+      if (existing.domain === "shipping") {
+        const rolled = await rollbackShippingChangeRequest({
+          id: body.id,
+          tenantId: session.tenantId,
+          actorUserId: session.userId,
+          actorEmail: session.email ?? null,
+        });
+        const { ensureEventsWired } = await import("@/lib/events-bootstrap");
+        ensureEventsWired();
+        const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+        await emitDomainEvent({
+          name: EVENT_NAMES.SHIPPING_ROLLED_BACK,
+          data: {
+            tenantId: session.tenantId,
+            changeRequestId: rolled.id,
+          },
+          idempotencyKey: `Shipping.RolledBack.V1:${rolled.id}`,
+        });
+        return NextResponse.json({ ok: true, request: rolled });
+      }
       if (existing.domain !== "theme") {
         return NextResponse.json(
-          { ok: false, error: "Rollback is only supported for theme and SEO changes." },
+          {
+            ok: false,
+            error: "Rollback is only supported for theme, SEO, checkout, and shipping changes.",
+          },
           { status: 400 }
         );
       }

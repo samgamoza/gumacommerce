@@ -57,6 +57,27 @@ const SEO_DIFF_KEYS = [
   "rationale",
 ] as const;
 
+const CHECKOUT_DIFF_KEYS = [
+  "codEnabled",
+  "minOrderAmount",
+  "autoAcceptOrders",
+  "tax",
+  "coupons",
+  "automaticDiscount",
+  "paymentAdapters",
+  "customer",
+  "abandonedAfterMinutes",
+  "rationale",
+] as const;
+
+const SHIPPING_DIFF_KEYS = [
+  "defaultProfileId",
+  "profiles",
+  "origin",
+  "notes",
+  "rationale",
+] as const;
+
 function formatDiffValue(value: unknown): string {
   if (value === undefined || value === null) return "—";
   if (typeof value === "string") {
@@ -100,6 +121,18 @@ function DiffPanel({
               ...Object.keys(after ?? {}),
               ...Object.keys(before ?? {}),
             ]
+          : domain === "checkout"
+            ? [
+                ...CHECKOUT_DIFF_KEYS,
+                ...Object.keys(after ?? {}),
+                ...Object.keys(before ?? {}),
+              ]
+            : domain === "shipping"
+              ? [
+                  ...SHIPPING_DIFF_KEYS,
+                  ...Object.keys(after ?? {}),
+                  ...Object.keys(before ?? {}),
+                ]
           : [...Object.keys(before ?? {}), ...Object.keys(after ?? {})];
 
   const keys = Array.from(new Set(preferred)).filter((key) => {
@@ -272,7 +305,11 @@ export function WorkspaceApprovals() {
                           ? "Apply price"
                           : r.domain === "seo"
                             ? "Publish SEO"
-                            : "Publish"}
+                            : r.domain === "checkout"
+                              ? "Publish checkout"
+                              : r.domain === "shipping"
+                                ? "Publish shipping"
+                              : "Publish"}
                     </Button>
                     <Button
                       size="sm"
@@ -311,7 +348,10 @@ export function WorkspaceApprovals() {
                     </p>
                   </div>
                   {r.status === "published" &&
-                    (r.domain === "theme" || r.domain === "seo") && (
+                    (r.domain === "theme" ||
+                      r.domain === "seo" ||
+                      r.domain === "checkout" ||
+                      r.domain === "shipping") && (
                     <Button
                       size="sm"
                       variant="secondary"

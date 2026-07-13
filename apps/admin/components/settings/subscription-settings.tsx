@@ -3,40 +3,18 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Badge, Button, Card } from "@guma-commerce/ui";
+import { SELLER_PLANS, normalizePlanId, planDisplayName } from "@guma-commerce/plans";
 import { SettingsShell } from "@/components/settings/settings-shell";
 import { useTenantSettings } from "@/components/settings/settings-forms";
 import { modelStoreUrl } from "@/lib/utils";
 
-const PLANS = [
-  {
-    id: "free",
-    name: "Sulit",
-    price: "₱0",
-    features: ["Basic shop templates", "AI product listings", "COD checkout"],
-  },
-  {
-    id: "growth",
-    name: "Growth",
-    price: "₱499/mo",
-    features: [
-      "Standard templates (Neon Bazaar, Street Cart…)",
-      "Live selling, flash deals & review sections",
-      "Background removal",
-      "Priority support",
-    ],
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    price: "₱999/mo",
-    features: [
-      "Advanced templates (Glass Future, Holo Grid…)",
-      "WhatsApp agent & SMS order notifications",
-      "Higher AI limits at scale",
-      "Lower transaction fees",
-    ],
-  },
-] as const;
+const PLANS = SELLER_PLANS.map((p) => ({
+  id: p.id,
+  name: p.name,
+  price: p.priceMonthly === 0 ? "₱0" : `₱${p.priceMonthly}/mo`,
+  features: p.marketingFeatures,
+}));
+
 const PAY_METHODS = [
   { id: "gcash", label: "GCash" },
   { id: "paymaya", label: "Maya" },
@@ -52,7 +30,7 @@ export function SubscriptionSettingsPage() {
   const highlightRef = useRef<HTMLDivElement | null>(null);
 
   const { settings, loading, error } = useTenantSettings();
-  const currentPlan = settings?.subscriptionPlan ?? "free";
+  const currentPlan = normalizePlanId(settings?.subscriptionPlan);
   const [method, setMethod] = useState<(typeof PAY_METHODS)[number]["id"]>("gcash");
   const [payingPlan, setPayingPlan] = useState<string | null>(null);
   const [payError, setPayError] = useState<string | null>(null);
@@ -106,8 +84,8 @@ export function SubscriptionSettingsPage() {
 
       <Card className="mb-4 border-emerald-100 bg-emerald-50/50 p-5">
         <p className="text-sm text-gray-600">Current plan</p>
-        <p className="mt-1 text-2xl font-bold capitalize text-emerald-800">
-          {PLANS.find((p) => p.id === currentPlan)?.name ?? currentPlan}
+        <p className="mt-1 text-2xl font-bold text-emerald-800">
+          {planDisplayName(currentPlan)}
         </p>
         <p className="mt-2 text-sm text-gray-600">
           Shop status: <span className="font-medium capitalize">{settings?.status}</span>
@@ -118,8 +96,8 @@ export function SubscriptionSettingsPage() {
         <Card className="mb-4 border-amber-200 bg-gradient-to-r from-amber-50 to-white p-5">
           <p className="font-semibold text-amber-900">Not sure which plan fits?</p>
           <p className="mt-1 text-sm text-gray-600">
-            Tour our flagship model store — live selling unlocks on Growth; flash deals and reviews
-            are labeled by plan tier so you know exactly what you&apos;re unlocking.
+            Tour our flagship model store — live selling unlocks on Pro; flash deals and reviews are
+            labeled by plan tier so you know exactly what you&apos;re unlocking.
           </p>
           <a
             href={modelStoreUrl(refSource ? `subscription-${refSource}` : "subscription")}
@@ -188,14 +166,16 @@ export function SubscriptionSettingsPage() {
                   className="mt-4 w-full"
                   type="button"
                   disabled={payingPlan !== null}
-                  onClick={() => upgrade(plan.id)}
+                  onClick={() => {
+                    if (plan.id === "growth" || plan.id === "pro") upgrade(plan.id);
+                  }}
                 >
                   {payingPlan === plan.id ? "Opening payment…" : `Upgrade — ${plan.price}`}
                 </Button>
               )}
               {!active && plan.id === "free" && (
                 <a
-                  href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent("Downgrade to Sulit")}`}
+                  href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent("Downgrade to Free")}`}
                   className="mt-4 block"
                 >
                   <Button className="w-full" variant="secondary" type="button">

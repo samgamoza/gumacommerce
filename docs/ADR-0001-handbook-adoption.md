@@ -27,10 +27,14 @@ App-level `tenantId` scoping via `packages/db` remains the tenancy model. Handbo
 Adopt the Handbook's contexts as **folder/interface boundaries and documentation** inside the monolith. Cross-context communication prefers events (D2) or a package's public API — never reaching into another context's tables directly from a UI route. **Do not** split into microservices.
 
 ### D4 — One plan catalog, one source of truth
-- Canonical plan ids: **`free` · `growth` · `pro`** (seller) and platform **`starter`** where applicable.
+- Canonical plan ids: **`free` · `growth` · `pro`** (stable forever in DB / billing). Platform legacy rows may still store `starter`; normalize via `normalizePlanId`.
 - Handbook mapping (use everywhere the Handbook names appear): **FREE → `free`, PRO → `growth`, ADVANCE → `pro`.**
-- All pricing/limits/labels resolve from a **single module** (consolidate `plan-limits.ts` + platform `PLATFORM_PLANS` + billing into one catalog). No feature may hardcode plan prices/limits elsewhere.
+- Constitution / seller-facing labels: **Free · Pro · Advance** (not Sulit / Growth / Pro).
+- **Single module:** `@guma-commerce/plans` (`packages/plans`) — prices, features, AI limits, aliases. Thin re-exports remain on `@guma-commerce/db` (`plans`) and `@guma-commerce/ai` (`plan-limits`) for compat. No feature may hardcode plan prices/limits elsewhere.
+- Aliases: `starter`→`growth`, `advance`→`pro`, `sulit`→`free`.
 - This is **prerequisite work** — it blocks correct billing/MRR (handoff §15, High severity).
+
+**Amendment 2026-07-13:** Sprint 4 landed `@guma-commerce/plans` as the canonical catalog. Do not invent Free/Starter/Growth/Pro as DB IDs.
 
 ### D5 — Crown jewel first: AI permissions + draft→approve→publish + audit
 This is the top Handbook feature to implement, and it must **reuse existing patterns** for uniformity:

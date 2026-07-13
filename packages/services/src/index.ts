@@ -1,5 +1,13 @@
 export { PayMongoClient, createPayMongoClient, type PayMongoMethod } from "./payments/paymongo";
 export {
+  resolvePaymentAdapterId,
+  startOnlinePayment,
+  type CheckoutPaymentMethod,
+  type PaymentAdapterId,
+  type StartOnlinePaymentInput,
+  type StartOnlinePaymentResult,
+} from "./payments/adapter";
+export {
   LalamoveClient,
   createLalamoveClient,
   type QuotationInput,

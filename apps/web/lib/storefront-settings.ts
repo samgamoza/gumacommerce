@@ -1,3 +1,17 @@
+import {
+  checkoutFromLegacySettings,
+  normalizeCheckoutJson,
+  type TenantCheckoutJson,
+} from "@guma-commerce/db/checkout";
+import {
+  isPickupEnabled,
+  legacyDeliveryFromShipping,
+  normalizeShippingJson,
+  resolveShippingFee,
+  shippingFromLegacyDelivery,
+  type TenantShippingJson,
+} from "@guma-commerce/db/shipping";
+
 export interface StorefrontStoreSettings {
   codEnabled: boolean;
   minOrderAmount: number;
@@ -27,6 +41,8 @@ export interface StorefrontStoreSettings {
     greeting: string;
     tone: "friendly_taglish" | "professional_en" | "gen_z_taglish";
   };
+  checkout: TenantCheckoutJson;
+  shipping: TenantShippingJson;
 }
 
 export const DEFAULT_STOREFRONT_SETTINGS: StorefrontStoreSettings = {
@@ -58,6 +74,17 @@ export const DEFAULT_STOREFRONT_SETTINGS: StorefrontStoreSettings = {
     greeting: "Hi! 👋 Ask me about products, delivery, or payment before you order.",
     tone: "friendly_taglish",
   },
+  checkout: checkoutFromLegacySettings({
+    codEnabled: true,
+    minOrderAmount: 99,
+    autoAcceptOrders: false,
+  }),
+  shipping: shippingFromLegacyDelivery({
+    provider: "manual",
+    flatRate: 89,
+    freeDeliveryMin: 500,
+    pickupEnabled: true,
+  }),
 };
 
 type SettingsJson = {
@@ -72,23 +99,35 @@ type SettingsJson = {
 
 export function resolveStorefrontSettings(
   settingsJson?: SettingsJson | null,
-  currency = "PHP"
+  currency = "PHP",
+  checkoutPublishedJson?: TenantCheckoutJson | null,
+  shippingPublishedJson?: TenantShippingJson | null
 ): StorefrontStoreSettings {
   const defaults = DEFAULT_STOREFRONT_SETTINGS;
+  const checkout = checkoutPublishedJson
+    ? normalizeCheckoutJson(checkoutPublishedJson)
+    : checkoutFromLegacySettings(settingsJson);
+  const shipping = shippingPublishedJson
+    ? normalizeShippingJson(shippingPublishedJson)
+    : shippingFromLegacyDelivery(settingsJson?.delivery);
+  const mirrored = legacyDeliveryFromShipping(shipping);
 
   return {
-    codEnabled: settingsJson?.codEnabled ?? defaults.codEnabled,
-    minOrderAmount: settingsJson?.minOrderAmount ?? defaults.minOrderAmount,
-    autoAcceptOrders: settingsJson?.autoAcceptOrders ?? defaults.autoAcceptOrders,
+    codEnabled: checkout.codEnabled ?? settingsJson?.codEnabled ?? defaults.codEnabled,
+    minOrderAmount:
+      checkout.minOrderAmount ?? settingsJson?.minOrderAmount ?? defaults.minOrderAmount,
+    autoAcceptOrders:
+      checkout.autoAcceptOrders ??
+      settingsJson?.autoAcceptOrders ??
+      defaults.autoAcceptOrders,
     currency,
     delivery: {
-      provider: settingsJson?.delivery?.provider ?? defaults.delivery.provider,
-      flatRate: settingsJson?.delivery?.flatRate ?? defaults.delivery.flatRate,
-      freeDeliveryMin:
-        settingsJson?.delivery?.freeDeliveryMin ?? defaults.delivery.freeDeliveryMin,
-      pickupEnabled: settingsJson?.delivery?.pickupEnabled ?? defaults.delivery.pickupEnabled,
-      deliveryNotes: settingsJson?.delivery?.deliveryNotes ?? defaults.delivery.deliveryNotes,
-      pickupAddress: settingsJson?.delivery?.pickupAddress ?? defaults.delivery.pickupAddress,
+      provider: mirrored.provider,
+      flatRate: mirrored.flatRate,
+      freeDeliveryMin: mirrored.freeDeliveryMin,
+      pickupEnabled: isPickupEnabled(shipping),
+      deliveryNotes: mirrored.deliveryNotes || (settingsJson?.delivery?.deliveryNotes ?? ""),
+      pickupAddress: mirrored.pickupAddress || (settingsJson?.delivery?.pickupAddress ?? ""),
     },
     whatsapp: {
       enabled: settingsJson?.whatsapp?.enabled ?? defaults.whatsapp.enabled,
@@ -108,17 +147,25 @@ export function resolveStorefrontSettings(
       greeting: settingsJson?.shopAssistant?.greeting ?? defaults.shopAssistant.greeting,
       tone: settingsJson?.shopAssistant?.tone ?? defaults.shopAssistant.tone,
     },
+    checkout,
+    shipping,
   };
 }
 
 export function computeDeliveryFee(
   subtotal: number,
-  settings: StorefrontStoreSettings
+  settings: StorefrontStoreSettings,
+  address?: { city?: string; barangay?: string; province?: string; postalCode?: string }
 ): number {
-  if (settings.delivery.freeDeliveryMin > 0 && subtotal >= settings.delivery.freeDeliveryMin) {
-    return 0;
-  }
-  return settings.delivery.flatRate;
+  const resolved = resolveShippingFee({
+    shipping: settings.shipping,
+    subtotal,
+    city: address?.city,
+    barangay: address?.barangay,
+    province: address?.province,
+    postalCode: address?.postalCode,
+  });
+  return resolved.fee;
 }
 
 export function deliveryProviderLabel(provider: StorefrontStoreSettings["delivery"]["provider"]) {

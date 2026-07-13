@@ -49,6 +49,18 @@ const FruitablesStorefront = dynamic(() =>
 const MinistoreStorefront = dynamic(() =>
   import("@/components/storefront/ministore/ministore-storefront").then((m) => ({ default: m.MinistoreStorefront }))
 );
+const AirconStorefront = dynamic(() =>
+  import("@/components/storefront/aircon/aircon-storefront").then((m) => ({ default: m.AirconStorefront }))
+);
+const CarservStorefront = dynamic(() =>
+  import("@/components/storefront/carserv/carserv-storefront").then((m) => ({ default: m.CarservStorefront }))
+);
+const MottoStorefront = dynamic(() =>
+  import("@/components/storefront/motto/motto-storefront").then((m) => ({ default: m.MottoStorefront }))
+);
+const StudioStorefront = dynamic(() =>
+  import("@/components/storefront/studio/studio-storefront").then((m) => ({ default: m.StudioStorefront }))
+);
 const StorefrontExperience = dynamic(() =>
   import("@/components/storefront/experience/storefront-experience").then((m) => ({
     default: m.StorefrontExperience,
@@ -120,6 +132,22 @@ export function TenantStorefrontHome({
 
   if (pattern.storefrontRenderer === "ministore") {
     return <MinistoreStorefront tenant={tenant} />;
+  }
+
+  if (pattern.storefrontRenderer === "aircon") {
+    return <AirconStorefront tenant={tenant} />;
+  }
+
+  if (pattern.storefrontRenderer === "carserv") {
+    return <CarservStorefront tenant={tenant} />;
+  }
+
+  if (pattern.storefrontRenderer === "motto") {
+    return <MottoStorefront tenant={tenant} />;
+  }
+
+  if (pattern.storefrontRenderer === "studio") {
+    return <StudioStorefront tenant={tenant} />;
   }
 
   if (pattern.storefrontRenderer === "experience") {

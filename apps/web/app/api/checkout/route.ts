@@ -4,21 +4,25 @@ import {
   createOrderForTenant,
   deletePushSubscriptions,
   getTenantStorefrontBySlug,
+  isPaymentMethodEnabled,
   listPushSubscriptionsForTenant,
+  markCheckoutSessionConverted,
   OrderError,
   recordDeliveryQuote,
   recordPaymentIntent,
+  upsertCheckoutSession,
 } from "@guma-commerce/db";
 import {
   clientIpFrom,
-  createPayMongoClient,
   createSemaphoreClient,
   formatPhp,
   generateOrderNumber,
   isPushConfigured,
   rateLimit,
+  resolvePaymentAdapterId,
   sendPushNotifications,
-  type PayMongoMethod,
+  startOnlinePayment,
+  type CheckoutPaymentMethod,
 } from "@guma-commerce/services";
 import { getTenant as getDemoTenant } from "@/lib/demo-data";
 import { getLalamoveCheckoutQuote } from "@/lib/delivery-quote";
@@ -33,6 +37,8 @@ const checkoutSchema = z.object({
   tenantSlug: z.string().min(1).max(64),
   paymentMethod: z.enum(["gcash", "paymaya", "qrph", "cod", "card"]),
   fulfillment: z.enum(["delivery", "pickup"]).default("delivery"),
+  sessionKey: z.string().min(8).max(64).optional(),
+  couponCode: z.string().trim().max(64).optional(),
   customer: z.object({
     name: z.string().trim().min(2).max(120),
     phone: z
@@ -40,8 +46,12 @@ const checkoutSchema = z.object({
       .trim()
       .transform((value) => value.replace(/[\s-]/g, ""))
       .pipe(z.string().regex(PH_MOBILE, "Enter a valid PH mobile number (09XX XXX XXXX).")),
+    email: z.string().trim().email().max(255).optional().or(z.literal("")),
   }),
   address: z.string().trim().max(500).optional(),
+  city: z.string().trim().max(120).optional(),
+  barangay: z.string().trim().max(120).optional(),
+  postalCode: z.string().trim().max(20).optional(),
   notes: z.string().trim().max(500).optional(),
   items: z
     .array(
@@ -55,7 +65,7 @@ const checkoutSchema = z.object({
 });
 
 function trackingUrl(tenantSlug: string, orderNumber: string): string {
-  const base = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3000";
+  const base = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3010";
   return `${base}/${tenantSlug}/orders/${orderNumber}`;
 }
 
@@ -77,6 +87,48 @@ async function pushSellerNewCodOrder(
   });
   if (expiredEndpoints.length > 0) {
     await deletePushSubscriptions(expiredEndpoints);
+  }
+}
+
+async function emitOrderEvents(input: {
+  tenantId: string;
+  orderId: string;
+  orderNumber: string;
+  paymentMethod: string;
+  total: string;
+  succeeded: boolean;
+}) {
+  try {
+    const { ensureEventsWired } = await import("@/lib/events-bootstrap");
+    ensureEventsWired();
+    const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+    await emitDomainEvent({
+      name: EVENT_NAMES.ORDER_CREATED,
+      data: {
+        tenantId: input.tenantId,
+        orderId: input.orderId,
+        orderNumber: input.orderNumber,
+        paymentMethod: input.paymentMethod,
+        total: input.total,
+      },
+      idempotencyKey: `Order.Created.V1:${input.orderId}`,
+    });
+    if (input.succeeded) {
+      await emitDomainEvent({
+        name: EVENT_NAMES.ORDER_SUCCEEDED,
+        data: {
+          tenantId: input.tenantId,
+          orderId: input.orderId,
+          orderNumber: input.orderNumber,
+          paymentMethod: input.paymentMethod,
+          total: input.total,
+          channel: input.paymentMethod === "cod" ? "cod" : "online",
+        },
+        idempotencyKey: `Order.Succeeded.V1:${input.orderId}`,
+      });
+    }
+  } catch (error) {
+    console.error("[checkout] event emit failed:", error);
   }
 }
 
@@ -111,7 +163,6 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Demo shops: simulate the flow without touching the database.
     const demo = getDemoTenant(body.tenantSlug);
     if (demo) {
       const orderNumber = generateOrderNumber("DMO");
@@ -128,7 +179,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Shop not found." }, { status: 404 });
     }
 
-    const settings = resolveStorefrontSettings(tenant.settingsJson, tenant.currency);
+    const settings = resolveStorefrontSettings(
+      tenant.settingsJson,
+      tenant.currency,
+      tenant.checkoutPublishedJson,
+      tenant.shippingPublishedJson
+    );
+    const checkoutConfig = settings.checkout;
+
+    if (!isPaymentMethodEnabled(checkoutConfig, body.paymentMethod)) {
+      return NextResponse.json(
+        { error: "That payment method is not available for this shop." },
+        { status: 400 }
+      );
+    }
     if (body.paymentMethod === "cod" && !settings.codEnabled) {
       return NextResponse.json(
         { error: "Cash on Delivery is not available for this shop." },
@@ -141,17 +205,42 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+    if (checkoutConfig.customer?.requireEmail && !body.customer.email) {
+      return NextResponse.json({ error: "Email is required." }, { status: 400 });
+    }
+    if (
+      body.fulfillment === "delivery" &&
+      checkoutConfig.customer?.requireStructuredAddress &&
+      (!(body.city?.trim()) || !(body.barangay?.trim()))
+    ) {
+      return NextResponse.json(
+        { error: "Please enter your city and barangay." },
+        { status: 400 }
+      );
+    }
 
-    // Delivery fee is recomputed from a server-side subtotal estimate; unit
-    // prices inside createOrderForTenant always come from the database.
+    if (body.sessionKey) {
+      await upsertCheckoutSession({
+        tenantId: tenant.id,
+        sessionKey: body.sessionKey,
+        cartJson: body.items,
+        customerJson: body.customer,
+        addressJson: {
+          line1: body.address,
+          city: body.city,
+          barangay: body.barangay,
+          postalCode: body.postalCode,
+        },
+        couponCode: body.couponCode ?? null,
+      }).catch((error) => console.error("[checkout] session upsert failed:", error));
+    }
+
     const priceById = new Map(tenant.products.map((p) => [p.id, Number(p.basePrice)]));
     const estimatedSubtotal = body.items.reduce(
       (sum, item) => sum + (priceById.get(item.productId) ?? 0) * item.qty,
       0
     );
 
-    // Lalamove shops get a live distance-based quote; anything else (or any
-    // quote failure) falls back to the seller's flat-rate rules.
     const liveQuote =
       body.fulfillment === "delivery" && body.address
         ? await getLalamoveCheckoutQuote(settings, body.address)
@@ -164,21 +253,40 @@ export async function POST(request: Request) {
     const order = await createOrderForTenant({
       tenantSlug: body.tenantSlug,
       items: body.items.map((item) => ({ productId: item.productId, quantity: item.qty })),
-      customer: body.customer,
+      customer: {
+        name: body.customer.name,
+        phone: body.customer.phone,
+        email: body.customer.email || undefined,
+      },
       deliveryType: body.fulfillment,
       deliveryAddress:
         body.fulfillment === "delivery" && body.address
-          ? { line1: body.address, notes: body.notes }
+          ? {
+              line1: body.address,
+              city: body.city,
+              barangay: body.barangay,
+              postalCode: body.postalCode,
+              notes: body.notes,
+            }
           : undefined,
       paymentMethod: body.paymentMethod,
       deliveryFee,
       minOrderAmount: settings.minOrderAmount,
+      checkoutConfig,
+      couponCode: body.couponCode,
       notes: body.notes,
       sourceChannel: "storefront",
     });
 
+    if (body.sessionKey) {
+      await markCheckoutSessionConverted({
+        tenantId: order.tenantId,
+        sessionKey: body.sessionKey,
+        orderId: order.id,
+      }).catch((error) => console.error("[checkout] session convert failed:", error));
+    }
+
     if (liveQuote) {
-      // Persist the quote so the seller can book the same rate from Orders.
       await recordDeliveryQuote({
         tenantId: order.tenantId,
         orderId: order.id,
@@ -191,8 +299,18 @@ export async function POST(request: Request) {
     }
 
     const sms = createSemaphoreClient();
+    const adapter = resolvePaymentAdapterId(body.paymentMethod as CheckoutPaymentMethod);
 
-    if (body.paymentMethod === "cod") {
+    await emitOrderEvents({
+      tenantId: order.tenantId,
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      paymentMethod: body.paymentMethod,
+      total: order.total,
+      succeeded: adapter === "cod",
+    });
+
+    if (adapter === "cod") {
       await sms
         .orderConfirmation({
           to: body.customer.phone,
@@ -210,30 +328,31 @@ export async function POST(request: Request) {
         orderNumber: order.orderNumber,
         status: order.status,
         paymentMethod: "cod",
+        adapter: "cod",
+        totals: {
+          subtotal: order.subtotal,
+          discount: order.discount,
+          tax: order.tax,
+          deliveryFee: order.deliveryFee,
+          total: order.total,
+        },
       });
     }
 
-    const paymongo = createPayMongoClient();
-    const intent = await paymongo.createPaymentIntent({
+    const started = await startOnlinePayment({
       amountCentavos: order.totalCentavos,
       description: `Order ${order.orderNumber} — ${tenant.name}`,
-      methods: [body.paymentMethod as PayMongoMethod],
+      method: body.paymentMethod as Exclude<CheckoutPaymentMethod, "cod">,
       metadata: { order_number: order.orderNumber, tenant: body.tenantSlug },
     });
 
     await recordPaymentIntent({
       orderId: order.id,
       tenantId: order.tenantId,
-      gatewayIntentId: intent.id,
+      gatewayIntentId: started.paymentIntentId,
       amount: order.total,
       methodType: body.paymentMethod,
     });
-
-    const attached = await paymongo.attachPaymentMethod(
-      intent.id,
-      body.paymentMethod as PayMongoMethod,
-      intent.clientKey
-    );
 
     await sms
       .orderConfirmation({
@@ -246,9 +365,17 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       orderNumber: order.orderNumber,
-      paymentIntentId: intent.id,
-      redirectUrl: attached.redirectUrl,
+      paymentIntentId: started.paymentIntentId,
+      redirectUrl: started.redirectUrl,
       status: order.status,
+      adapter: started.adapter,
+      totals: {
+        subtotal: order.subtotal,
+        discount: order.discount,
+        tax: order.tax,
+        deliveryFee: order.deliveryFee,
+        total: order.total,
+      },
     });
   } catch (error) {
     if (error instanceof OrderError) {

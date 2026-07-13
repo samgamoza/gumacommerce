@@ -3,6 +3,7 @@ import type { ResolvedShopTheme } from "@guma-commerce/storefront-themes";
 import {
   normalizeStorePlan,
   planAtLeast,
+  planDisplayName,
   type StorePlan,
 } from "@/lib/storefront-plans";
 import { PlanTierBadge } from "./plan-tier-badge";
@@ -49,14 +50,14 @@ export function FeatureGate({
         <p className="max-w-xs text-sm font-medium">
           {required === "pro"
             ? "Advanced templates & campaign automation"
-            : "Live selling, flash deals, reviews & Growth templates"}
+            : "Live selling, flash deals, reviews & Pro templates"}
         </p>
         <a
           href={upgradeHref}
           className="rounded-full px-4 py-2 text-xs font-semibold text-white shadow-md transition hover:opacity-90"
           style={{ backgroundColor: theme.primaryColor }}
         >
-          Upgrade to {required === "pro" ? "Pro" : "Growth"}
+          Upgrade to {planDisplayName(required)}
         </a>
       </div>
     </div>

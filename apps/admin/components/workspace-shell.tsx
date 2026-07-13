@@ -9,7 +9,9 @@ import {
   Lock,
   MessageSquare,
   Search,
+  ShoppingCart,
   Sparkles,
+  Truck,
   Workflow,
 } from "lucide-react";
 import { PatternAdminShell } from "@/components/pattern-admin-shell";
@@ -42,6 +44,20 @@ const MODULES = [
     label: "SEO",
     icon: Search,
     description: "Meta, social cards, robots",
+  },
+  {
+    id: "checkout",
+    href: "/workspace/checkout",
+    label: "Checkout",
+    icon: ShoppingCart,
+    description: "Taxes, coupons, payments",
+  },
+  {
+    id: "shipping",
+    href: "/workspace/shipping",
+    label: "Shipping",
+    icon: Truck,
+    description: "Profiles, zones, rates",
   },
   {
     id: "marketing",
@@ -84,8 +100,15 @@ export function WorkspaceShell({
   const allowed = planAtLeast(plan, "growth");
   const approvalsAlwaysOpen = pathname.startsWith("/workspace/approvals");
   const seoAlwaysOpen = pathname.startsWith("/workspace/seo");
+  const checkoutAlwaysOpen = pathname.startsWith("/workspace/checkout");
+  const shippingAlwaysOpen = pathname.startsWith("/workspace/shipping");
   const showChildren =
-    allowed || approvalsAlwaysOpen || seoAlwaysOpen || pathname === "/workspace";
+    allowed ||
+    approvalsAlwaysOpen ||
+    seoAlwaysOpen ||
+    checkoutAlwaysOpen ||
+    shippingAlwaysOpen ||
+    pathname === "/workspace";
 
   return (
     <PatternAdminShell title={title}>

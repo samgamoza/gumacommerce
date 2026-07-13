@@ -1,4 +1,5 @@
 import type { ResolvedShopTheme } from "@guma-commerce/storefront-themes";
+import { PLAN_PRICES_PHP, planDisplayName } from "@guma-commerce/plans";
 import { hasGrowthFeatures, hasProFeatures, upgradeUrl } from "@/lib/storefront-plans";
 import { PlanTierBadge } from "./plan-tier-badge";
 
@@ -38,7 +39,7 @@ export function UpgradeHintBanner({
             className="font-semibold underline-offset-2 hover:underline"
             style={{ color: theme.primaryColor }}
           >
-            Growth from ₱499/mo
+            {planDisplayName("growth")} from ₱{PLAN_PRICES_PHP.growth}/mo
           </a>
         )}
         {!hasProFeatures(plan) && (
@@ -47,7 +48,7 @@ export function UpgradeHintBanner({
             className="font-semibold underline-offset-2 hover:underline"
             style={{ color: theme.accentColor }}
           >
-            Pro from ₱999/mo
+            {planDisplayName("pro")} from ₱{PLAN_PRICES_PHP.pro}/mo
           </a>
         )}
       </div>

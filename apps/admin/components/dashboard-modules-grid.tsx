@@ -68,7 +68,7 @@ export function DashboardModulesGrid() {
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-100 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3">
           <div>
             <p className="text-sm font-semibold text-amber-900">
-              Unlock Growth & Pro features
+              Unlock Pro &amp; Advance features
             </p>
             <p className="text-xs text-amber-800/80">
               Analytics, integrations, workflows, API access, and more.

@@ -142,6 +142,17 @@ export async function POST(request: Request) {
             },
             idempotencyKey: `Order.PaymentSucceeded.V1:${intentId}`,
           });
+          await emitDomainEvent({
+            name: EVENT_NAMES.ORDER_SUCCEEDED,
+            data: {
+              tenantId: result.tenantId,
+              orderNumber: result.orderNumber,
+              total: result.total,
+              paymentMethod: "online",
+              channel: "online",
+            },
+            idempotencyKey: `Order.Succeeded.V1:paymongo:${intentId}`,
+          });
         }
         await Promise.all([
           notifySellerPaymentReceived(result).catch((error) =>

@@ -50,29 +50,45 @@ export interface RankedTemplate {
 /** Strong industry → live template affinity (until every bundle entry is ported). */
 const CATEGORY_AFFINITY: Record<string, Partial<Record<ShopTemplateId, number>>> = {
   "Printing & Signage": {
-    ministore: 42,
-    "mono-market": 38,
-    zay: 34,
-    electro: 28,
-    bloom: 18,
+    studio: 48,
+    ministore: 36,
+    "mono-market": 32,
+    zay: 28,
+    electro: 22,
   },
   "Auto Shop & Services": {
-    electro: 42,
-    ministore: 36,
-    zay: 30,
-    "street-cart": 18,
-    "clean-guma": 12,
+    carserv: 48,
+    motto: 42,
+    electro: 30,
+    ministore: 24,
+    zay: 20,
   },
   "Automotive Parts & Accessories": {
-    electro: 44,
-    ministore: 34,
-    zay: 28,
+    carserv: 44,
+    electro: 36,
+    ministore: 28,
+    motto: 26,
   },
   "Car Wash & Detailing": {
-    electro: 36,
-    ministore: 32,
+    carserv: 44,
+    electro: 30,
+    ministore: 26,
+    "clean-guma": 18,
+  },
+  "HVAC & Air Conditioning": {
+    aircon: 50,
+    mellow: 18,
+    "clean-guma": 14,
+  },
+  "Home Services & Trades": {
+    aircon: 40,
+    carserv: 28,
     "clean-guma": 22,
-    mellow: 16,
+  },
+  "Photography & Creative": {
+    studio: 50,
+    furnish: 22,
+    bloom: 18,
   },
   "Professional & Consulting": {
     "mono-market": 36,
@@ -88,7 +104,7 @@ const CATEGORY_AFFINITY: Record<string, Partial<Record<ShopTemplateId, number>>>
   "Organic & Farm Produce": { organic: 46, fruitables: 42 },
   "Hotels & Resorts": { mellow: 46 },
   "Travel & Tours": { mellow: 40, "clean-guma": 16 },
-  "Retail & General Merchandise": { zay: 40, ministore: 34, electro: 22 },
+  "Retail & General Merchandise": { zay: 40, ministore: 34, electro: 22, motto: 18 },
   "Beauty & Skincare": { bloom: 34, kaira: 28, "magazine-rack": 24 },
 };
 
@@ -128,11 +144,17 @@ function categoryScore(pkg: TemplatePackageMetadata, category: string, id: ShopT
   }
 
   // Soft tokens for print / auto when category string is messy
-  if (/print|sign|graphic|press|banner/i.test(category) && ["ministore", "mono-market", "zay", "electro"].includes(id)) {
+  if (/print|sign|graphic|press|banner/i.test(category) && ["studio", "ministore", "mono-market", "zay"].includes(id)) {
     score = Math.max(score, 30);
   }
-  if (/auto|car|vehicle|motor|detail|garage|spa/i.test(category) && ["electro", "ministore", "zay"].includes(id)) {
+  if (/auto|car|vehicle|motor|detail|garage|spa/i.test(category) && ["carserv", "motto", "electro", "ministore"].includes(id)) {
     score = Math.max(score, 30);
+  }
+  if (/hvac|air.?con|cooling|heating/i.test(category) && id === "aircon") {
+    score = Math.max(score, 40);
+  }
+  if (/photo|studio|creative|print/i.test(category) && id === "studio") {
+    score = Math.max(score, 36);
   }
 
   return Math.min(score, 48);
@@ -223,8 +245,10 @@ function resolveInstallId(entry: BundleTemplateCatalogEntry): ShopTemplateId | n
     if (c && isShopTemplateId(c)) return c;
   }
   // Category fallbacks for queued verticals not yet ported
-  if (entry.shopCategory === "Auto Shop & Services") return "electro";
-  if (entry.shopCategory === "Printing & Signage") return "ministore";
+  if (entry.shopCategory === "Auto Shop & Services") return "carserv";
+  if (entry.shopCategory === "Printing & Signage") return "studio";
+  if (entry.shopCategory === "HVAC & Air Conditioning") return "aircon";
+  if (entry.shopCategory === "Photography & Creative") return "studio";
   if (entry.shopCategory === "Electronics") return "electro";
   if (entry.shopCategory === "Fashion & Apparel") return "bloom";
   if (entry.shopCategory === "Food & Beverage") return "sarab";

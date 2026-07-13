@@ -26,7 +26,7 @@ export default function RefundsPage() {
       <ContentSection>
         <h2>Platform subscription refunds</h2>
         <p>
-          Guma Commerce subscription fees (Growth, Pro) are non-refundable for the current billing
+          Guma Commerce subscription fees (Pro, Advance) are non-refundable for the current billing
           period. You may cancel anytime to prevent future charges. If you were charged in error,
           contact {company.support} within 7 days.
         </p>

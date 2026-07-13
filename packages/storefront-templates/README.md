@@ -7,10 +7,40 @@ External full-code templates are extracted under `reference/` and integrated as 
 - **Source zip:** `Free.Bundle.2023.zip` → `reference/Free.Bundle.2023/Free bundle 2023/`
 - **Master catalog:** [BUNDLE-2023-CATALOG.md](./BUNDLE-2023-CATALOG.md)
 - **Machine registry:** `packages/storefront-themes/src/bundle-catalog.ts`
-- **Status:** Categorized — 14 live integrations + 86 bundle entries mapped to 39 shop categories
-- **Priority queue:** `aircon`, `haircut`, `feane`, `dentcare`, `carserv`, `multishop`
+- **Status:** Categorized — 18 live integrations + Free Bundle mapped to 39 shop categories (4 Sprint 5 priority ports integrated)
+- **Priority queue:** `aircon` → `carserv` → `motto` → `studio` (**integrated**)
 
-Send a bundle template name (e.g. `aircon-1.0.0.zip`) to port the next storefront.
+## AirCon (aircon-1.0.0)
+
+- **Source:** ThemeWagon / HTML Codex AirCon (free) → `reference/aircon-1.0.0/aircon-main/`
+- **Integrated renderer:** `apps/web/components/storefront/aircon/`
+- **Template / pattern ID:** `aircon`
+- **Demo:** http://localhost:3010/aircon-demo
+- **Fit:** HVAC & Air Conditioning — service booking + quote
+
+## CarServ (carserv-1.0.0)
+
+- **Source:** ThemeWagon CarServ (free) → `reference/carserv-1.0.0/carserv-main/`
+- **Integrated renderer:** `apps/web/components/storefront/carserv/`
+- **Template / pattern ID:** `carserv`
+- **Demo:** http://localhost:3010/carserv-demo
+- **Fit:** Auto Shop & Services — repair booking + parts
+
+## Motto (motto-1.0.0)
+
+- **Source:** ThemeWagon Motto (free) → `reference/motto-1.0.0/motto-main/`
+- **Integrated renderer:** `apps/web/components/storefront/motto/`
+- **Template / pattern ID:** `motto`
+- **Demo:** http://localhost:3010/motto-demo
+- **Fit:** Motorcycle / moto gear ecommerce
+
+## Studio (studio-master)
+
+- **Source:** ThemeWagon Studio (free) → `reference/studio-1.0.0/studio-master/`
+- **Integrated renderer:** `apps/web/components/storefront/studio/`
+- **Template / pattern ID:** `studio`
+- **Demo:** http://localhost:3010/studio-demo
+- **Fit:** Photography & Creative (+ Printing & Signage interim)
 
 ## Bloom (bloomtpl 1.0.0)
 

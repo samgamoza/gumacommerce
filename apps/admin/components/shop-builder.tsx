@@ -353,7 +353,7 @@ export function ShopBuilder() {
         </div>
         <p className="mt-3 text-xs text-gray-500">
           Plan: <span className="font-medium capitalize">{subscriptionPlan}</span> · Basic templates
-          included free · Standard & Advanced unlock with Growth / Pro
+          included free · Standard & Advanced unlock with Pro / Advance
         </p>
       </Card>
 
@@ -365,12 +365,13 @@ export function ShopBuilder() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-amber-900">
-                {lockedPrompt.label} requires {lockedPrompt.minPlan === "pro" ? "Pro" : "Growth"}
+                {lockedPrompt.label} requires{" "}
+                {lockedPrompt.minPlan === "pro" ? "Advance" : "Pro"}
               </p>
               <p className="mt-1 max-w-xl text-sm text-gray-600">
                 Preview how flagship shops look with live selling, flash deals, and more on our model
-                store — then upgrade to unlock {lockedPrompt.minPlan === "pro" ? "Pro" : "Growth"}{" "}
-                templates for your shop.
+                store — then upgrade to unlock{" "}
+                {lockedPrompt.minPlan === "pro" ? "Advance" : "Pro"} templates for your shop.
               </p>
             </div>
             <button
@@ -395,7 +396,7 @@ export function ShopBuilder() {
               href={`/settings/subscription?highlight=${lockedPrompt.minPlan}&ref=shop-builder`}
               className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
             >
-              Upgrade to {lockedPrompt.minPlan === "pro" ? "Pro" : "Growth"}
+              Upgrade to {lockedPrompt.minPlan === "pro" ? "Advance" : "Pro"}
             </Link>
           </div>
         </Card>
@@ -405,8 +406,8 @@ export function ShopBuilder() {
         <Card className="border-gray-200 p-5">
           <h3 className="font-semibold text-gray-900">Compare: your shop vs flagship</h3>
           <p className="mt-1 text-sm text-gray-500">
-            Open both side by side on your phone. The model store shows what Growth &amp; Pro features
-            feel like — your live preview is what customers see today on Sulit (free).
+            Open both side by side on your phone. The model store shows what Pro &amp; Advance
+            features feel like — your live preview is what customers see today on Free.
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <a
@@ -427,7 +428,7 @@ export function ShopBuilder() {
             >
               <p className="text-xs font-bold uppercase tracking-wide text-amber-300">Model store</p>
               <p className="mt-1 font-medium">Guma Supply Co.</p>
-              <p className="mt-2 text-xs text-gray-300">Growth + Pro features · Staged demo</p>
+              <p className="mt-2 text-xs text-gray-300">Pro + Advance features · Staged demo</p>
             </a>
           </div>
         </Card>

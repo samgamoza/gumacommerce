@@ -104,7 +104,7 @@ Legacy `/ai-studio` and `/agents` redirect into Workspace modules.
 - Permission matrix: `packages/ai/src/permissions.ts`
 - Launch Publish creates + approves + publishes a **theme** change request with audit
 - AI product generate creates a **catalog** change request; Products save / Approvals publish applies it
-- UI: `/workspace/approvals` (theme + catalog diffs; theme rollback only)
+- UI: `/workspace/approvals` (theme + catalog + pricing + SEO diffs; theme + SEO rollback)
 
 ### Phase 4 breadth (in progress)
 
@@ -113,8 +113,11 @@ Legacy `/ai-studio` and `/agents` redirect into Workspace modules.
 | Theme | Live (Launch + Approvals) |
 | Catalog | Live (AI product generate → change request → publish) |
 | Pricing | Live (AI suggest price → change request → apply) |
-| SEO / checkout / shipping | Not started |
-| Priority template ports | Metadata queue: `listPriorityPortQueue()` — aircon → carserv → motto → studio (print interim) |
+| SEO | Live (Workspace SEO + AI suggest → CR → Approvals publish; storefront metadata / robots / sitemap / JSON-LD) |
+| Checkout | Live (Workspace Checkout + AI suggest → CR → Approvals publish; cart session, tax/coupons, payment adapters, Order.Created/Succeeded + Checkout.Abandoned) |
+| Shipping | Live (Workspace Shipping + AI suggest → CR → Approvals publish; profiles/zones/rates/courier/pickup/ETA; mirrors `settings_json.delivery`) |
+| Plan catalog (ADR D4) | Live — `@guma-commerce/plans` (ids `free`/`growth`/`pro`; labels Free/Pro/Advance; aliases `starter`/`advance`/`sulit`) |
+| Priority template ports | Live — `aircon` → `carserv` → `motto` → `studio` (demos `/{id}-demo`; catalog status `integrated`) |
 
 ---
 

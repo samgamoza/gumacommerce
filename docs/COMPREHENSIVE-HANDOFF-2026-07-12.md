@@ -1,8 +1,8 @@
 # Guma Commerce — Comprehensive Summary & Handoff
 
-**Last updated:** 2026-07-12  
+**Last updated:** 2026-07-13  
 **Audience:** Next developer, architect, or AI agent continuing this repo  
-**Supersedes partially:** `docs/AGENT-HANDOFF.md` (2026-07-05 session) — read both; this doc is the current whole-repo picture including template library work and Handbook v1.2 assessment.
+**Supersedes partially:** `docs/AGENT-HANDOFF.md` (2026-07-05 session) — read both; this doc is the current whole-repo picture including template library work, Handbook v1.2 assessment, and **Sprints 1–5** (SEO → Checkout → Shipping → Plan catalog → Priority template ports).
 
 ---
 
@@ -12,10 +12,11 @@
 
 | Dimension | Status |
 |-----------|--------|
-| **Maturity** | Working MVP+ — real checkout, orders, agents, 14+ storefront themes, platform super-admin |
+| **Maturity** | Working MVP+ — real checkout, orders, agents, **18** live storefront themes, platform super-admin, crown-jewel CR rails for theme/catalog/pricing/SEO/checkout/shipping |
 | **Stack** | pnpm + Turbo monorepo, Next.js 15, React 19, Drizzle + Neon Postgres |
-| **Templates** | 13 HTML-ported themes live + built-in token themes; 100-template bundle catalogued |
-| **Handbook** | v1.2 reviewed — hybrid adoption recommended (events + Workstation), not stack rewrite |
+| **Templates** | **18** HTML-ported themes live + built-in token themes; Free Bundle 2023 catalogued; Sprint 5 priority ports **aircon / carserv / motto / studio** integrated |
+| **Plans (ADR D4)** | Single catalog `@guma-commerce/plans` — IDs `free`/`growth`/`pro`; labels **Free / Pro / Advance**; ₱0 / ₱499 / ₱999 |
+| **Handbook** | v1.2 hybrid adoption — crown jewel + plan catalog landed; Workstation unification and infra still incremental |
 | **Deployment** | Vercel-ready docs; production deploy not assumed complete |
 
 **Repo path:** `D:\All Apps\gumacommerce`  
@@ -36,24 +37,24 @@
 
 | Handbook concept | Current implementation |
 |------------------|------------------------|
-| AI Workstation | Split: **Shop Builder** + **AI Studio** + **Agents** — no unified diff/approve UI |
-| 100+ templates | **14** full React ports + **~9** built-in token themes; **100** in bundle catalog only |
-| Template in onboarding | Signup picks category/vibe; template chosen later in Shop Builder |
+| AI Workstation | Split: **Shop Builder** + **Workspace** (marketing/SEO/checkout/shipping/approvals) + **Agents** — Approvals diff UI live; full unified Workstation still converging |
+| 100+ templates | **18** full React ports + built-in token themes; **100** in Free Bundle catalog; priority queue ported |
+| Template in onboarding | Signup picks category/vibe; Launch recommends Top 3; template also chosen in Shop Builder |
 | LangGraph orchestration | Custom `packages/ai` + cron agents — **no LangGraph** |
-| Event bus (Inngest) | Direct API/webhook handlers + Vercel crons |
+| Event bus (Inngest) | `packages/events` thin bus — Theme/Catalog/Pricing/SEO/Checkout/Shipping/Order events emitting |
 | Prisma + RLS | **Drizzle**, app-level `tenantId` scoping |
-| Plans FREE/PRO/ADVANCE | **`free` / `growth` / `pro`** (+ platform `starter`) |
-| Live selling, POS, smart pricing | **Not built** |
-| Commerce + logistics | **Largely built** (checkout, PayMongo, Lalamove, wallet) |
+| Plans FREE/PRO/ADVANCE | **Canonical:** IDs `free`/`growth`/`pro`; labels Free/Pro/Advance via `@guma-commerce/plans` (ADR D4 done) |
+| Live selling, POS, smart pricing | **Not built** (pricing *suggest* CR domain exists) |
+| Commerce + logistics | **Largely built** (checkout CR + tax/coupons, shipping CR, PayMongo, Lalamove, wallet) |
 
 ### 2.3 Agreed hybrid direction (do not rewrite from handbook verbatim)
 
 1. **Keep** Drizzle, 3-app monolith, PayMongo-first, pattern-based TSX renderers  
-2. **Add** Inngest events, unified Workstation, theme draft/publish, LangGraph for customization only  
+2. **Add** Inngest events (partially landed), unified Workstation, theme draft/publish (landed), LangGraph for customization only (deferred)  
 3. **Defer** Prisma migration, plugin marketplace, ClickHouse, full pgvector memory  
-4. **Map plans:** Handbook FREE → `free`, PRO → `growth`, ADVANCE → `pro`
+4. **Map plans:** Handbook FREE → `free`, PRO → `growth`, ADVANCE → `pro` — **implemented** in `@guma-commerce/plans`
 
-Full assessment: see conversation handoff 2026-07-12 or request `docs/HANDBOOK-V1.2-ASSESSMENT.md` if split out later.
+Full assessment: `docs/HANDBOOK-V1.2-ASSESSMENT.md`. Binding decisions: `docs/ADR-0001-handbook-adoption.md`.
 
 ---
 
@@ -62,27 +63,29 @@ Full assessment: see conversation handoff 2026-07-12 or request `docs/HANDBOOK-V
 ```
 guma-commerce/
 ├── apps/
-│   ├── web/                 # Storefront + marketing (buyer-facing)
-│   ├── admin/               # Seller dashboard + signup + AI
-│   └── platform/            # Super-admin console (all tenants)
+│   ├── web/                 # Storefront + marketing (buyer-facing) :3010
+│   ├── admin/               # Seller dashboard + Launch + Workspace :3001
+│   └── platform/            # Super-admin console (all tenants) :3002
 ├── packages/
 │   ├── db/                  # Drizzle schema, migrations, queries
-│   ├── ai/                  # LLM router, quotas, generators
+│   ├── ai/                  # LLM router, permissions; plan-limits re-exports @guma-commerce/plans
+│   ├── plans/               # Canonical plan catalog + AI limits (ADR D4)
 │   ├── auth/                # JWT sessions, signup, Google OAuth
+│   ├── events/              # Inngest client + Domain.Event.Vn emitters
 │   ├── services/            # PayMongo, Lalamove, SMS, rate-limit, push
 │   ├── storefront-themes/   # Templates, patterns, registry, bundle catalog
 │   ├── ui/                  # Shared Button/Card/Badge
 │   └── media/               # Image-enhance prompt templates (minimal)
-├── reference/               # Extracted HTML template sources
-│   ├── bloomtpl-1.0.0/
-│   ├── waggy-1.0.0/
-│   ├── fruitables-1.0.0/
-│   ├── MiniStore-1.0.0/
-│   └── Free.Bundle.2023/    # 100 zips (~594 MB) — consider .gitignore
+├── reference/               # Extracted HTML template sources (incl. aircon/carserv/motto/studio)
 ├── packages/storefront-templates/   # Human docs (README, BUNDLE catalog)
 └── docs/
-    ├── AGENT-HANDOFF.md             # 2026-07-05 platform session
+    ├── AGENT-HANDOFF.md
     ├── COMPREHENSIVE-HANDOFF-2026-07-12.md   # ← this file
+    ├── HANDBOOK-V1.2-ASSESSMENT.md
+    ├── ADR-0001-handbook-adoption.md
+    ├── CROWN-JEWEL-AI-APPROVAL.md
+    ├── ARCHITECTURE.md
+    ├── SPRINT-1-SEO-PROGRESS.md … SPRINT-5-TEMPLATE-PORTS-PROGRESS.md
     ├── DATABASE.md
     └── DEPLOY-VERCEL.md
 ```
@@ -237,17 +240,16 @@ Examples in `templates.ts`: `clean-guma`, `neon-bazaar`, `simply-sweet`, `glass-
 
 | Status | Count |
 |--------|------:|
-| Live integrated (this repo) | 14 |
+| Live HTML→React ports (this repo) | **18** |
+| Free Bundle catalog `integrated` | 4 (aircon, carserv, motto, studio) |
 | Variant of integrated | 11 |
-| Queued storefront | 56 |
-| Service landing | 16 |
-| Admin dashboard | 7 |
-| Content / non-storefront | 10 |
+| Queued storefront | ~52 |
+| Service landing / admin / content / non-storefront | remainder of 100 |
 
-**Docs:** `packages/storefront-templates/BUNDLE-2023-CATALOG.md`  
-**Priority queue:** `aircon`, `haircut`, `feane`, `dentcare`, `carserv`, `multishop`
+**Docs:** `packages/storefront-templates/BUNDLE-2023-CATALOG.md`, `docs/SPRINT-5-TEMPLATE-PORTS-PROGRESS.md`  
+**Priority queue:** `listPriorityPortQueue()` — **aircon → carserv → motto → studio** (all `integrated`, Sprint 5)
 
-**Not all 100 are integrated** — only catalogued and categorized.
+**Not all 100 are integrated** — only catalogued and categorized; expand ports as demand warrants.
 
 ---
 
@@ -287,8 +289,11 @@ Examples in `templates.ts`: `clean-guma`, `neon-bazaar`, `simply-sweet`, `glass-
 | Orders admin | ✅ | `apps/admin/app/orders/` |
 | Lalamove quotes/booking | ✅ (+ mock) | `services/delivery/lalamove.ts`, webhooks |
 | Wallet & payouts | ✅ schema + APIs | `api/wallet/*`, KYC flow |
-| SMS (Semaphore) | ✅ | Growth+ agent reminders |
+| SMS (Semaphore) | ✅ | Pro+ (`growth`+) agent reminders |
 | Push notifications | ✅ | VAPID web push on order events |
+| SEO (Workspace) | ✅ | `seo_*_json` CR → Approvals → storefront metadata/robots/sitemap |
+| Checkout config | ✅ | `checkout_*_json` CR; tax/coupons; Order.Created/Succeeded |
+| Shipping profiles | ✅ | `shipping_*_json` CR; zones/rates; mirrors `settings_json.delivery` |
 
 ---
 
@@ -299,23 +304,26 @@ Examples in `templates.ts`: `clean-guma`, `neon-bazaar`, `simply-sweet`, `glass-
 | Component | Path |
 |-----------|------|
 | LLM router | `packages/ai/src/providers/llm.ts` (OpenAI, Gemini, Groq, mock) |
-| Quotas | `packages/ai/src/plan-limits.ts` + `ai_usage_monthly` |
+| Quotas | `@guma-commerce/plans` (+ thin re-export `packages/ai/src/plan-limits.ts`) + `ai_usage_monthly` |
 | Generators | `packages/ai/src/generator.ts` |
+| Permissions / SCOPE_MATRIX | `packages/ai/src/permissions.ts` |
 | Agent runner | `apps/admin/lib/agents/run-agents.ts` |
-| Agent UI | `/agents` — `agents-manager.tsx` |
-| AI Studio | `/ai-studio` — campaign preview |
+| Agent UI | Workspace / Agents |
+| Marketing / AI Studio | `/workspace/marketing` (legacy `/ai-studio` redirects) |
 | Buyer chat | `apps/web/app/api/chat/route.ts` + `shop-assistant.tsx` |
 | Crons | `apps/admin/vercel.json` |
 
 ### AI limits by plan (seller billing)
 
-| Plan | Label | Chat/day | Generations/mo | Agent runs/week |
-|------|-------|----------|----------------|-----------------|
-| `free` | Sulit | 25 | 5 | 3 |
-| `growth` | Growth | 200 | 100 | 14 |
-| `pro` | Pro | 2000 | 500 | 999 |
+Canonical source: `@guma-commerce/plans` (`PLAN_AI_LIMITS`).
 
-Soft token budget degrades model to Gemini Flash when exceeded.
+| Plan ID | Label | Chat/day | Generations/mo | Agent runs/week |
+|---------|-------|----------|----------------|-----------------|
+| `free` | Free | 25 | 5 | 3 |
+| `growth` | Pro | 200 | 100 | 14 |
+| `pro` | Advance | 2000 | 500 | 999 |
+
+Aliases: `starter`→`growth`, `advance`→`pro`, `sulit`→`free`. Soft token budget degrades model to Gemini Flash when exceeded.
 
 ---
 
@@ -328,7 +336,7 @@ Built 2026-07-05. Surfaces:
 - Users, Subscriptions, Moderation (`content_queue`)
 - Orders (platform-wide), Audit log
 
-**Plan catalog conflict:** Platform uses `PLATFORM_PLANS` (`free/starter/growth/pro` at different price points) vs seller admin (`free/growth/pro` at ₱0/499/999). **Reconcile before real billing.**
+**Plan catalog:** Uses `@guma-commerce/plans` via `CLIENT_PLANS` / `PLATFORM_PLANS` re-exports (ADR D4). Legacy DB rows with `starter` normalize to `growth` at read time. Filters show Free / Pro / Advance (+ legacy starter).
 
 ---
 
@@ -336,10 +344,11 @@ Built 2026-07-05. Surfaces:
 
 | Source | Plans | Notes |
 |--------|-------|-------|
-| Seller admin | `free`, `growth`, `pro` | ₱0 / ₱499 / ₱999 |
-| AI limits | same 3 | `plan-limits.ts` |
-| Platform console | + `starter` | Different MRR math |
-| Handbook v1.2 | FREE, PRO, ADVANCE | Not implemented as named |
+| **Canonical** | `@guma-commerce/plans` | IDs `free`/`growth`/`pro`; labels Free/Pro/Advance; ₱0 / ₱499 / ₱999 |
+| Seller admin / web / platform | same | Thin wrappers / re-exports |
+| AI limits | same package | `PLAN_AI_LIMITS` |
+| Handbook v1.2 | FREE, PRO, ADVANCE | Mapped → free / growth / pro |
+| PayMongo upgrade | `growth` \| `pro` | Contract unchanged |
 
 Upgrade flow: `apps/admin/app/api/billing/upgrade/route.ts` → PayMongo → webhook applies plan.
 
@@ -364,25 +373,31 @@ Features **degrade gracefully** without keys (mocks for PayMongo/Lalamove/LLM).
 
 ---
 
-## 14. Recent work (2026-07-06 — 2026-07-12)
+## 14. Recent work
 
-### Template integrations
+### 2026-07-13 — MVP completion sprints 1–5
 
-- Ported: **waggy**, **fruitables**, **ministore** (React renderers + demos + registry)
-- Catalogued **Free Bundle 2023** (100 templates) → `bundle-catalog.ts`, `BUNDLE-2023-CATALOG.md`
+| Sprint | Outcome | Doc |
+|--------|---------|-----|
+| 1 SEO | Tenant SEO draft/publish JSON; Workspace SEO; storefront metadata/robots/sitemap/JSON-LD | `SPRINT-1-SEO-PROGRESS.md` |
+| 2 Checkout | Checkout draft/publish; tax/coupons; sessions; abandon sweep; Order events | `SPRINT-2-CHECKOUT-PROGRESS.md` |
+| 3 Shipping | Shipping profiles/zones/rates; CR publish; delivery mirror | `SPRINT-3-SHIPPING-PROGRESS.md` |
+| 4 Plan catalog | `@guma-commerce/plans`; Free/Pro/Advance labels; aliases; ADR D4 | `SPRINT-4-PLAN-CATALOG-PROGRESS.md` |
+| 5 Template ports | aircon, carserv, motto, studio React ports + demos | `SPRINT-5-TEMPLATE-PORTS-PROGRESS.md` |
+
+### 2026-07-06 — 2026-07-12 (pre-sprint)
+
+- Ported: **waggy**, **fruitables**, **ministore**
+- Catalogued **Free Bundle 2023** (100 templates)
 - Expanded shop categories **19 → 39**
-
-### Fixes
-
-- **waggy-demo:** CSS 404 (dev cache), price format (`/100` removed), hero/product images
-- **fruitables-demo:** webpack HMR error — dynamic storefront imports, price fix, hero Link CTA, dead Unsplash URLs replaced
-- **Dev port:** `apps/web` uses **3010** in `package.json`
+- Crown jewel Phase 1–3: change_requests, Approvals, theme publish
 
 ### Architecture decisions (from handbook review)
 
 - Do **not** migrate to Prisma
-- Adopt **Inngest + Workstation + draft/publish** incrementally
+- Adopt **Inngest + Workstation + draft/publish** incrementally (CR rails + events largely landed for Phase 4 domains)
 - Keep **pattern + TSX renderer** model for templates
+- **One plan catalog** — `@guma-commerce/plans` (ADR D4)
 
 ---
 
@@ -390,16 +405,15 @@ Features **degrade gracefully** without keys (mocks for PayMongo/Lalamove/LLM).
 
 | Issue | Severity | Notes |
 |-------|----------|-------|
-| Plan price sources disagree (3–4 catalogs) | High | Blocks accurate billing/MRR |
+| ~~Plan price sources disagree~~ | ~~High~~ | **Resolved Sprint 4** — `@guma-commerce/plans` |
 | Drizzle migrations lag live Neon schema | High | Run `db:generate` / reconcile |
-| `reference/Free.Bundle.2023/` may bloat git | Medium | Add to `.gitignore` if not needed in repo |
-| README ports (3000) vs web package.json (3010) | Low | Update README |
-| Demo prices: some formatters still divide by 100 | Low | Waggy/fruitables fixed; check stylish/organic/ministore |
-| Many Unsplash demo URLs return 404 | Low | Replace as found |
+| `reference/` extracted templates may bloat git | Medium | Prefer `.gitignore` for large trees; keep catalog metadata |
 | Suspended tenant/user not enforced on seller login/storefront | Medium | Platform can suspend; apps don't block yet |
 | Email verification placeholder | Medium | Token exists; Resend not wired |
-| Live selling, POS, smart pricing | — | Handbook future phases |
-| LangGraph, Inngest, pgvector | — | Handbook v1.2 — not started |
+| Unified AI Workstation UX | Medium | Approvals exist; Shop Builder / Marketing / Agents still separate entry points |
+| Live selling, POS | — | Handbook future / Advance |
+| LangGraph / ClickHouse / Meili / Vault | — | Deferred (ADR D6) |
+| Remaining Free Bundle ports | Low | Demand-driven; priority queue done |
 
 ### Webpack dev error (`__webpack_modules__[moduleId] is not a function`)
 
@@ -411,33 +425,41 @@ cd apps/web && pnpm run dev:clean
 
 ---
 
-## 16. Recommended roadmap (post-handoff)
+## 16. Recommended roadmap (post-sprint)
 
-### Phase A — Foundation (1–2 weeks)
+### Done (do not re-open unless regressing)
 
-- [ ] Unify plan catalog to single source of truth
-- [ ] Generate/reconcile Drizzle migrations
-- [ ] Update README ports + point to this handoff
-- [ ] Add `packages/events` + Inngest skeleton + 3 core events
-- [ ] Schema: `themeDraftJson`, `customizationVersion` on tenants
+- [x] Unify plan catalog (`@guma-commerce/plans`, ADR D4)
+- [x] Theme draft/publish + change_requests + Approvals (crown jewel Phases 1–3)
+- [x] Phase 4 domains: catalog, pricing, SEO, checkout, shipping
+- [x] Priority template ports: aircon → carserv → motto → studio
+- [x] `packages/events` thin emitters for landed domains
 
-### Phase B — AI Workstation (4–6 weeks)
+### Still open
 
-- [ ] Unified UI: preview + controls + AI input + plan/diff panel
-- [ ] Template pick in signup/onboarding
-- [ ] LangGraph graph for customization → draft → approve → publish
-- [ ] AI permission scopes (minimal matrix)
+#### Phase A — Foundation leftovers
 
-### Phase C — Template scale (ongoing)
+- [ ] Generate/reconcile Drizzle migrations vs Neon
+- [ ] Enforce suspended tenant/user on login + storefront
+- [ ] Update README ports if still stale (web = **3010**)
 
-- [ ] Port priority bundle templates (aircon, haircut, feane, …)
+#### Phase B — AI Workstation convergence
+
+- [ ] Unify Shop Builder + Workspace modules into one preview/diff surface
+- [ ] Template pick firmly in Launch onboarding (Top 3 already scored)
+- [ ] LangGraph **only** if customization graph needs it (optional)
+
+#### Phase C — Template scale (ongoing)
+
+- [ ] Further Free Bundle ports as demand (haircut, feane, dentcare, …)
 - [ ] Postgres FTS product search
-- [ ] Template embeddings for AI suggest (pgvector)
+- [ ] Template embeddings for AI suggest (pgvector) — only when needed
 
-### Phase D — Pro/Advance features
+#### Phase D — Pro/Advance features
 
-- [ ] Live selling, smart pricing, POS, dropshipping
+- [ ] Live selling, smart pricing UI depth, POS, dropshipping
 - [ ] Plugin provider registry (internal first)
+- [ ] Paid subscription renewals hardening (PayMongo)
 
 ---
 
@@ -466,15 +488,24 @@ packages/storefront-themes/src/templates.ts
 packages/storefront-themes/src/patterns.ts
 packages/storefront-themes/src/template-registry.ts
 packages/storefront-themes/src/bundle-catalog.ts
+packages/plans/src/catalog.ts          — canonical plans (ADR D4)
+packages/plans/src/ai-limits.ts
 
 # Data
 packages/db/src/schema/index.ts
 packages/auth/src/service.ts
-packages/ai/src/plan-limits.ts
+packages/ai/src/plan-limits.ts         — re-export of @guma-commerce/plans
+packages/ai/src/permissions.ts
 packages/services/src/payments/paymongo.ts
+packages/events/
 
 # Docs
 docs/AGENT-HANDOFF.md
+docs/HANDBOOK-V1.2-ASSESSMENT.md
+docs/ADR-0001-handbook-adoption.md
+docs/CROWN-JEWEL-AI-APPROVAL.md
+docs/ARCHITECTURE.md
+docs/SPRINT-*-PROGRESS.md
 docs/DATABASE.md
 docs/DEPLOY-VERCEL.md
 packages/storefront-templates/README.md
@@ -483,11 +514,9 @@ packages/storefront-templates/BUNDLE-2023-CATALOG.md
 
 ---
 
-## 18. Git state (snapshot 2026-07-12)
+## 18. Git state
 
-- Branch observed: `backup/pre-storefront-unify` (ahead of origin)
-- Recent commits include platform app, orders, cart, checkout improvements
-- **Much template work may be uncommitted** — verify `git status` before assuming remote state
+- Prefer current branch status over this snapshot; template + sprint work may be uncommitted
 - Do **not** commit unless explicitly requested
 
 ---
@@ -498,19 +527,25 @@ After clone or major pull:
 
 ```powershell
 pnpm install
-pnpm --dir apps/web exec tsc --noEmit
-pnpm --dir apps/admin exec tsc --noEmit
-pnpm --dir apps/platform exec tsc --noEmit
+pnpm --filter @guma-commerce/plans test
+pnpm --filter @guma-commerce/storefront-themes exec tsc --noEmit
+pnpm --filter web exec tsc --noEmit
+pnpm --filter admin exec tsc --noEmit
+pnpm --filter platform exec tsc --noEmit
 
 cd apps/web && pnpm run dev:clean
-# Open http://localhost:3010/waggy-demo
-# Open http://localhost:3010/fruitables-demo
+# http://localhost:3010/aircon-demo
+# http://localhost:3010/carserv-demo
+# http://localhost:3010/motto-demo
+# http://localhost:3010/studio-demo
+# http://localhost:3010/waggy-demo
 
 cd apps/admin && pnpm run dev
-# Open http://localhost:3001/shop-builder
+# http://localhost:3001/workspace/approvals
+# http://localhost:3001/shop-builder
 
 cd apps/platform && pnpm exec next dev
-# Open http://localhost:3002 — login super_admin
+# http://localhost:3002 — login super_admin
 ```
 
 ---
@@ -520,8 +555,9 @@ cd apps/platform && pnpm exec next dev
 - **Commits:** Only when user asks
 - **Scope:** Minimize diff; match existing patterns in each package
 - **Template ports:** One zip at a time; always add demo + build verify
-- **Handbook:** v1.2 is target architecture — implement incrementally via hybrid plan above
+- **Plans:** Never hardcode prices/limits outside `@guma-commerce/plans`
+- **Handbook:** v1.2 is target architecture — implement incrementally via ADR-0001
 
 ---
 
-*End of comprehensive handoff. For the 2026-07-05 platform console session details, see `docs/AGENT-HANDOFF.md` § Session 2026-07-05.*
+*End of comprehensive handoff. Sprint progress: `docs/SPRINT-*-PROGRESS.md`. Platform session details: `docs/AGENT-HANDOFF.md`. Handbook verdicts: `docs/HANDBOOK-V1.2-ASSESSMENT.md`.*

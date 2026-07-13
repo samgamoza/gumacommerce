@@ -69,7 +69,7 @@ export const faqCategories = [
       },
       {
         q: "How much does Guma Commerce cost?",
-        a: "Start free on the Sulit plan (30 orders/month). Growth is ₱499/month for unlimited orders, daily agents, and AI tools. Pro is ₱999/month for advanced campaigns, WhatsApp agent, and higher AI limits. A small per-order platform fee applies on paid transactions.",
+        a: "Start free on the Free plan. Pro is ₱499/month for GUMA Workspace, agents, and higher AI limits. Advance is ₱999/month for advanced campaigns and priority support. A small per-order platform fee applies on paid transactions.",
       },
       {
         q: "When do I receive my money?",

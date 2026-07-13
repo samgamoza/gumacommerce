@@ -213,6 +213,59 @@ export const STORE_PATTERNS: StorePatternDefinition[] = [
     storefrontRenderer: "ministore",
     dashboardRenderer: "guma",
   },
+  {
+    id: "aircon",
+    label: "AirCon HVAC",
+    description:
+      "AC repair & HVAC service storefront with quote hero, service grid, bookable packages, and free quote form — ported from AirCon (ThemeWagon).",
+    tags: ["hvac", "aircon", "ac repair", "cooling", "heating"],
+    categoryHints: [
+      /hvac|air.?con|aircon|air.?condition|cooling|heating|ac.?repair|refrigeration/i,
+    ],
+    templateId: "aircon",
+    storefrontRenderer: "aircon",
+    dashboardRenderer: "guma",
+  },
+  {
+    id: "carserv",
+    label: "CarServ Auto",
+    description:
+      "Auto repair storefront with booking hero, service tabs, parts & labor packages — ported from CarServ (ThemeWagon).",
+    tags: ["auto", "car repair", "garage", "mechanic", "parts"],
+    categoryHints: [
+      /auto.?shop|car.?repair|car.?service|garage|mechanic|auto.?repair|vehicle.?service/i,
+      /automotive.?service|oil.?change|brake.?service/i,
+    ],
+    templateId: "carserv",
+    storefrontRenderer: "carserv",
+    dashboardRenderer: "guma",
+  },
+  {
+    id: "motto",
+    label: "Motto Moto",
+    description:
+      "Motorcycle & moto gear ecommerce with bold black/white hero and product grid — ported from Motto (ThemeWagon).",
+    tags: ["motorcycle", "moto", "gear", "helmet", "bike"],
+    categoryHints: [
+      /moto|motorcycle|motorbike|helmet|riding.?gear|scooter.?shop/i,
+    ],
+    templateId: "motto",
+    storefrontRenderer: "motto",
+    dashboardRenderer: "guma",
+  },
+  {
+    id: "studio",
+    label: "Studio Creative",
+    description:
+      "Photography & creative packages with portfolio hero and print/signage interim — ported from Studio (ThemeWagon).",
+    tags: ["photography", "studio", "creative", "print", "signage"],
+    categoryHints: [
+      /photograph|photo.?studio|creative.?studio|print(ing)?|signage|graphic.?design/i,
+    ],
+    templateId: "studio",
+    storefrontRenderer: "studio",
+    dashboardRenderer: "guma",
+  },
 ];
 
 export const STORE_PATTERN_MAP = Object.fromEntries(
@@ -295,6 +348,10 @@ export function matchStorePattern(input: {
   if (templateId === "waggy") return "waggy";
   if (templateId === "fruitables") return "fruitables";
   if (templateId === "ministore") return "ministore";
+  if (templateId === "aircon") return "aircon";
+  if (templateId === "carserv") return "carserv";
+  if (templateId === "motto") return "motto";
+  if (templateId === "studio") return "studio";
 
   const category = input.category?.trim() ?? "";
   if (category) {

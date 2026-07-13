@@ -150,7 +150,7 @@ export const tenants = pgTable(
     themeJson: jsonb("theme_json").$type<{
       templateId?: string;
       /** Paired storefront + seller-dashboard pattern (e.g. simply-sweet). */
-      patternId?: "classic" | "simply-sweet" | "bloom" | "sarab" | "furnish" | "zay" | "electro" | "kaira" | "foodmart" | "stylish" | "mellow" | "organic" | "waggy" | "fruitables" | "ministore";
+      patternId?: "classic" | "simply-sweet" | "bloom" | "sarab" | "furnish" | "zay" | "electro" | "kaira" | "foodmart" | "stylish" | "mellow" | "organic" | "waggy" | "fruitables" | "ministore" | "aircon" | "carserv" | "motto" | "studio";
       primaryColor?: string;
       accentColor?: string;
       fontFamily?: string;
@@ -215,6 +215,22 @@ export const tenants = pgTable(
     /** Buyer-facing published SEO. Storefront metadata/robots/sitemap read this. */
     seoPublishedJson: jsonb("seo_published_json").$type<
       import("../types/tenant-seo").TenantSeoJson
+    >(),
+    /** Working checkout config draft (Workspace Checkout / AI suggest). */
+    checkoutDraftJson: jsonb("checkout_draft_json").$type<
+      import("../types/tenant-checkout").TenantCheckoutJson
+    >(),
+    /** Buyer-facing published checkout config. Storefront reads this. */
+    checkoutPublishedJson: jsonb("checkout_published_json").$type<
+      import("../types/tenant-checkout").TenantCheckoutJson
+    >(),
+    /** Working shipping config draft (Workspace Shipping / AI suggest). */
+    shippingDraftJson: jsonb("shipping_draft_json").$type<
+      import("../types/tenant-shipping").TenantShippingJson
+    >(),
+    /** Buyer-facing published shipping. Storefront reads this. */
+    shippingPublishedJson: jsonb("shipping_published_json").$type<
+      import("../types/tenant-shipping").TenantShippingJson
     >(),
     localeDefault: localeEnum("locale_default").default("taglish"),
     currency: varchar("currency", { length: 3 }).default("PHP").notNull(),
@@ -423,6 +439,8 @@ export const orders = pgTable(
     status: orderStatusEnum("status").default("pending_payment").notNull(),
     subtotal: decimal("subtotal", { precision: 12, scale: 2 }).notNull(),
     discount: decimal("discount", { precision: 12, scale: 2 }).default("0"),
+    tax: decimal("tax", { precision: 12, scale: 2 }).default("0"),
+    couponCode: varchar("coupon_code", { length: 64 }),
     deliveryFee: decimal("delivery_fee", { precision: 12, scale: 2 }).default("0"),
     serviceFee: decimal("service_fee", { precision: 12, scale: 2 }).default("0"),
     total: decimal("total", { precision: 12, scale: 2 }).notNull(),
@@ -484,6 +502,38 @@ export const orderStatusHistory = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [index("order_status_history_order_idx").on(table.orderId)]
+);
+
+// ─── Checkout sessions (abandoned cart / progress) ───────────────────────────
+
+export const checkoutSessions = pgTable(
+  "checkout_sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .references(() => tenants.id, { onDelete: "cascade" })
+      .notNull(),
+    sessionKey: varchar("session_key", { length: 64 }).notNull(),
+    cartJson: jsonb("cart_json"),
+    customerJson: jsonb("customer_json"),
+    addressJson: jsonb("address_json"),
+    couponCode: varchar("coupon_code", { length: 64 }),
+    status: varchar("status", { length: 32 }).default("active").notNull(),
+    lastActivityAt: timestamp("last_activity_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    abandonedAt: timestamp("abandoned_at", { withTimezone: true }),
+    convertedOrderId: uuid("converted_order_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("checkout_sessions_tenant_key_idx").on(table.tenantId, table.sessionKey),
+    index("checkout_sessions_status_idx").on(
+      table.tenantId,
+      table.status,
+      table.lastActivityAt
+    ),
+  ]
 );
 
 // ─── Payments ────────────────────────────────────────────────────────────────

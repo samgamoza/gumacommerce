@@ -1,11 +1,11 @@
 # GUMA ai-Commerce — Constitutional Refactoring Assessment
 
-**Version:** 1.0  
-**Date:** 2026-07-12  
-**Status:** Phase 0–3 + Crown Jewel Approvals MVP landed (2026-07-12)  
+**Version:** 1.1  
+**Date:** 2026-07-12 (amended **2026-07-13**)  
+**Status:** Phase 0–3 + Crown Jewel Approvals MVP + Phase 4 breadth (SEO/Checkout/Shipping) + plan catalog (D4) + priority template ports landed  
 **Constitution source:** Cursor Master Prompt — GUMA ai-Commerce Constitutional Refactoring  
 **Codebase:** `D:\All Apps\gumacommerce`  
-**Companion docs:** `docs/CONSTITUTION.md`, `docs/ARCHITECTURE.md`, `docs/COMPREHENSIVE-HANDOFF-2026-07-12.md`, Handbook v1.2
+**Companion docs:** `docs/CONSTITUTION.md`, `docs/ARCHITECTURE.md`, `docs/COMPREHENSIVE-HANDOFF-2026-07-12.md`, `docs/HANDBOOK-V1.2-ASSESSMENT.md`, Handbook v1.2
 
 ---
 
@@ -38,7 +38,7 @@ Guma Commerce is a **working modular monolith**: three Next.js 15 apps (`web`, `
 1. **`deriveBrandKit()`** — Zero-LLM deterministic personalization at signup. **Fully constitutional** for GUMA Launch economics and philosophy.
 2. **`matchStorePattern()` + category hints** — Rule-based vertical matching. Foundation for Template Recommendation Engine.
 3. **Pattern → dynamic TSX renderer** — Installs crafted templates; does not AI-generate layouts. Aligns with “personalize, don’t generate.”
-4. **14 ported HTML templates + 100-entry bundle catalog** — Curated library exists; needs metadata enrichment, not replacement.
+4. **14 ported HTML templates + 100-entry bundle catalog** — Curated library exists (**18** live ports as of Sprint 5); keep enriching metadata, don't replace.
 5. **Commerce core** — Checkout, orders, payments, delivery, wallet. Storefront is one capability; commerce ops already exist.
 6. **AI quotas + soft budget degrade** — Cost-aware by design (`plan-limits.ts`).
 7. **Three-app separation** — Natural home for Launch (admin onboarding routes) vs Workspace (admin `/workspace`) vs Platform (super-admin).
@@ -53,7 +53,7 @@ Guma Commerce is a **working modular monolith**: three Next.js 15 apps (`web`, `
 6. **AI in wrong places** — Buyer chat + agent crons available on free tier (acceptable with quotas); no separation of “Launch = no LLM required” vs “Workspace = LLM.”
 7. **No event bus** — Side effects inline in routes/webhooks; blocks audit replay and loose coupling.
 8. **Domain boundaries implicit** — Packages exist but cross-import freely; no published domain APIs.
-9. **Plan / product naming drift** — `free/growth/pro` vs constitution Free/Pro/Advance vs platform `starter` — confuses Launch vs Workspace gating.
+9. **Plan / product naming** — ✔ Unified: IDs `free`/`growth`/`pro`; labels Free/Pro/Advance via `@guma-commerce/plans` (legacy `starter`/`sulit`/`advance` normalize at read).
 
 ## 1.4 Alignment score (approximate)
 
@@ -127,13 +127,13 @@ The codebase **embodies the spirit** of the constitution (deterministic launch h
 
 **Goal:** Single source of truth before structural moves.
 
-- [ ] Adopt this document + constitution as `docs/CONSTITUTION.md`
-- [ ] Unify plan catalog (`free` → Launch+, `growth` → Pro, `pro` → Advance) — one enum, one price table
+- [x] Unify plan catalog (`free`/`growth`/`pro` IDs; Free/Pro/Advance labels) — `@guma-commerce/plans` (Sprint 4 / ADR D4)
+- [x] Adopt constitution as `docs/CONSTITUTION.md` (+ ADR-0001)
+- [x] Add `ARCHITECTURE.md` domain map
 - [ ] Reconcile Drizzle migrations with Neon
-- [ ] Update README/handbook references: Drizzle not Prisma
-- [ ] Add `ARCHITECTURE.md` domain map (Deliverable 6)
+- [ ] Update README ports if still stale (web = 3010)
 
-**Exit criteria:** Plans consistent; no doc-driven wrong migrations.
+**Exit criteria:** Plans consistent; no doc-driven wrong migrations. **Plans: met.**
 
 ## Phase 1 — GUMA Launch (Weeks 2–5)
 
@@ -177,12 +177,13 @@ The codebase **embodies the spirit** of the constitution (deterministic launch h
 
 **Goal:** Templates as scored commerce products.
 
-- [ ] Extend `template-registry.ts` → `TemplatePackage` metadata schema
-- [ ] Scoring engine: DNA × metadata → ranked list (rules first; LLM tie-breaker optional on Pro+)
-- [ ] Enrich bundle catalog entries with metadata for queued templates
-- [ ] Continue porting priority queue (aircon, haircut, feane…)
+- [x] Extend `template-registry.ts` → `TemplatePackage` metadata schema (`template-packages.ts`)
+- [x] Scoring engine: DNA × metadata → ranked list (`recommend-templates.ts`)
+- [x] Enrich priority bundle entries; mark Sprint 5 ports `integrated`
+- [x] Port priority queue: **aircon → carserv → motto → studio** (Sprint 5)
+- [ ] Continue demand-driven ports (haircut, feane, dentcare, …)
 
-**Exit criteria:** Recommendation engine uses metadata scores; AI optional.
+**Exit criteria:** Recommendation engine uses metadata scores; AI optional. **Met for priority queue.**
 
 ## Phase 5 — Workspace depth (Weeks 12+)
 

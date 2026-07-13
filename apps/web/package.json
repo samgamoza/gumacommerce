@@ -17,6 +17,7 @@
     "@guma-commerce/ai": "workspace:*",
     "@guma-commerce/db": "workspace:*",
     "@guma-commerce/events": "workspace:*",
+    "@guma-commerce/plans": "workspace:*",
     "@guma-commerce/services": "workspace:*",
     "@guma-commerce/storefront-themes": "workspace:*",
     "@guma-commerce/ui": "workspace:*",

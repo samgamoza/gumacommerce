@@ -4,6 +4,8 @@ import { changeRequests, platformAuditLog, tenants } from "../schema/index";
 import { publishThemeDraft, getLaunchTenantState, type ThemeJson } from "./launch";
 import { createProductForTenant, updateProductForTenant } from "./products";
 import { publishTenantSeo, type TenantSeoJson } from "./seo";
+import type { TenantCheckoutJson } from "./checkout";
+import type { TenantShippingJson } from "./shipping";
 
 export type ChangeRequestDomain =
   | "theme"
@@ -596,6 +598,214 @@ export async function rollbackSeoChangeRequest(input: {
     actorId: input.actorUserId,
     actorEmail: input.actorEmail,
     action: "seo.rollback",
+    entityType: "change_request",
+    entityId: input.id,
+    entityLabel: request.summary,
+    metadata: { scope: request.scope },
+  });
+
+  return mapRow(updated);
+}
+
+/**
+ * Publish a checkout change request by writing afterJson to checkout_published_json.
+ */
+export async function publishCheckoutChangeRequest(input: {
+  id: string;
+  tenantId: string;
+  actorUserId: string;
+  actorEmail: string | null;
+}): Promise<{ request: ChangeRequestRow; checkout: TenantCheckoutJson }> {
+  const db = getDb();
+  const request = await getChangeRequest(input.id, input.tenantId);
+  if (!request) throw new Error("Change request not found");
+  if (request.domain !== "checkout") throw new Error("Not a checkout change request");
+  if (!["approved", "draft", "pending_review"].includes(request.status)) {
+    throw new Error(`Cannot publish from status ${request.status}`);
+  }
+  if (request.approvalLevel === "admin_only") {
+    throw new Error("This change requires platform admin approval");
+  }
+  if (!request.afterJson) throw new Error("No checkout proposal to publish");
+
+  const { publishTenantCheckout } = await import("./checkout");
+  const checkout = await publishTenantCheckout(
+    input.tenantId,
+    request.afterJson as TenantCheckoutJson
+  );
+
+  const [updated] = await db
+    .update(changeRequests)
+    .set({
+      status: "published",
+      publishedAt: new Date(),
+      reviewedBy: input.actorUserId,
+      reviewedAt: new Date(),
+      afterJson: checkout as unknown as Record<string, unknown>,
+    })
+    .where(and(eq(changeRequests.id, input.id), eq(changeRequests.tenantId, input.tenantId)))
+    .returning();
+
+  if (!updated) throw new Error("Failed to mark checkout change published");
+
+  await writeTenantAudit({
+    tenantId: input.tenantId,
+    actorType: "user",
+    actorId: input.actorUserId,
+    actorEmail: input.actorEmail,
+    action: "checkout.publish",
+    entityType: "change_request",
+    entityId: input.id,
+    entityLabel: request.summary ?? "Checkout publish",
+    metadata: {
+      scope: request.scope,
+      codEnabled: checkout.codEnabled,
+      minOrderAmount: checkout.minOrderAmount,
+    },
+  });
+
+  return { request: mapRow(updated), checkout };
+}
+
+/**
+ * Rollback checkout to beforeJson snapshot (previous published state).
+ */
+export async function rollbackCheckoutChangeRequest(input: {
+  id: string;
+  tenantId: string;
+  actorUserId: string;
+  actorEmail: string | null;
+}): Promise<ChangeRequestRow> {
+  const db = getDb();
+  const request = await getChangeRequest(input.id, input.tenantId);
+  if (!request) throw new Error("Change request not found");
+  if (request.domain !== "checkout") throw new Error("Not a checkout change request");
+  if (request.status !== "published") {
+    throw new Error("Only published checkout changes can be rolled back");
+  }
+
+  const { publishTenantCheckout } = await import("./checkout");
+  const before = (request.beforeJson ?? {}) as TenantCheckoutJson;
+  await publishTenantCheckout(input.tenantId, before);
+
+  const [updated] = await db
+    .update(changeRequests)
+    .set({ status: "rolled_back" })
+    .where(and(eq(changeRequests.id, input.id), eq(changeRequests.tenantId, input.tenantId)))
+    .returning();
+
+  if (!updated) throw new Error("Failed to roll back checkout change");
+
+  await writeTenantAudit({
+    tenantId: input.tenantId,
+    actorType: "user",
+    actorId: input.actorUserId,
+    actorEmail: input.actorEmail,
+    action: "checkout.rollback",
+    entityType: "change_request",
+    entityId: input.id,
+    entityLabel: request.summary,
+    metadata: { scope: request.scope },
+  });
+
+  return mapRow(updated);
+}
+
+/**
+ * Publish a shipping change request by writing afterJson to shipping_published_json.
+ */
+export async function publishShippingChangeRequest(input: {
+  id: string;
+  tenantId: string;
+  actorUserId: string;
+  actorEmail: string | null;
+}): Promise<{ request: ChangeRequestRow; shipping: TenantShippingJson }> {
+  const db = getDb();
+  const request = await getChangeRequest(input.id, input.tenantId);
+  if (!request) throw new Error("Change request not found");
+  if (request.domain !== "shipping") throw new Error("Not a shipping change request");
+  if (!["approved", "draft", "pending_review"].includes(request.status)) {
+    throw new Error(`Cannot publish from status ${request.status}`);
+  }
+  if (request.approvalLevel === "admin_only") {
+    throw new Error("This change requires platform admin approval");
+  }
+  if (!request.afterJson) throw new Error("No shipping proposal to publish");
+
+  const { publishTenantShipping } = await import("./shipping");
+  const shipping = await publishTenantShipping(
+    input.tenantId,
+    request.afterJson as unknown as TenantShippingJson
+  );
+
+  const [updated] = await db
+    .update(changeRequests)
+    .set({
+      status: "published",
+      publishedAt: new Date(),
+      reviewedBy: input.actorUserId,
+      reviewedAt: new Date(),
+      afterJson: shipping as unknown as Record<string, unknown>,
+    })
+    .where(and(eq(changeRequests.id, input.id), eq(changeRequests.tenantId, input.tenantId)))
+    .returning();
+
+  if (!updated) throw new Error("Failed to mark shipping change published");
+
+  await writeTenantAudit({
+    tenantId: input.tenantId,
+    actorType: "user",
+    actorId: input.actorUserId,
+    actorEmail: input.actorEmail,
+    action: "shipping.publish",
+    entityType: "change_request",
+    entityId: input.id,
+    entityLabel: request.summary ?? "Shipping publish",
+    metadata: {
+      scope: request.scope,
+      defaultProfileId: shipping.defaultProfileId,
+      profileCount: shipping.profiles.length,
+    },
+  });
+
+  return { request: mapRow(updated), shipping };
+}
+
+/**
+ * Rollback shipping to beforeJson snapshot (previous published state).
+ */
+export async function rollbackShippingChangeRequest(input: {
+  id: string;
+  tenantId: string;
+  actorUserId: string;
+  actorEmail: string | null;
+}): Promise<ChangeRequestRow> {
+  const db = getDb();
+  const request = await getChangeRequest(input.id, input.tenantId);
+  if (!request) throw new Error("Change request not found");
+  if (request.domain !== "shipping") throw new Error("Not a shipping change request");
+  if (request.status !== "published") {
+    throw new Error("Only published shipping changes can be rolled back");
+  }
+
+  const { publishTenantShipping } = await import("./shipping");
+  const before = (request.beforeJson ?? {}) as unknown as TenantShippingJson;
+  await publishTenantShipping(input.tenantId, before);
+
+  const [updated] = await db
+    .update(changeRequests)
+    .set({ status: "rolled_back" })
+    .where(and(eq(changeRequests.id, input.id), eq(changeRequests.tenantId, input.tenantId)))
+    .returning();
+
+  if (!updated) throw new Error("Failed to roll back shipping change");
+
+  await writeTenantAudit({
+    tenantId: input.tenantId,
+    actorType: "user",
+    actorId: input.actorUserId,
+    actorEmail: input.actorEmail,
+    action: "shipping.rollback",
     entityType: "change_request",
     entityId: input.id,
     entityLabel: request.summary,

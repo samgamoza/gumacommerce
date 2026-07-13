@@ -334,7 +334,7 @@ export function AgentsManager({ embedded = false }: { embedded?: boolean }) {
               </label>
               <p className="text-xs text-gray-500">
                 Cron: <code>/api/cron/agents</code> (daily/weekly) ·{" "}
-                <code>/api/cron/agent-reminders</code> (5 PM PHT SMS on Growth+)
+                <code>/api/cron/agent-reminders</code> (5 PM PHT SMS on Pro+)
               </p>
             </div>
           )}

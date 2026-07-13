@@ -14,7 +14,10 @@
     "db:seed": "pnpm --filter @guma-commerce/db seed",
     "db:seed:simply-sweet": "pnpm --filter @guma-commerce/db seed:simply-sweet",
     "db:up": "docker compose up -d postgres",
-    "db:down": "docker compose down"
+    "db:down": "docker compose down",
+    "test:seo": "pnpm --filter @guma-commerce/db test && pnpm --filter @guma-commerce/events test && pnpm --filter @guma-commerce/ai test",
+    "test:checkout": "pnpm --filter @guma-commerce/db test && pnpm --filter @guma-commerce/events test && pnpm --filter @guma-commerce/ai test",
+    "test:shipping": "pnpm --filter @guma-commerce/db test && pnpm --filter @guma-commerce/events test && pnpm --filter @guma-commerce/ai test"
   },
   "devDependencies": {
     "turbo": "^2.3.3",

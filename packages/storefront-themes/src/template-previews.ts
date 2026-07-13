@@ -38,6 +38,10 @@ export const TEMPLATE_PREVIEW_IMAGES: Record<ShopTemplateId, string> = {
   waggy: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=960&q=80",
   fruitables: "https://images.unsplash.com/photo-1610832958506-aa563bf15cff?w=960&q=80",
   ministore: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=960&q=80",
+  aircon: "https://images.unsplash.com/photo-1631545806609-c2b666c4a6f4?w=960&q=80",
+  carserv: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=960&q=80",
+  motto: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=960&q=80",
+  studio: "https://images.unsplash.com/photo-1452587925148-ce544e77e382?w=960&q=80",
 };
 
 /** Category mood images when recommending from the Free Bundle library (not yet ported). */
@@ -50,6 +54,12 @@ export const CATEGORY_PREVIEW_IMAGES: Record<string, string> = {
     "https://images.unsplash.com/photo-1562654501-a0ccc0fc3fb1?w=960&q=80",
   "Auto Shop & Services":
     "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=960&q=80",
+  "HVAC & Air Conditioning":
+    "https://images.unsplash.com/photo-1631545806609-c2b666c4a6f4?w=960&q=80",
+  "Photography & Creative":
+    "https://images.unsplash.com/photo-1452587925148-ce544e77e382?w=960&q=80",
+  "Home Services & Trades":
+    "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=960&q=80",
   "Automotive Parts & Accessories":
     "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=960&q=80",
   "Car Wash & Detailing":

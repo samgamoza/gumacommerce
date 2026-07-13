@@ -24,15 +24,33 @@ import {
   computeDeliveryFee,
   deliveryProviderLabel,
 } from "@/lib/storefront-settings";
+import {
+  computeCheckoutTotals,
+  isPaymentMethodEnabled,
+} from "@guma-commerce/db/checkout";
 
 const ALL_PAYMENT_METHODS = [
   { id: "gcash", label: "GCash", icon: "💙", desc: "Pay via GCash app" },
   { id: "paymaya", label: "Maya", icon: "💚", desc: "Pay via Maya app" },
   { id: "qrph", label: "QR Ph", icon: "📱", desc: "Scan to pay" },
   { id: "cod", label: "Cash on Delivery", icon: "💵", desc: "Pay rider on arrival" },
+  { id: "card", label: "Card", icon: "💳", desc: "Visa / Mastercard" },
 ];
 
 const PH_MOBILE = /^(09\d{9}|\+639\d{9})$/;
+
+function checkoutSessionKey(tenantSlug: string): string {
+  if (typeof window === "undefined") return "";
+  const key = `guma-checkout-session:${tenantSlug}`;
+  const existing = window.localStorage.getItem(key);
+  if (existing && existing.length >= 8) return existing;
+  const next =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID().replace(/-/g, "").slice(0, 32)
+      : `${Date.now()}${Math.random().toString(36).slice(2, 10)}`;
+  window.localStorage.setItem(key, next);
+  return next;
+}
 
 function formatPrice(amount: number, currency = "PHP"): string {
   return new Intl.NumberFormat("en-PH", {
@@ -50,20 +68,25 @@ export function CheckoutForm({
   storeSettings: StorefrontStoreSettings;
 }) {
   const cart = useCart(tenantSlug);
+  const checkout = storeSettings.checkout;
 
   const paymentMethods = useMemo(
     () =>
-      ALL_PAYMENT_METHODS.filter(
-        (method) => method.id !== "cod" || storeSettings.codEnabled
+      ALL_PAYMENT_METHODS.filter((method) =>
+        isPaymentMethodEnabled(checkout, method.id)
       ),
-    [storeSettings.codEnabled]
+    [checkout]
   );
 
   const [fulfillment, setFulfillment] = useState<"delivery" | "pickup">("delivery");
   const [payment, setPayment] = useState(paymentMethods[0]?.id ?? "gcash");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [barangay, setBarangay] = useState("");
+  const [couponCode, setCouponCode] = useState("");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +95,17 @@ export function CheckoutForm({
     null
   );
   const [quoting, setQuoting] = useState(false);
+  const [sessionKey, setSessionKey] = useState("");
+
+  useEffect(() => {
+    setSessionKey(checkoutSessionKey(tenantSlug));
+  }, [tenantSlug]);
+
+  useEffect(() => {
+    if (paymentMethods.length && !paymentMethods.some((m) => m.id === payment)) {
+      setPayment(paymentMethods[0]!.id);
+    }
+  }, [paymentMethods, payment]);
 
   // Live Lalamove quote once the customer has typed a usable address.
   const wantsLiveQuote =
@@ -112,12 +146,49 @@ export function CheckoutForm({
     };
   }, [quoteAddress, tenantSlug]);
 
+  // Sync cart progress for abandoned-checkout detection.
+  useEffect(() => {
+    if (!sessionKey || !cart.ready || cart.items.length === 0) return;
+    const timer = window.setTimeout(() => {
+      void fetch("/api/checkout/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantSlug,
+          sessionKey,
+          cart: cart.items,
+          customer: { name, phone, email },
+          address: { line1: address, city, barangay },
+          couponCode: couponCode || null,
+        }),
+      }).catch(() => undefined);
+    }, 1200);
+    return () => window.clearTimeout(timer);
+  }, [
+    sessionKey,
+    cart.ready,
+    cart.items,
+    tenantSlug,
+    name,
+    phone,
+    email,
+    address,
+    city,
+    barangay,
+    couponCode,
+  ]);
+
   const subtotal = cart.subtotal;
   const deliveryFee =
     fulfillment === "pickup"
       ? 0
       : liveQuote?.fee ?? computeDeliveryFee(subtotal, storeSettings);
-  const total = subtotal + deliveryFee;
+  const totals = computeCheckoutTotals({
+    subtotal,
+    deliveryFee,
+    checkout,
+    couponCode,
+  });
   const belowMinimum = subtotal > 0 && subtotal < storeSettings.minOrderAmount;
 
   const cleanPhone = phone.replace(/[\s-]/g, "");
@@ -126,12 +197,37 @@ export function CheckoutForm({
     phone: !PH_MOBILE.test(cleanPhone)
       ? "Enter a valid PH mobile number (09XX XXX XXXX)."
       : null,
+    email:
+      checkout.customer?.requireEmail && !email.trim()
+        ? "Email is required."
+        : email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+          ? "Enter a valid email."
+          : null,
     address:
       fulfillment === "delivery" && address.trim().length < 10
         ? "Enter your complete address (street, barangay, city)."
         : null,
+    city:
+      fulfillment === "delivery" &&
+      checkout.customer?.requireStructuredAddress &&
+      !city.trim()
+        ? "City is required."
+        : null,
+    barangay:
+      fulfillment === "delivery" &&
+      checkout.customer?.requireStructuredAddress &&
+      !barangay.trim()
+        ? "Barangay is required."
+        : null,
   };
-  const hasFieldErrors = Boolean(fieldErrors.name || fieldErrors.phone || fieldErrors.address);
+  const hasFieldErrors = Boolean(
+    fieldErrors.name ||
+      fieldErrors.phone ||
+      fieldErrors.email ||
+      fieldErrors.address ||
+      fieldErrors.city ||
+      fieldErrors.barangay
+  );
 
   async function handleCheckout() {
     setTouched(true);
@@ -147,8 +243,16 @@ export function CheckoutForm({
           tenantSlug,
           paymentMethod: payment,
           fulfillment,
-          customer: { name: name.trim(), phone: cleanPhone },
+          sessionKey: sessionKey || undefined,
+          couponCode: couponCode.trim() || undefined,
+          customer: {
+            name: name.trim(),
+            phone: cleanPhone,
+            email: email.trim() || undefined,
+          },
           address: fulfillment === "delivery" ? address.trim() : undefined,
+          city: fulfillment === "delivery" ? city.trim() || undefined : undefined,
+          barangay: fulfillment === "delivery" ? barangay.trim() || undefined : undefined,
           notes: notes.trim() || undefined,
           items: cart.items.map((item) => ({ productId: item.productId, qty: item.qty })),
         }),
@@ -358,18 +462,61 @@ export function CheckoutForm({
                 We&apos;ll text your order confirmation and tracking link here.
               </p>
             </div>
+            <div>
+              <input
+                placeholder={
+                  checkout.customer?.requireEmail ? "Email (required)" : "Email (optional)"
+                }
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                autoComplete="email"
+                className="h-11 w-full rounded-xl border border-border/60 bg-muted/30 px-4 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
+              />
+              {touched && fieldErrors.email && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>
+              )}
+            </div>
             {fulfillment === "delivery" ? (
-              <div>
-                <textarea
-                  placeholder="Complete address (Street, Barangay, City, Province)"
-                  rows={3}
-                  value={address}
-                  onChange={(event) => setAddress(event.target.value)}
-                  autoComplete="street-address"
-                  className="w-full rounded-xl border border-border/60 bg-muted/30 px-4 py-3 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
-                />
-                {touched && fieldErrors.address && (
-                  <p className="mt-1 text-xs text-red-600">{fieldErrors.address}</p>
+              <div className="space-y-3">
+                <div>
+                  <textarea
+                    placeholder="Complete address (Street, Building, Landmark)"
+                    rows={3}
+                    value={address}
+                    onChange={(event) => setAddress(event.target.value)}
+                    autoComplete="street-address"
+                    className="w-full rounded-xl border border-border/60 bg-muted/30 px-4 py-3 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
+                  />
+                  {touched && fieldErrors.address && (
+                    <p className="mt-1 text-xs text-red-600">{fieldErrors.address}</p>
+                  )}
+                </div>
+                {checkout.customer?.requireStructuredAddress && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <input
+                        placeholder="Barangay"
+                        value={barangay}
+                        onChange={(event) => setBarangay(event.target.value)}
+                        className="h-11 w-full rounded-xl border border-border/60 bg-muted/30 px-4 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
+                      />
+                      {touched && fieldErrors.barangay && (
+                        <p className="mt-1 text-xs text-red-600">{fieldErrors.barangay}</p>
+                      )}
+                    </div>
+                    <div>
+                      <input
+                        placeholder="City"
+                        value={city}
+                        onChange={(event) => setCity(event.target.value)}
+                        className="h-11 w-full rounded-xl border border-border/60 bg-muted/30 px-4 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
+                      />
+                      {touched && fieldErrors.city && (
+                        <p className="mt-1 text-xs text-red-600">{fieldErrors.city}</p>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
             ) : (
@@ -381,6 +528,12 @@ export function CheckoutForm({
               placeholder="Delivery notes / landmark (optional)"
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
+              className="h-11 w-full rounded-xl border border-border/60 bg-muted/30 px-4 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
+            />
+            <input
+              placeholder="Coupon code (optional)"
+              value={couponCode}
+              onChange={(event) => setCouponCode(event.target.value.toUpperCase())}
               className="h-11 w-full rounded-xl border border-border/60 bg-muted/30 px-4 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
             />
           </CardContent>
@@ -419,8 +572,22 @@ export function CheckoutForm({
               <span className="text-muted-foreground">
                 Subtotal ({cart.count} item{cart.count > 1 ? "s" : ""})
               </span>
-              <span>{formatPrice(subtotal, storeSettings.currency)}</span>
+              <span>{formatPrice(totals.subtotal, storeSettings.currency)}</span>
             </div>
+            {totals.discount > 0 && (
+              <div className="flex justify-between text-emerald-700">
+                <span>{totals.discountLabel ?? "Discount"}</span>
+                <span>-{formatPrice(totals.discount, storeSettings.currency)}</span>
+              </div>
+            )}
+            {totals.tax > 0 && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  Tax{checkout.tax?.inclusive ? " (included)" : ""}
+                </span>
+                <span>{formatPrice(totals.tax, storeSettings.currency)}</span>
+              </div>
+            )}
             {fulfillment === "delivery" && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">
@@ -431,11 +598,11 @@ export function CheckoutForm({
                       : " · live quote"
                     : quoting
                       ? " · getting quote…"
-                      : deliveryFee === 0 && storeSettings.delivery.freeDeliveryMin > 0
+                      : totals.deliveryFee === 0 && storeSettings.delivery.freeDeliveryMin > 0
                         ? " (free)"
                         : ""}
                 </span>
-                <span>{formatPrice(deliveryFee, storeSettings.currency)}</span>
+                <span>{formatPrice(totals.deliveryFee, storeSettings.currency)}</span>
               </div>
             )}
             {storeSettings.minOrderAmount > 0 && (
@@ -445,7 +612,9 @@ export function CheckoutForm({
             )}
             <div className="flex justify-between border-t border-border/60 pt-3 text-base font-bold">
               <span>Total</span>
-              <span className="text-primary">{formatPrice(total, storeSettings.currency)}</span>
+              <span className="text-primary">
+                {formatPrice(totals.total, storeSettings.currency)}
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -474,9 +643,9 @@ export function CheckoutForm({
               Processing...
             </>
           ) : payment === "cod" ? (
-            `Place Order (COD) · ${formatPrice(total, storeSettings.currency)}`
+            `Place Order (COD) · ${formatPrice(totals.total, storeSettings.currency)}`
           ) : (
-            `Pay ${formatPrice(total, storeSettings.currency)}`
+            `Pay ${formatPrice(totals.total, storeSettings.currency)}`
           )}
         </Button>
 

@@ -1,7 +1,7 @@
 # Crown Jewel — AI Permissions + Draft → Approve → Publish + Audit
 
 **Date:** 2026-07-12
-**Status:** Implementation blueprint — **Phases 1–3 MVP landed**; **Phase 4 catalog + pricing domains live** (seo/checkout still open).  
+**Status:** Implementation blueprint — **Phases 1–3 MVP landed**; **Phase 4 catalog + pricing + SEO + checkout + shipping + plan catalog (D4) + priority template ports live**.  
 **Handbook source:** v1.2 §5 (AI Permission Framework & Approval Workflow), §10 (Audit)
 
 > For the implementing agent (Cursor et al.): this is the **highest-leverage Handbook feature** and the safety backbone of an "AI publishes your store" product. Build it by **extending existing patterns**, not inventing new ones. Every schema/enum/route below is chosen to match what already ships so the result is cohesive.
@@ -177,7 +177,7 @@ Today: **Shop Builder** (`apps/admin/app/shop-builder`), **AI Studio** (`/ai-stu
 
 **Phase 3 — Workstation.** Unified UI with diff + approve/reject; `admin_only` routes to platform console. *Accept:* a seller sees the AI's proposed diff and approves/rejects; a `free`-plan `ai.bulk.catalog` request is blocked to `admin_only`.
 
-**Phase 4 — Breadth.** Extend domains (pricing, catalog, seo, checkout) reusing the same table/flow. *Accept:* no new tables added; only new `domain`/`scope` values. **Catalog:** landed — AI product generate → `change_requests` (domain `catalog`) → Products save or Approvals publish → `Catalog.ChangeApproved.V1`. **Pricing:** landed — AI suggest price → `change_requests` (domain `pricing`) → Products save or Approvals apply → `Pricing.ChangeApproved.V1`. SEO/checkout still open.
+**Phase 4 — Breadth.** Extend domains (pricing, catalog, seo, checkout, shipping) reusing the same table/flow. *Accept:* no new tables added; only new `domain`/`scope` values. **Catalog:** landed — AI product generate → `change_requests` (domain `catalog`) → Products save or Approvals publish → `Catalog.ChangeApproved.V1`. **Pricing:** landed — AI suggest price → `change_requests` (domain `pricing`) → Products save or Approvals apply → `Pricing.ChangeApproved.V1`. **SEO:** landed — Workspace SEO / AI suggest → `change_requests` (domain `seo`, scope `ai.suggest.seo`) → Approvals publish → `Seo.Published.V1` (+ `Seo.Updated.V1`, `Seo.ChangeApproved.V1`, `Seo.RolledBack.V1`); storefront reads `seo_published_json` only. **Checkout:** landed — Workspace Checkout / AI suggest → `change_requests` (domain `checkout`, scope `ai.suggest.checkout`) → Approvals publish → `Checkout.Published.V1`; storefront reads `checkout_published_json` (mirrors COD/min-order into `settings_json` for compatibility). **Shipping:** landed — Workspace Shipping / AI suggest → `change_requests` (domain `shipping`, scope `ai.suggest.shipping`) → Approvals publish → `Shipping.Published.V1` (+ Updated / ChangeApproved / RolledBack / ProfileCreated / RuleChanged); storefront reads `shipping_published_json` and mirrors compact delivery into `settings_json.delivery`. **Plan catalog (ADR D4):** landed — single module `@guma-commerce/plans` (`free`/`growth`/`pro` ids; Free/Pro/Advance labels; aliases + AI limits); thin re-exports from `@guma-commerce/db` and `@guma-commerce/ai`. **Priority template ports:** landed — `aircon`, `carserv`, `motto`, `studio` React storefronts + demos + catalog `integrated` (ThemeWagon Free Bundle sources under `reference/`).
 
 ---
 

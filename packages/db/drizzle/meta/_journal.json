@@ -57,6 +57,20 @@
       "when": 1783900000000,
       "tag": "0008_seo_draft_publish",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784000000000,
+      "tag": "0009_checkout_domain",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784100000000,
+      "tag": "0010_shipping_domain",
+      "breakpoints": true
     }
   ]
 }

@@ -36,7 +36,12 @@ function mapDbTenantToDemo(
     tenant.name,
     tenant.subscriptionPlan
   );
-  const storeSettings = resolveStorefrontSettings(tenant.settingsJson, tenant.currency ?? "PHP");
+  const storeSettings = resolveStorefrontSettings(
+    tenant.settingsJson,
+    tenant.currency ?? "PHP",
+    tenant.checkoutPublishedJson,
+    tenant.shippingPublishedJson
+  );
   const patternId = resolveStorePattern(tenant.themeJson);
 
   return {

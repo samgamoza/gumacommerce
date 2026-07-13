@@ -13,6 +13,7 @@
   "dependencies": {
     "@guma-commerce/auth": "workspace:*",
     "@guma-commerce/db": "workspace:*",
+    "@guma-commerce/plans": "workspace:*",
     "@guma-commerce/ui": "workspace:*",
     "lucide-react": "^1.23.0",
     "next": "^15.1.3",

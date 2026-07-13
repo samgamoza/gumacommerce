@@ -1,55 +1,30 @@
 import Link from "next/link";
 import { ArrowRight, Check, ShieldCheck, Sparkles, Zap } from "lucide-react";
+import { SELLER_PLANS, PLAN_AI_LIMITS } from "@guma-commerce/plans";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { adminUrl, modelStoreUrl } from "@/lib/utils";
 
-const plans = [
-  {
-    name: "Sulit",
-    price: "₱0",
+const plans = SELLER_PLANS.map((plan) => {
+  const limits = PLAN_AI_LIMITS[plan.id];
+  return {
+    id: plan.id,
+    name: plan.name,
+    price: plan.priceMonthly === 0 ? "₱0" : `₱${plan.priceMonthly}`,
     period: "/month",
-    desc: "Perfect for starting out",
-    features: ["30 orders/month", "5 AI generations", "Free shop chatbot", "Guma Commerce subdomain", "GCash & COD"],
-    cta: "Start free",
-    href: `${adminUrl}/signup`,
-    highlighted: false,
-  },
-  {
-    name: "Growth",
-    price: "₱499",
-    period: "/month",
-    desc: "For growing social sellers",
-    features: [
-      "Unlimited orders",
-      "100 AI generations",
-      "Live selling on your storefront",
-      "Daily agents & SMS reminders",
-      "Priority support",
-      "All payment methods",
-    ],
-    cta: "Get Growth",
-    href: `${adminUrl}/signup`,
-    highlighted: true,
-  },
-  {
-    name: "Pro",
-    price: "₱999",
-    period: "/month",
-    desc: "For serious brands",
-    features: [
-      "Everything in Growth",
-      "500 AI generations",
-      "Advanced campaign agents",
-      "WhatsApp agent",
-      "Lower transaction fees",
-    ],
-    cta: "Contact us",
-    href: "/contact",
-    highlighted: false,
-  },
-];
+    desc: plan.tagline,
+    features: plan.marketingFeatures.length
+      ? plan.marketingFeatures
+      : [
+          `${limits.generationsPerMonth} AI generations / month`,
+          ...plan.features,
+        ],
+    cta: plan.id === "free" ? "Start free" : plan.id === "growth" ? "Get Pro" : "Get Advance",
+    href: plan.id === "pro" ? "/contact" : `${adminUrl}/signup`,
+    highlighted: plan.id === "growth",
+  };
+});
 
 export function LandingPricing() {
   return (
@@ -77,7 +52,8 @@ export function LandingPricing() {
               See the flagship model store
             </span>
             <span className="mt-0.5 block text-xs text-muted-foreground">
-              Live selling, flash deals, reviews &amp; instant chat — preview what Growth &amp; Pro unlock.
+              Live selling, flash deals, reviews &amp; instant chat — preview what Pro &amp; Advance
+              unlock.
             </span>
           </span>
           <ArrowRight className="h-4 w-4 shrink-0 text-primary" />
@@ -86,7 +62,7 @@ export function LandingPricing() {
         <div className="mt-14 grid items-start gap-6 lg:grid-cols-3">
           {plans.map((plan) => (
             <Card
-              key={plan.name}
+              key={plan.id}
               className={`relative overflow-hidden border-border/60 transition ${
                 plan.highlighted
                   ? "border-primary/40 shadow-2xl shadow-primary/15 ring-1 ring-primary/25 lg:-mt-4 lg:mb-[-1rem] lg:scale-[1.03]"

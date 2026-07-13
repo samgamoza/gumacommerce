@@ -1,9 +1,12 @@
 # Guma Commerce — Agent Handoff Document
 
-**Last updated:** 2026-07-05  
+**Last updated:** 2026-07-13  
 **Purpose:** Hands-off context for the next agent or developer. Read this before making changes.
 
-> **Newest work is documented in [Session 2026-07-05](#session-2026-07-05--brand-redesign--platform-super-admin-console) immediately below.** Sections 1–21 remain the durable reference for the core platform (agents, AI, settings, DB). Where they conflict with the 2026-07-05 session, the session wins.
+> **Whole-repo truth:** Prefer [`COMPREHENSIVE-HANDOFF-2026-07-12.md`](./COMPREHENSIVE-HANDOFF-2026-07-12.md) (amended 2026-07-13) for current architecture, Sprints 1–5, plans, and roadmap.  
+> **This file** keeps the 2026-07-05 platform-console session narrative plus durable core-platform notes. Where they conflict, the comprehensive handoff + ADR-0001 win.
+
+> Newest durable deltas since 2026-07-05: **Workspace CR domains** (SEO/Checkout/Shipping), **`@guma-commerce/plans`**, **18 live storefront ports** (incl. aircon/carserv/motto/studio). See sprint progress docs.
 
 ---
 
@@ -14,7 +17,7 @@ Three Next.js 15 (App Router, React 19) apps now exist in the `pnpm`+Turbo monor
 
 | App | Path | Port | Role |
 |-----|------|------|------|
-| Storefront + marketing | `apps/web` | 3000 | `/{tenantSlug}` shops, checkout, buyer chat |
+| Storefront + marketing | `apps/web` | **3010** | `/{tenantSlug}` shops, checkout, buyer chat |
 | Seller admin | `apps/admin` | 3001 | Per-tenant dashboard (one shop) |
 | **Platform console (NEW)** | `apps/platform` | 3002 | **Super-admin over ALL tenants** |
 
@@ -60,8 +63,8 @@ Added:
 - All mutations run through **server actions** in `app/actions.ts`, each guarded by `requireSuperAdminApi()` and writing a `platform_audit_log` row + `revalidatePath`.
 
 ### 6. Critical pitfalls / decisions
-- **Client components must NOT import from `@guma-commerce/db`.** The package barrel pulls `client.ts` → `postgres` → node `net`, which breaks the browser bundle (`Can't resolve 'net'`) and 500s *every* page. This is why the client-side plan list lives in `apps/platform/lib/plans.ts` (mirror of `PLATFORM_PLANS`; keep in sync). Server components/actions import from `@guma-commerce/db` freely.
-- **Plan catalog inconsistency (tech debt):** `PLATFORM_PLANS` (db) defines `free/starter/growth/pro` at ₱0/499/1499/2999. This differs from `packages/ai/src/plan-limits.ts` (`free/growth/pro`) and the marketing pricing (Pro was ₱999). MRR/ARR/ARPU on the Subscriptions page derive from `PLATFORM_PLANS`. **Reconcile these three sources before wiring real billing.**
+- **Client components must NOT import from `@guma-commerce/db`.** The package barrel pulls `client.ts` → `postgres` → node `net`, which breaks the browser bundle (`Can't resolve 'net'`) and 500s *every* page. Client-safe plan list: `apps/platform/lib/plans.ts` re-exports `@guma-commerce/plans` (`CLIENT_PLANS`). Server components/actions may still import from `@guma-commerce/db`.
+- **~~Plan catalog inconsistency~~ → resolved (Sprint 4 / ADR D4).** Single source: `@guma-commerce/plans` (₱0 / ₱499 / ₱999; labels Free / Pro / Advance). Thin re-exports remain on db/ai for compat. Legacy `starter` rows normalize to `growth`.
 - Charts are dependency-free inline SVG (`AreaChart`, `BarMeter` in `components/ui.tsx`) — no chart lib added.
 - Pages are **server components** (direct query calls, no client fetch/loading states) + server actions for writes — the modern idiom, differs from `apps/admin`'s client-fetch+API-route pattern.
 
@@ -73,11 +76,11 @@ Added:
 
 ### 8. Pending / recommended next steps (this session's scope)
 - **High:** `pnpm db:generate` to create the migration file for the schema additions (DB is ahead of `drizzle/`).
-- **High:** Reconcile the 3 plan-price sources (§6) before billing.
+- ~~**High:** Reconcile the 3 plan-price sources~~ — **done** (`@guma-commerce/plans`).
 - **Medium:** `next build` the platform app; add it to CI/Vercel (new project, port 3002, same monorepo build command, needs `AUTH_SECRET` + `DATABASE_URL*`).
 - **Medium:** Enforce `users.status='suspended'` and `tenants.status='suspended'` at the **seller** login/storefront layer (platform can suspend, but `apps/admin`/`apps/web` don't yet block suspended accounts/shops).
 - **Low:** Moderation currently only covers `content_queue`; extend to products if needed. Add pagination to platform tables (currently limit 200–500).
-- **Housekeeping:** Nothing from this session is committed. A launch config for the platform app exists at `D:\All Apps\guma-phase1.2\.claude\launch.json` (name `gumacommerce-platform`).
+- **Housekeeping:** Prefer `COMPREHENSIVE-HANDOFF` + sprint docs for post-2026-07-05 work.
 
 ### 9. Next-agent quick start (platform work)
 ```cmd
@@ -89,7 +92,7 @@ pnpm --dir apps/platform exec tsc --noEmit
 Inspect first: `apps/platform/app/actions.ts`, `packages/db/src/queries/platform.ts`, `apps/platform/components/platform-shell.tsx`, `apps/platform/lib/plans.ts`. **Warning:** never import `@guma-commerce/db` from a `"use client"` file; never run `db:push`.
 
 ### 10. Recommended next prompt (paste to continue)
-> You're working in the `guma-commerce` pnpm+Turbo monorepo at `C:\Users\samga\gumacommerce`. Read `docs/AGENT-HANDOFF.md` (Session 2026-07-05 first). Three Next.js 15 apps: `web` (3000), `admin` (3001), and the new super-admin `platform` (3002, login `admin@guma.ph`/`GumaAdmin2026!`). A prior session added `apps/platform`, `packages/db/src/queries/platform.ts`, and DB schema (`users.status`, `content_queue` moderation cols, `platform_audit_log`) already applied to live Neon — but **no drizzle migration file was generated**. Your tasks, in order: (1) run `pnpm db:generate` and reconcile so `packages/db/drizzle/` matches the live DB; (2) reconcile the three conflicting plan-price sources — `PLATFORM_PLANS` in `packages/db/src/queries/platform.ts`, `packages/ai/src/plan-limits.ts`, and marketing pricing — into one source of truth; (3) make `apps/admin` (seller login) and `apps/web` (storefront) respect `users.status='suspended'` and `tenants.status='suspended'`. Constraints: never import `@guma-commerce/db` from a `"use client"` component (it pulls the Postgres driver and 500s the page — keep client plan data in `apps/platform/lib/plans.ts`); never run `db:push` against this DB (it fails on a pre-existing PK). Verify with `pnpm --dir apps/platform exec tsc --noEmit` and by loading the affected pages. Don't commit unless asked.
+> You're working in the `guma-commerce` pnpm+Turbo monorepo at `D:\All Apps\gumacommerce`. Read `docs/COMPREHENSIVE-HANDOFF-2026-07-12.md` first (amended 2026-07-13), then `docs/HANDBOOK-V1.2-ASSESSMENT.md` and `docs/ADR-0001-handbook-adoption.md`. Apps: `web` (:3010), `admin` (:3001), `platform` (:3002). **Already done:** plan catalog `@guma-commerce/plans` (ADR D4); crown-jewel CR domains through SEO/checkout/shipping; priority template ports aircon/carserv/motto/studio. **Open priorities:** (1) reconcile Drizzle migrations vs live Neon (`db:generate` / journal — never `db:push`); (2) enforce `users.status='suspended'` and `tenants.status='suspended'` on seller login + storefront; (3) Workstation UX convergence (Shop Builder + Approvals). Constraints: never import `@guma-commerce/db` from `"use client"`; never hardcode plan prices outside `@guma-commerce/plans`. Don't commit unless asked.
 
 ---
 
@@ -157,10 +160,14 @@ guma-commerce/
 | User-facing product | **Guma Commerce** |
 | Company | Guma Commerce Technologies (`apps/web/lib/site-content.ts`) |
 | npm packages | `@guma-commerce/*` |
-| Subscription plan IDs (DB) | `free`, `growth`, `pro` |
-| Marketing / UI plan names | **Sulit** (free), **Growth**, **Pro** |
+| Subscription plan IDs (DB / billing) | `free`, `growth`, `pro` (stable forever) |
+| Marketing / UI plan names | **Free**, **Pro**, **Advance** (constitution) — from `@guma-commerce/plans` |
+| Handbook mapping | FREE→`free`, PRO→`growth`, ADVANCE→`pro` |
+| Aliases (normalize at read) | `starter`→`growth`, `advance`→`pro`, `sulit`→`free` |
 | Shop URL display | `{NEXT_PUBLIC_ROOT_DOMAIN}/{slug}` — default host `gumacommerce.ph` |
 | Emails | `hello@gumacommerce.ph`, `support@gumacommerce.ph`, `privacy@gumacommerce.ph` |
+
+**Do not reintroduce** Sulit / Growth / Pro as seller-facing labels, or invent Free/Starter/Growth/Pro as DB IDs. Canonical module: `@guma-commerce/plans` (ADR D4).
 
 **Do not reintroduce** any legacy pre-rebrand brand names, domains, or package scopes. The brand is **Guma Commerce** (`gumacommerce`) everywhere.
 
@@ -282,7 +289,7 @@ Configured in `apps/admin/vercel.json`:
 |----------------|------|---------|
 | `0 10 * * *` | `/api/cron/agents?mode=daily` | Daily posting agent (~6 PM PHT) |
 | `0 2 * * 1` | `/api/cron/agents?mode=weekly` | Weekly campaign agent |
-| `0 9 * * *` | `/api/cron/agent-reminders` | SMS nudge (Growth+ only) |
+| `0 9 * * *` | `/api/cron/agent-reminders` | SMS nudge (Pro+ / `growth`+) |
 
 Requires `CRON_SECRET` on admin Vercel project. Cron routes also enforce plan quotas.
 
@@ -304,17 +311,19 @@ Requires `CRON_SECRET` on admin Vercel project. Cron routes also enforce plan qu
 
 | File | Role |
 |------|------|
-| `src/plan-limits.ts` | `PLAN_AI_LIMITS`, `checkQuota`, `resolveModelForTask` |
+| `@guma-commerce/plans` (`packages/plans`) | Canonical `PLAN_AI_LIMITS`, catalog, `normalizePlanId` |
+| `src/plan-limits.ts` | Thin re-export of `@guma-commerce/plans` (compat) |
+| `src/permissions.ts` | `SCOPE_MATRIX` + approval levels |
 | `src/providers/llm.ts` | OpenAI, Gemini, Groq, mock fallback |
 | `src/generator.ts` | Template-based generation with plan routing |
 
 ### Plan limits (summary)
 
-| Plan | Agent runs/week | Chat/day | Generations/mo | SMS reminders | Models |
-|------|-----------------|----------|----------------|---------------|--------|
-| free (Sulit) | 3 | 25 | 5 | No | gemini-2.0-flash |
-| growth | 14 (2/day cap) | 200 | 100 | Yes | gpt-4o-mini |
-| pro | 999 (10/day cap) | 2000 | 500 | Yes | gpt-4o-mini posts, gpt-4o campaigns |
+| Plan ID | Label | Agent runs/week | Chat/day | Generations/mo | SMS reminders | Models |
+|---------|-------|-----------------|----------|----------------|---------------|--------|
+| `free` | Free | 3 | 25 | 5 | No | gemini-2.0-flash |
+| `growth` | Pro | 14 (2/day cap) | 200 | 100 | Yes | gpt-4o-mini |
+| `pro` | Advance | 999 (10/day cap) | 2000 | 500 | Yes | gpt-4o-mini posts, gpt-4o campaigns |
 
 **Env for live AI:** `OPENAI_API_KEY`, `GEMINI_API_KEY` (or `GOOGLE_AI_API_KEY`), optional `GROQ_API_KEY`.
 
@@ -429,7 +438,7 @@ pnpm db:up
 | `relation "content_queue" does not exist` | Run `pnpm db:migrate` against connected DB |
 | Admin 500 after deleting `.next` while dev running | Restart dev server |
 | Package not found after rebrand | `pnpm install`; scope is `@guma-commerce/*` |
-| Plan shows `free` in DB but UI says Sulit | Map via `PLANS` in subscription-settings |
+| Plan shows `free` in DB but UI says Free | Always resolve via `@guma-commerce/plans` (`planDisplayName` / `SELLER_PLANS`) |
 
 ---
 
@@ -439,7 +448,7 @@ pnpm db:up
 
 - Navbar `/#features`, `/#how-it-works`
 - FAQ anchors: `#payments`, `#delivery`, `#ai`
-- Pricing: Sulit / Growth / Pro aligned with admin (₱0 / ₱499 / ₱999)
+- Pricing: Free / Pro / Advance aligned with admin (₱0 / ₱499 / ₱999) via `@guma-commerce/plans`
 - Removed all legacy pre-rebrand brand names and domains
 - Blog: removed broken `#` read-more links
 - Footer: removed placeholder social `href="#"`
@@ -485,7 +494,7 @@ cd ../.. && pnpm install && pnpm turbo build --filter=@guma-commerce/web
 2. ~~Rename local folder~~ — done; repo now lives at `C:\Users\samga\gumacommerce`
 3. **Contact form backend** — email or store inquiries (Resend, Semaphore, etc.)
 4. **Meta/TikTok OAuth** — auto-publish from content queue (Phase 2)
-5. **Paid billing** — PayMongo subscriptions for Growth/Pro
+5. **Paid billing** — PayMongo subscriptions for Pro/Advance (`growth`/`pro` IDs)
 6. **Mobile nav drawer** — marketing site
 7. **LLM daily briefing** — optional upgrade over rule-based `buildDailyBriefing`
 8. **SEC/BIR + social URLs** — replace placeholders in `site-content.ts`

@@ -1,39 +1,36 @@
-import type { SubscriptionPlan } from "@guma-commerce/ai";
+import {
+  planAtLeast as catalogPlanAtLeast,
+  planBadgeLabel as catalogPlanBadgeLabel,
+  planDisplayName,
+  normalizePlanId,
+  upgradeHref as catalogUpgradeHref,
+  type SubscriptionPlanId,
+} from "@guma-commerce/plans";
 
-export type { SubscriptionPlan };
+export type SubscriptionPlan = SubscriptionPlanId;
 
+/** Constitution display names from the canonical catalog */
 export const PLAN_DISPLAY: Record<SubscriptionPlan, string> = {
-  free: "Free",
-  growth: "Pro",
-  pro: "Advance",
-};
-
-export const PLAN_ORDER: Record<SubscriptionPlan, number> = {
-  free: 0,
-  growth: 1,
-  pro: 2,
+  free: planDisplayName("free"),
+  growth: planDisplayName("growth"),
+  pro: planDisplayName("pro"),
 };
 
 export function normalizeAdminPlan(plan: string | null | undefined): SubscriptionPlan {
-  if (plan === "growth" || plan === "pro") return plan;
-  return "free";
+  return normalizePlanId(plan);
 }
 
 export function planAtLeast(current: SubscriptionPlan, required: SubscriptionPlan): boolean {
-  return PLAN_ORDER[current] >= PLAN_ORDER[required];
+  return catalogPlanAtLeast(current, required);
 }
 
 export function upgradeHref(
   highlight: Exclude<SubscriptionPlan, "free">,
   ref?: string
 ): string {
-  const params = new URLSearchParams({ highlight });
-  if (ref) params.set("ref", ref);
-  return `/settings/subscription?${params.toString()}`;
+  return catalogUpgradeHref(highlight, ref);
 }
 
 export function planBadgeLabel(required: SubscriptionPlan): string {
-  if (required === "pro") return "Advance+";
-  if (required === "growth") return "Pro+";
-  return "Free";
+  return catalogPlanBadgeLabel(required);
 }

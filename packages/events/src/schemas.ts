@@ -13,6 +13,19 @@ export const EVENT_NAMES = {
   SEO_CHANGE_APPROVED: "Seo.ChangeApproved.V1",
   SEO_PUBLISHED: "Seo.Published.V1",
   SEO_ROLLED_BACK: "Seo.RolledBack.V1",
+  CHECKOUT_UPDATED: "Checkout.Updated.V1",
+  CHECKOUT_CHANGE_APPROVED: "Checkout.ChangeApproved.V1",
+  CHECKOUT_PUBLISHED: "Checkout.Published.V1",
+  CHECKOUT_ROLLED_BACK: "Checkout.RolledBack.V1",
+  CHECKOUT_ABANDONED: "Checkout.Abandoned.V1",
+  SHIPPING_UPDATED: "Shipping.Updated.V1",
+  SHIPPING_CHANGE_APPROVED: "Shipping.ChangeApproved.V1",
+  SHIPPING_PUBLISHED: "Shipping.Published.V1",
+  SHIPPING_ROLLED_BACK: "Shipping.RolledBack.V1",
+  SHIPPING_PROFILE_CREATED: "Shipping.ProfileCreated.V1",
+  SHIPPING_RULE_CHANGED: "Shipping.RuleChanged.V1",
+  ORDER_CREATED: "Order.Created.V1",
+  ORDER_SUCCEEDED: "Order.Succeeded.V1",
   ORDER_PAYMENT_SUCCEEDED: "Order.PaymentSucceeded.V1",
   MERCHANT_UPGRADED: "Merchant.Upgraded.V1",
   AI_PLAN_COMPLETED: "AI.PlanCompleted.V1",
@@ -128,6 +141,125 @@ export const SeoRolledBackV1 = baseMeta.extend({
   }),
 });
 
+export const CheckoutUpdatedV1 = baseMeta.extend({
+  name: z.literal(EVENT_NAMES.CHECKOUT_UPDATED),
+  data: z.object({
+    tenantId: z.string().uuid(),
+    changeRequestId: z.string().uuid().optional(),
+  }),
+});
+
+export const CheckoutChangeApprovedV1 = baseMeta.extend({
+  name: z.literal(EVENT_NAMES.CHECKOUT_CHANGE_APPROVED),
+  data: z.object({
+    tenantId: z.string().uuid(),
+    changeRequestId: z.string().uuid(),
+    scope: z.string().optional(),
+  }),
+});
+
+export const CheckoutPublishedV1 = baseMeta.extend({
+  name: z.literal(EVENT_NAMES.CHECKOUT_PUBLISHED),
+  data: z.object({
+    tenantId: z.string().uuid(),
+    changeRequestId: z.string().uuid(),
+  }),
+});
+
+export const CheckoutRolledBackV1 = baseMeta.extend({
+  name: z.literal(EVENT_NAMES.CHECKOUT_ROLLED_BACK),
+  data: z.object({
+    tenantId: z.string().uuid(),
+    changeRequestId: z.string().uuid(),
+  }),
+});
+
+export const CheckoutAbandonedV1 = baseMeta.extend({
+  name: z.literal(EVENT_NAMES.CHECKOUT_ABANDONED),
+  data: z.object({
+    tenantId: z.string().uuid(),
+    sessionId: z.string().uuid(),
+    sessionKey: z.string(),
+    itemCount: z.number().int().nonnegative().optional(),
+  }),
+});
+
+export const ShippingUpdatedV1 = baseMeta.extend({
+  name: z.literal(EVENT_NAMES.SHIPPING_UPDATED),
+  data: z.object({
+    tenantId: z.string().uuid(),
+    changeRequestId: z.string().uuid().optional(),
+  }),
+});
+
+export const ShippingChangeApprovedV1 = baseMeta.extend({
+  name: z.literal(EVENT_NAMES.SHIPPING_CHANGE_APPROVED),
+  data: z.object({
+    tenantId: z.string().uuid(),
+    changeRequestId: z.string().uuid(),
+    scope: z.string().optional(),
+  }),
+});
+
+export const ShippingPublishedV1 = baseMeta.extend({
+  name: z.literal(EVENT_NAMES.SHIPPING_PUBLISHED),
+  data: z.object({
+    tenantId: z.string().uuid(),
+    changeRequestId: z.string().uuid(),
+    defaultProfileId: z.string().optional(),
+  }),
+});
+
+export const ShippingRolledBackV1 = baseMeta.extend({
+  name: z.literal(EVENT_NAMES.SHIPPING_ROLLED_BACK),
+  data: z.object({
+    tenantId: z.string().uuid(),
+    changeRequestId: z.string().uuid(),
+  }),
+});
+
+export const ShippingProfileCreatedV1 = baseMeta.extend({
+  name: z.literal(EVENT_NAMES.SHIPPING_PROFILE_CREATED),
+  data: z.object({
+    tenantId: z.string().uuid(),
+    profileId: z.string(),
+    profileName: z.string().optional(),
+    changeRequestId: z.string().uuid().optional(),
+  }),
+});
+
+export const ShippingRuleChangedV1 = baseMeta.extend({
+  name: z.literal(EVENT_NAMES.SHIPPING_RULE_CHANGED),
+  data: z.object({
+    tenantId: z.string().uuid(),
+    changeRequestId: z.string().uuid().optional(),
+    ruleKind: z.enum(["rate", "zone", "free", "courier", "pickup"]).optional(),
+  }),
+});
+
+export const OrderCreatedV1 = baseMeta.extend({
+  name: z.literal(EVENT_NAMES.ORDER_CREATED),
+  data: z.object({
+    tenantId: z.string().uuid(),
+    orderId: z.string().uuid(),
+    orderNumber: z.string(),
+    paymentMethod: z.string().optional(),
+    total: z.string().optional(),
+  }),
+});
+
+export const OrderSucceededV1 = baseMeta.extend({
+  name: z.literal(EVENT_NAMES.ORDER_SUCCEEDED),
+  data: z.object({
+    tenantId: z.string().uuid(),
+    orderId: z.string().uuid().optional(),
+    orderNumber: z.string(),
+    paymentMethod: z.string().optional(),
+    total: z.string().optional(),
+    channel: z.enum(["cod", "online"]).optional(),
+  }),
+});
+
 export const OrderPaymentSucceededV1 = baseMeta.extend({
   name: z.literal(EVENT_NAMES.ORDER_PAYMENT_SUCCEEDED),
   data: z.object({
@@ -169,6 +301,19 @@ export const DomainEventSchema = z.discriminatedUnion("name", [
   SeoChangeApprovedV1,
   SeoPublishedV1,
   SeoRolledBackV1,
+  CheckoutUpdatedV1,
+  CheckoutChangeApprovedV1,
+  CheckoutPublishedV1,
+  CheckoutRolledBackV1,
+  CheckoutAbandonedV1,
+  ShippingUpdatedV1,
+  ShippingChangeApprovedV1,
+  ShippingPublishedV1,
+  ShippingRolledBackV1,
+  ShippingProfileCreatedV1,
+  ShippingRuleChangedV1,
+  OrderCreatedV1,
+  OrderSucceededV1,
   OrderPaymentSucceededV1,
   MerchantUpgradedV1,
   AiPlanCompletedV1,
@@ -188,6 +333,19 @@ export type EmitPayload =
   | { name: typeof EVENT_NAMES.SEO_CHANGE_APPROVED; data: z.infer<typeof SeoChangeApprovedV1>["data"]; idempotencyKey?: string; correlationId?: string }
   | { name: typeof EVENT_NAMES.SEO_PUBLISHED; data: z.infer<typeof SeoPublishedV1>["data"]; idempotencyKey?: string; correlationId?: string }
   | { name: typeof EVENT_NAMES.SEO_ROLLED_BACK; data: z.infer<typeof SeoRolledBackV1>["data"]; idempotencyKey?: string; correlationId?: string }
+  | { name: typeof EVENT_NAMES.CHECKOUT_UPDATED; data: z.infer<typeof CheckoutUpdatedV1>["data"]; idempotencyKey?: string; correlationId?: string }
+  | { name: typeof EVENT_NAMES.CHECKOUT_CHANGE_APPROVED; data: z.infer<typeof CheckoutChangeApprovedV1>["data"]; idempotencyKey?: string; correlationId?: string }
+  | { name: typeof EVENT_NAMES.CHECKOUT_PUBLISHED; data: z.infer<typeof CheckoutPublishedV1>["data"]; idempotencyKey?: string; correlationId?: string }
+  | { name: typeof EVENT_NAMES.CHECKOUT_ROLLED_BACK; data: z.infer<typeof CheckoutRolledBackV1>["data"]; idempotencyKey?: string; correlationId?: string }
+  | { name: typeof EVENT_NAMES.CHECKOUT_ABANDONED; data: z.infer<typeof CheckoutAbandonedV1>["data"]; idempotencyKey?: string; correlationId?: string }
+  | { name: typeof EVENT_NAMES.SHIPPING_UPDATED; data: z.infer<typeof ShippingUpdatedV1>["data"]; idempotencyKey?: string; correlationId?: string }
+  | { name: typeof EVENT_NAMES.SHIPPING_CHANGE_APPROVED; data: z.infer<typeof ShippingChangeApprovedV1>["data"]; idempotencyKey?: string; correlationId?: string }
+  | { name: typeof EVENT_NAMES.SHIPPING_PUBLISHED; data: z.infer<typeof ShippingPublishedV1>["data"]; idempotencyKey?: string; correlationId?: string }
+  | { name: typeof EVENT_NAMES.SHIPPING_ROLLED_BACK; data: z.infer<typeof ShippingRolledBackV1>["data"]; idempotencyKey?: string; correlationId?: string }
+  | { name: typeof EVENT_NAMES.SHIPPING_PROFILE_CREATED; data: z.infer<typeof ShippingProfileCreatedV1>["data"]; idempotencyKey?: string; correlationId?: string }
+  | { name: typeof EVENT_NAMES.SHIPPING_RULE_CHANGED; data: z.infer<typeof ShippingRuleChangedV1>["data"]; idempotencyKey?: string; correlationId?: string }
+  | { name: typeof EVENT_NAMES.ORDER_CREATED; data: z.infer<typeof OrderCreatedV1>["data"]; idempotencyKey?: string; correlationId?: string }
+  | { name: typeof EVENT_NAMES.ORDER_SUCCEEDED; data: z.infer<typeof OrderSucceededV1>["data"]; idempotencyKey?: string; correlationId?: string }
   | { name: typeof EVENT_NAMES.ORDER_PAYMENT_SUCCEEDED; data: z.infer<typeof OrderPaymentSucceededV1>["data"]; idempotencyKey?: string; correlationId?: string }
   | { name: typeof EVENT_NAMES.MERCHANT_UPGRADED; data: z.infer<typeof MerchantUpgradedV1>["data"]; idempotencyKey?: string; correlationId?: string }
   | { name: typeof EVENT_NAMES.AI_PLAN_COMPLETED; data: z.infer<typeof AiPlanCompletedV1>["data"]; idempotencyKey?: string; correlationId?: string };
