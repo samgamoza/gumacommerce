@@ -417,7 +417,7 @@ export function StudioFooter({ tenant }: { tenant: DemoTenant }) {
 
         <div className="st-footer-bottom">
           <p>© {tenant.name} {year}. All rights reserved.</p>
-          <p>Powered by Guma Commerce</p>
+          <p>Powered by Guma One</p>
         </div>
       </div>
     </footer>

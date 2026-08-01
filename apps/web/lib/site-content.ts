@@ -1,6 +1,6 @@
 export const company = {
-  name: "Guma Commerce Technologies",
-  product: "Guma Commerce",
+  name: "Guma One Technologies",
+  product: "Guma One",
   email: "hello@gumacommerce.ph",
   support: "support@gumacommerce.ph",
   privacy: "privacy@gumacommerce.ph",
@@ -42,12 +42,12 @@ export const faqCategories = [
     title: "Getting started",
     items: [
       {
-        q: "What is Guma Commerce?",
-        a: "Guma Commerce is an all-in-one social commerce platform built for Philippine sellers. It turns your Facebook, TikTok, and Instagram posts into a branded mobile storefront with GCash/Maya checkout, AI marketing tools, and Lalamove delivery — so you stop losing sales in Messenger chats.",
+        q: "What is Guma One?",
+        a: "Guma One is an all-in-one social commerce platform built for Philippine sellers. It turns your Facebook, TikTok, and Instagram posts into a branded mobile storefront with GCash/Maya checkout, AI marketing tools, and Lalamove delivery — so you stop losing sales in Messenger chats.",
       },
       {
-        q: "Who is Guma Commerce for?",
-        a: "Home-based sellers, food creators, fashion resellers, beauty brands, and any small business selling through social media in the Philippines. If you currently take orders via PM, comment, or chat, Guma Commerce is built for you.",
+        q: "Who is Guma One for?",
+        a: "Home-based sellers, food creators, fashion resellers, beauty brands, and any small business selling through social media in the Philippines. If you currently take orders via PM, comment, or chat, Guma One is built for you.",
       },
       {
         q: "How long does setup take?",
@@ -55,7 +55,7 @@ export const faqCategories = [
       },
       {
         q: "Do I need a website or coding skills?",
-        a: "No. Guma Commerce gives you a ready-made mobile storefront at yourname.gumacommerce.ph. No developers, no Shopify setup, no technical knowledge required.",
+        a: "No. Guma One gives you a ready-made mobile storefront at yourname.gumacommerce.ph. No developers, no Shopify setup, no technical knowledge required.",
       },
     ],
   },
@@ -68,7 +68,7 @@ export const faqCategories = [
         a: "GCash, Maya, QRPh, credit/debit cards, and Cash on Delivery (COD) — all optimized for Filipino buyers. You choose which methods to enable per shop.",
       },
       {
-        q: "How much does Guma Commerce cost?",
+        q: "How much does Guma One cost?",
         a: "Start free on the Free plan. Pro is ₱499/month for GUMA Workspace, agents, and higher AI limits. Advance is ₱999/month for advanced campaigns and priority support. A small per-order platform fee applies on paid transactions.",
       },
       {
@@ -87,7 +87,7 @@ export const faqCategories = [
     items: [
       {
         q: "How does delivery work?",
-        a: "Guma Commerce integrates with Lalamove for instant quotes and rider booking. Customers see delivery fees at checkout. You can also enter manual rider details for Angkas, GrabExpress, or your own riders.",
+        a: "Guma One integrates with Lalamove for instant quotes and rider booking. Customers see delivery fees at checkout. You can also enter manual rider details for Angkas, GrabExpress, or your own riders.",
       },
       {
         q: "Can customers order without creating an account?",
@@ -112,8 +112,8 @@ export const faqCategories = [
         a: "Every post, reel, or story gets a unique link. When customers tap it, they land on your branded storefront (not Messenger). UTM tracking shows which platform drives the most sales.",
       },
       {
-        q: "Does Guma Commerce work with Facebook Shops and TikTok Shop?",
-        a: "Yes. Guma Commerce aligns with Meta's website-checkout model and supports TikTok link-in-bio ordering. Your Guma Commerce storefront is the checkout destination.",
+        q: "Does Guma One work with Facebook Shops and TikTok Shop?",
+        a: "Yes. Guma One aligns with Meta's website-checkout model and supports TikTok link-in-bio ordering. Your Guma One storefront is the checkout destination.",
       },
     ],
   },
@@ -122,7 +122,7 @@ export const faqCategories = [
     title: "Trust & compliance",
     items: [
       {
-        q: "Is Guma Commerce compliant with Philippine data privacy laws?",
+        q: "Is Guma One compliant with Philippine data privacy laws?",
         a: "Yes. We comply with the Data Privacy Act of 2012 (RA 10173), NPC issuances, and the Internet Transactions Act (RA 11967). See our Privacy Policy for full details.",
       },
       {

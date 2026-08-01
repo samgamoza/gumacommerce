@@ -65,7 +65,7 @@ export function BloomFooter({ tenant }: { tenant: DemoTenant }) {
             <Heart className="h-4 w-4 fill-current text-red-500" />
           </div>
           <p>
-            Powered by <span className="font-semibold text-gray-800">Guma Commerce</span>
+            Powered by <span className="font-semibold text-gray-800">Guma One</span>
           </p>
         </div>
       </div>

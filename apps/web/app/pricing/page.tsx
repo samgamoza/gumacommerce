@@ -7,7 +7,7 @@ import {
 import { LandingPricing, LandingCta } from "@/components/landing/pricing";
 
 export const metadata: Metadata = {
-  title: "Pricing — Guma Commerce",
+  title: "Pricing — Guma One",
   description: "Simple, transparent pricing for Philippine social sellers. Start free, scale when ready.",
 };
 

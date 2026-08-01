@@ -55,7 +55,7 @@ export function LandingFooter() {
                 href="/contact"
                 className="text-sm text-muted-foreground transition hover:text-primary"
               >
-                Follow Guma Commerce on social — coming soon
+                Follow Guma One on social — coming soon
               </Link>
             </div>
           </div>
@@ -90,7 +90,7 @@ export function LandingFooter() {
         </div>
 
         <p className="mt-6 text-center text-[11px] leading-relaxed text-muted-foreground/80">
-          Guma Commerce complies with the Philippine Data Privacy Act (RA 10173), Internet Transactions
+          Guma One complies with the Philippine Data Privacy Act (RA 10173), Internet Transactions
           Act (RA 11967), and DTI e-commerce guidelines. Payment processing via BSP-regulated
           partners.
         </p>

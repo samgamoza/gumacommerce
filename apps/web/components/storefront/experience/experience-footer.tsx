@@ -59,7 +59,7 @@ export function ExperienceFooter() {
         <div>
           <h3 className="mb-3 text-sm font-semibold text-foreground">Powered by</h3>
           <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
-            Guma Commerce
+            Guma One
           </Link>
         </div>
       </div>
@@ -69,7 +69,7 @@ export function ExperienceFooter() {
           <p>
             © {new Date().getFullYear()} {tenant.name}
           </p>
-          <p>Built with Guma Commerce</p>
+          <p>Built with Guma One</p>
         </div>
       </div>
     </footer>

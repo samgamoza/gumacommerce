@@ -9,8 +9,8 @@ import {
 import { company } from "@/lib/site-content";
 
 export const metadata: Metadata = {
-  title: "Refund & Return Policy — Guma Commerce",
-  description: "Refund and return policies for Guma Commerce platform and seller storefronts.",
+  title: "Refund & Return Policy — Guma One",
+  description: "Refund and return policies for Guma One platform and seller storefronts.",
 };
 
 export default function RefundsPage() {
@@ -26,7 +26,7 @@ export default function RefundsPage() {
       <ContentSection>
         <h2>Platform subscription refunds</h2>
         <p>
-          Guma Commerce subscription fees (Pro, Advance) are non-refundable for the current billing
+          Guma One subscription fees (Pro, Advance) are non-refundable for the current billing
           period. You may cancel anytime to prevent future charges. If you were charged in error,
           contact {company.support} within 7 days.
         </p>
@@ -69,7 +69,7 @@ export default function RefundsPage() {
           >
             www.dti.gov.ph
           </a>{" "}
-          or contact Guma Commerce support at {company.support} for platform assistance.
+          or contact Guma One support at {company.support} for platform assistance.
         </p>
 
         <p className="mt-8">

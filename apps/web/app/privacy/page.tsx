@@ -8,8 +8,8 @@ import {
 import { company } from "@/lib/site-content";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Guma Commerce",
-  description: "How Guma Commerce collects, uses, and protects your personal data under the Philippine Data Privacy Act.",
+  title: "Privacy Policy — Guma One",
+  description: "How Guma One collects, uses, and protects your personal data under the Philippine Data Privacy Act.",
 };
 
 export default function PrivacyPage() {
@@ -60,7 +60,7 @@ export default function PrivacyPage() {
 
         <h2>3. How we use your information</h2>
         <ul>
-          <li>Provide and improve the Guma Commerce platform</li>
+          <li>Provide and improve the Guma One platform</li>
           <li>Process orders, payments, and delivery bookings</li>
           <li>Send transactional SMS/email (order confirmations, status updates)</li>
           <li>Generate AI content at your request</li>

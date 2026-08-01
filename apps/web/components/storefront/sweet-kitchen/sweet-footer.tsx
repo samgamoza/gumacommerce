@@ -24,7 +24,7 @@ export function SweetFooter({ tenant }: { tenant: DemoTenant }) {
           <p>{tenant.category} · {tenant.location}</p>
           <p className="mt-4 text-xs">
             &copy; {new Date().getFullYear()} {tenant.name}. Powered by{" "}
-            <span style={{ color: accent }}>Guma Commerce</span>.
+            <span style={{ color: accent }}>Guma One</span>.
           </p>
         </div>
       </div>

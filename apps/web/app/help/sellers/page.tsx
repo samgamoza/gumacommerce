@@ -9,8 +9,8 @@ import {
 import { adminUrl } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Seller Guide — Guma Commerce Help",
-  description: "Step-by-step guide to launching your Guma Commerce social commerce shop.",
+  title: "Seller Guide — Guma One Help",
+  description: "Step-by-step guide to launching your Guma One social commerce shop.",
 };
 
 export default function SellerGuidePage() {

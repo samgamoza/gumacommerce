@@ -12,8 +12,8 @@ import {
 } from "@/components/landing/marketing-shell";
 
 export const metadata: Metadata = {
-  title: "System Status — Guma Commerce",
-  description: "Real-time status of Guma Commerce platform services.",
+  title: "System Status — Guma One",
+  description: "Real-time status of Guma One platform services.",
 };
 
 // Health checks re-run at most every 5 minutes.
@@ -120,7 +120,7 @@ export default async function StatusPage() {
       <PageHeader
         eyebrow="Status"
         title={headline}
-        description="Live status of Guma Commerce platform services, checked every 5 minutes."
+        description="Live status of Guma One platform services, checked every 5 minutes."
       />
 
       <ContentSection>

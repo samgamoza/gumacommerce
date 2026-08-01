@@ -98,7 +98,7 @@ export function StylishFooter({ tenant }: { tenant: DemoTenant }) {
 
         <div className="stylish-footer-bottom">
           <p>© Copyright {tenant.name} {year}.</p>
-          <p>Powered by Guma Commerce</p>
+          <p>Powered by Guma One</p>
         </div>
       </div>
     </footer>

@@ -182,7 +182,7 @@ export function CheckoutForm({
   const deliveryFee =
     fulfillment === "pickup"
       ? 0
-      : liveQuote?.fee ?? computeDeliveryFee(subtotal, storeSettings);
+      : liveQuote?.fee ?? computeDeliveryFee(subtotal, storeSettings, { city, barangay });
   const totals = computeCheckoutTotals({
     subtotal,
     deliveryFee,

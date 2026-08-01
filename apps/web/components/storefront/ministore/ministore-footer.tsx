@@ -52,7 +52,7 @@ export function MinistoreFooter({ tenant }: { tenant: DemoTenant }) {
           <p>
             © {tenant.name} {year}. All rights reserved.
           </p>
-          <p>Powered by Guma Commerce</p>
+          <p>Powered by Guma One</p>
         </div>
       </div>
     </footer>

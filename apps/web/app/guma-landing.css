@@ -1,0 +1,108 @@
+/* Guma landing page — ported from the guma-one-ai Base44 app.
+   Everything is scoped under `.guma-landing` so the dark palette + custom
+   utilities never leak into the storefront or the rest of apps/web. */
+
+.guma-landing {
+  color-scheme: dark;
+  background-color: #0a0f1d;
+  color: #fff;
+  /* Override the app's light theme tokens with the landing's dark palette,
+     scoped to this wrapper only. `--color-*` in @theme reference these. */
+  --background: hsl(222 47% 7%);
+  --foreground: hsl(0 0% 100%);
+  --card: hsl(222 47% 9%);
+  --card-foreground: hsl(0 0% 100%);
+  --popover: hsl(222 47% 9%);
+  --popover-foreground: hsl(0 0% 100%);
+  --primary: hsl(255 92% 76%);
+  --primary-foreground: hsl(222 47% 7%);
+  --secondary: hsl(217 33% 17%);
+  --secondary-foreground: hsl(0 0% 100%);
+  --muted: hsl(217 33% 17%);
+  --muted-foreground: hsl(215 20% 65%);
+  --accent: hsl(160 84% 39%);
+  --accent-foreground: hsl(222 47% 7%);
+  --destructive: hsl(0 84% 60%);
+  --border: hsl(217 33% 20%);
+  --input: hsl(217 33% 20%);
+  --ring: hsl(255 92% 76%);
+}
+
+.guma-landing ::selection {
+  background: rgba(167, 139, 250, 0.3);
+  color: #fff;
+}
+
+/* ── Custom utilities the sections use ── */
+.guma-landing .glass {
+  background: rgba(30, 41, 59, 0.35);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+.guma-landing .glass-strong {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+}
+.guma-landing .text-gradient-purple {
+  background: linear-gradient(120deg, #a78bfa 0%, #818cf8 45%, #34d399 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+.guma-landing .glow-purple {
+  box-shadow: 0 0 30px rgba(167, 139, 250, 0.35), 0 0 60px rgba(167, 139, 250, 0.12);
+}
+.guma-landing .glow-emerald {
+  box-shadow: 0 0 30px rgba(52, 211, 153, 0.35), 0 0 60px rgba(52, 211, 153, 0.12);
+}
+.guma-landing .grid-lines {
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.035) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+.guma-landing .tilt-card {
+  position: relative;
+  transition: transform 0.2s ease-out, box-shadow 0.3s ease-out;
+  transform-style: preserve-3d;
+  border-radius: 1.5rem;
+}
+.guma-landing .tilt-card:hover {
+  box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.2), 0 20px 60px -10px rgba(167, 139, 250, 0.15);
+}
+.guma-landing .holo-text {
+  background: linear-gradient(90deg, #a78bfa 0%, #818cf8 25%, #34d399 50%, #818cf8 75%, #a78bfa 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: guma-holo-shimmer 4s linear infinite;
+}
+
+/* ── Animations (scoped; keyframes prefixed to avoid collisions) ── */
+.guma-landing .animate-pulse-glow { animation: guma-pulse-glow 2s ease-in-out infinite; }
+.guma-landing .animate-float { animation: guma-float 8s ease-in-out infinite; }
+.guma-landing .animate-aurora { background-size: 200% 200%; animation: guma-aurora 6s ease infinite; }
+.guma-landing .animate-slide-up { animation: guma-slide-up 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
+.guma-landing .animate-scan-down { animation: guma-scan-down 8s linear infinite; }
+.guma-landing .animate-spin-slow { animation: guma-spin-slow 30s linear infinite; }
+.guma-landing .animate-particle-drift { animation: guma-particle-drift 6s ease-in-out infinite; }
+.guma-landing .animate-border-pulse { animation: guma-border-pulse 3s ease-in-out infinite; }
+
+@keyframes guma-pulse-glow { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.55; transform: scale(1.08); } }
+@keyframes guma-float { 0%, 100% { transform: translateY(0px) translateX(0px); } 50% { transform: translateY(-24px) translateX(12px); } }
+@keyframes guma-aurora { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+@keyframes guma-slide-up { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes guma-scan-down { 0% { transform: translateY(-100vh); opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.6; } 100% { transform: translateY(100vh); opacity: 0; } }
+@keyframes guma-spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes guma-particle-drift { 0%, 100% { transform: translate(0, 0); opacity: 0.3; } 50% { transform: translate(20px, -30px); opacity: 0.8; } }
+@keyframes guma-border-pulse { 0%, 100% { border-color: rgba(167, 139, 250, 0.2); } 50% { border-color: rgba(167, 139, 250, 0.5); } }
+@keyframes guma-holo-shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+@keyframes wave { 0%, 100% { transform: scaleY(0.6); opacity: 0.6; } 50% { transform: scaleY(1.4); opacity: 1; } }
+/* AICreatorStudio audio bars: name/timing/iteration via class, duration+delay
+   set inline (longhand) — avoids the `animation` shorthand hydration mismatch. */
+.guma-landing .animate-wave { animation-name: wave; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }

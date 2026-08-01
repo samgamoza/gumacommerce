@@ -18,8 +18,8 @@ import {
 import { faqCategories } from "@/lib/site-content";
 
 export const metadata: Metadata = {
-  title: "FAQs — Guma Commerce",
-  description: "Frequently asked questions about Guma Commerce social commerce for Philippine sellers.",
+  title: "FAQs — Guma One",
+  description: "Frequently asked questions about Guma One social commerce for Philippine sellers.",
 };
 
 export default function FaqPage() {
@@ -29,7 +29,7 @@ export default function FaqPage() {
       <PageHeader
         eyebrow="Support"
         title="Frequently asked questions"
-        description="Everything you need to know about selling on social media with Guma Commerce — payments, delivery, AI tools, and compliance."
+        description="Everything you need to know about selling on social media with Guma One — payments, delivery, AI tools, and compliance."
       />
 
       <ContentSection>

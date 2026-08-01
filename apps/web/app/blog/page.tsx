@@ -9,7 +9,7 @@ import {
 } from "@/components/landing/marketing-shell";
 
 export const metadata: Metadata = {
-  title: "Blog — Guma Commerce",
+  title: "Blog — Guma One",
   description: "Tips, guides, and stories for Philippine social sellers.",
 };
 
@@ -42,7 +42,7 @@ export default function BlogPage() {
       <PageHeader
         eyebrow="Blog"
         title="Tips for social sellers"
-        description="Guides, data, and stories from the Guma Commerce team and community."
+        description="Guides, data, and stories from the Guma One team and community."
       />
 
       <ContentSection>

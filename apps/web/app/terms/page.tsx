@@ -8,8 +8,8 @@ import {
 import { company } from "@/lib/site-content";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — Guma Commerce",
-  description: "Terms and conditions for using the Guma Commerce social commerce platform.",
+  title: "Terms of Service — Guma One",
+  description: "Terms and conditions for using the Guma One social commerce platform.",
 };
 
 export default function TermsPage() {
@@ -31,7 +31,7 @@ export default function TermsPage() {
 
         <h2>2. Platform description</h2>
         <p>
-          Guma Commerce provides social commerce tools including storefront hosting, payment processing
+          Guma One provides social commerce tools including storefront hosting, payment processing
           integration, delivery booking, and AI content generation for sellers in the Philippines.
         </p>
 
@@ -53,20 +53,20 @@ export default function TermsPage() {
 
         <h2>5. Internet Transactions Act (RA 11967)</h2>
         <p>
-          Sellers using Guma Commerce must display their business identity, contact information, and
+          Sellers using Guma One must display their business identity, contact information, and
           return/refund policies on their storefront as required by RA 11967 and DTI guidelines.
         </p>
 
         <h2>6. Intellectual property</h2>
         <p>
-          Guma Commerce owns the platform, branding, and software. Sellers retain ownership of their
+          Guma One owns the platform, branding, and software. Sellers retain ownership of their
           product content, images, and brand materials. AI-generated content is licensed to sellers
           for commercial use on their shops and social media.
         </p>
 
         <h2>7. Limitation of liability</h2>
         <p>
-          Guma Commerce is a technology platform. We are not a party to transactions between sellers and
+          Guma One is a technology platform. We are not a party to transactions between sellers and
           buyers. We are not liable for product quality, delivery failures by third-party couriers,
           or payment disputes beyond our platform obligations.
         </p>

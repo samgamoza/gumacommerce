@@ -70,8 +70,22 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
   return (
     <>
       {isPreview && (
-        <div className="sticky top-0 z-50 bg-amber-500 px-4 py-2 text-center text-sm font-semibold text-amber-950">
-          Draft preview — not live to buyers until you publish &amp; activate
+        <div className="sticky top-0 z-50 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 bg-amber-500 px-4 py-2 text-center text-sm font-semibold text-amber-950">
+          <span>Draft preview — not live to buyers until you publish &amp; activate</span>
+          <span className="flex items-center gap-2">
+            <a
+              href={adminUrl}
+              className="inline-flex items-center gap-1 rounded-full border border-amber-950/30 px-2.5 py-0.5 text-xs transition hover:bg-amber-950/10"
+            >
+              ← Back to dashboard
+            </a>
+            <a
+              href={`${adminUrl}/launch`}
+              className="inline-flex items-center gap-1 rounded-full bg-amber-950 px-2.5 py-0.5 text-xs text-amber-50 transition hover:bg-amber-900"
+            >
+              Edit shop
+            </a>
+          </span>
         </div>
       )}
       <TenantStorefrontHome
@@ -97,7 +111,7 @@ export async function generateMetadata({ params }: PageProps) {
   if (pending) {
     return {
       title: `${pending.name} — Coming soon`,
-      description: `${pending.name} is setting up their Guma Commerce shop.`,
+      description: `${pending.name} is setting up their Guma One shop.`,
     };
   }
 

@@ -54,7 +54,7 @@ async function notifySellerPaymentReceived(result: MarkOrderPaidResult): Promise
   const total = result.total ? formatPhp(Number(result.total)) : "";
   await createSemaphoreClient().send({
     to: phone,
-    message: `Guma Commerce: Payment received for order ${result.orderNumber}${
+    message: `Guma One: Payment received for order ${result.orderNumber}${
       total ? ` (${total})` : ""
     }. Open your dashboard to start preparing it.`,
     priority: true,

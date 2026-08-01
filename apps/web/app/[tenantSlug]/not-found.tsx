@@ -23,7 +23,7 @@ export default function NotFound() {
           Try demo shop
         </Link>
         <Link href="/" className="text-sm text-emerald-600 underline">
-          Back to Guma Commerce
+          Back to Guma One
         </Link>
       </div>
     </div>

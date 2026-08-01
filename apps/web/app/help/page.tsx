@@ -10,8 +10,8 @@ import {
 } from "@/components/landing/marketing-shell";
 
 export const metadata: Metadata = {
-  title: "Help Center — Guma Commerce",
-  description: "Guides and resources for Guma Commerce sellers and customers.",
+  title: "Help Center — Guma One",
+  description: "Guides and resources for Guma One sellers and customers.",
 };
 
 const topics = [

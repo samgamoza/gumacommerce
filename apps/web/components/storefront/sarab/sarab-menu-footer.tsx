@@ -157,7 +157,7 @@ export function SarabFooter({ tenant }: { tenant: DemoTenant }) {
           <div className="sarab-container sarab-fbot-inner">
             <p>
               © {year} <strong>{tenant.name}</strong>. Powered by{" "}
-              <strong>Guma Commerce</strong>.
+              <strong>Guma One</strong>.
             </p>
           </div>
         </div>

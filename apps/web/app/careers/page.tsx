@@ -10,7 +10,7 @@ import {
 import { company } from "@/lib/site-content";
 
 export const metadata: Metadata = {
-  title: "Careers — Guma Commerce",
+  title: "Careers — Guma One",
   description: "Join the team building social commerce for the Philippines.",
 };
 
@@ -46,7 +46,7 @@ export default function CareersPage() {
       />
 
       <ContentSection>
-        <h2>Why Guma Commerce?</h2>
+        <h2>Why Guma One?</h2>
         <ul>
           <li>Work on products used by real home-based businesses across the Philippines</li>
           <li>Remote-friendly with Metro Manila hub</li>

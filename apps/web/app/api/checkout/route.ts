@@ -248,7 +248,12 @@ export async function POST(request: Request) {
     const deliveryFee =
       body.fulfillment === "pickup"
         ? 0
-        : liveQuote?.fee ?? computeDeliveryFee(estimatedSubtotal, settings);
+        : liveQuote?.fee ??
+          computeDeliveryFee(estimatedSubtotal, settings, {
+            city: body.city,
+            barangay: body.barangay,
+            postalCode: body.postalCode,
+          });
 
     const order = await createOrderForTenant({
       tenantSlug: body.tenantSlug,

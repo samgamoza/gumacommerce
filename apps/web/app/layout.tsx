@@ -15,13 +15,13 @@ const bricolage = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
-  title: "Guma Commerce — Turn Social Posts Into Sales",
+  title: "Guma One — Turn Social Posts Into Sales",
   description:
     "The all-in-one social commerce platform for Philippine sellers. AI content, GCash checkout, Lalamove delivery — no more Messenger chaos.",
   manifest: "/manifest.json",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "Guma Commerce" },
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "Guma One" },
   openGraph: {
-    title: "Guma Commerce — Social Commerce for PH Sellers",
+    title: "Guma One — Social Commerce for PH Sellers",
     description: "Post on FB, TikTok, IG. Customers order in seconds.",
     type: "website",
   },

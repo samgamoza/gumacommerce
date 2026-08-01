@@ -10,7 +10,7 @@ import {
 import { company } from "@/lib/site-content";
 
 export const metadata: Metadata = {
-  title: "About Us — Guma Commerce",
+  title: "About Us — Guma One",
   description: "Our mission to empower Philippine social sellers with professional e-commerce tools.",
 };
 
@@ -44,7 +44,7 @@ export default function AboutPage() {
       <PageHeader
         eyebrow="Company"
         title="Empowering every Filipino social seller"
-        description="Guma Commerce was built to solve one problem: talented sellers losing sales in messy Messenger chats. We give them the tools of a real brand — in minutes, not months."
+        description="Guma One was built to solve one problem: talented sellers losing sales in messy Messenger chats. We give them the tools of a real brand — in minutes, not months."
       />
 
       <ContentSection>
