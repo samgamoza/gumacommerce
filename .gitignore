@@ -27,7 +27,9 @@ npm-debug.log*
 pnpm-debug.log*
 
 # Drizzle
-packages/db/drizzle/*.sql
+# Migrations ARE tracked - they are the schema history and the only way a
+# fresh environment can build the database. Previously ignored, which left
+# them existing on one machine only.
 
 # Vercel
 .vercel
