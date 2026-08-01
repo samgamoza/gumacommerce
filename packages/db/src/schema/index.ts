@@ -422,6 +422,33 @@ export const productImages = pgTable(
   (table) => [index("product_images_product_idx").on(table.productId)]
 );
 
+// ─── Customers (shop CRM — buyer identity by phone) ──────────────────────────
+// A per-tenant buyer aggregate keyed by phone (phone is identity for PH social
+// commerce). Distinct from `users` (seller/platform accounts). Order counts and
+// spend are computed from `orders` at read time — not denormalized here — so the
+// CRM can never drift from the source of truth.
+export const customers = pgTable(
+  "customers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .references(() => tenants.id)
+      .notNull(),
+    phone: varchar("phone", { length: 20 }).notNull(),
+    name: varchar("name", { length: 255 }),
+    email: varchar("email", { length: 255 }),
+    firstOrderAt: timestamp("first_order_at", { withTimezone: true }),
+    lastOrderAt: timestamp("last_order_at", { withTimezone: true }),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("customers_tenant_phone_idx").on(table.tenantId, table.phone),
+    index("customers_tenant_last_order_idx").on(table.tenantId, table.lastOrderAt),
+  ]
+);
+
 // ─── Orders ──────────────────────────────────────────────────────────────────
 
 export const orders = pgTable(
@@ -433,6 +460,8 @@ export const orders = pgTable(
       .notNull(),
     orderNumber: varchar("order_number", { length: 32 }).notNull(),
     customerId: uuid("customer_id").references(() => users.id),
+    // Shop-CRM buyer this order belongs to (linked by phone at order time).
+    customerRecordId: uuid("customer_record_id").references(() => customers.id),
     guestPhone: varchar("guest_phone", { length: 20 }),
     guestName: varchar("guest_name", { length: 255 }),
     guestEmail: varchar("guest_email", { length: 255 }),
@@ -958,6 +987,14 @@ export const aiUsageMonthly = pgTable(
     uniqueIndex("ai_usage_tenant_month_idx").on(table.tenantId, table.periodMonth),
   ]
 );
+
+/** Global platform-wide key/value settings, controlled by super-admins.
+    e.g. key "active_landing" -> "frontend1" | "frontend2". */
+export const platformSettings = pgTable("platform_settings", {
+  key: varchar("key", { length: 64 }).primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
 
 // ─── Relations ───────────────────────────────────────────────────────────────
 

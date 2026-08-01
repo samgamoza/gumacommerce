@@ -6,10 +6,10 @@ interface GumaMarkProps {
 }
 
 /**
- * Guma Commerce brand mark: a chat bubble fused with a shopping bag —
+ * Guma One brand mark: a chat bubble fused with a shopping bag —
  * bag handle on top, chat tail below, typing dots inside. "Chats become orders."
  */
-export function GumaMark({ className, title = "Guma Commerce" }: GumaMarkProps) {
+export function GumaMark({ className, title = "Guma One" }: GumaMarkProps) {
   const id = useId();
   const tileId = `${id}-tile`;
   const shineId = `${id}-shine`;

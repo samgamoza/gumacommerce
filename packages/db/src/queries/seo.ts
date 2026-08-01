@@ -89,8 +89,8 @@ export function buildDefaultSeo(input: {
 }): TenantSeoJson {
   const title = `${input.name} — Shop`;
   const description = input.category
-    ? `${input.name} — ${input.category} on Guma Commerce. Order online with COD & e-wallets.`
-    : `${input.name} on Guma Commerce. Order online with COD & e-wallets.`;
+    ? `${input.name} — ${input.category} on Guma One. Order online with COD & e-wallets.`
+    : `${input.name} on Guma One. Order online with COD & e-wallets.`;
   const canonical = `${input.storefrontBaseUrl.replace(/\/$/, "")}/${input.slug}`;
 
   return normalizeSeoJson({

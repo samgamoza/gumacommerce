@@ -15,6 +15,22 @@ export {
   type SetupStep,
 } from "./queries/tenant-dashboard";
 export {
+  listCustomersForTenant,
+  getCustomerForTenant,
+  getCustomerStatsForTenant,
+  type CustomerSummary,
+  type CustomerDetail,
+  type CustomerStats,
+} from "./queries/customers";
+export {
+  getPlatformSetting,
+  setPlatformSetting,
+  getActiveLanding,
+  setActiveLanding,
+  ACTIVE_LANDING_KEY,
+  type ActiveLanding,
+} from "./queries/platform-settings";
+export {
   getTenantStorefrontSettings,
   updateTenantStorefront,
   type TenantStorefrontSettings,

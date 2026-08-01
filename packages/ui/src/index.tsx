@@ -2,10 +2,13 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 export { GumaMark } from "./logo";
 
+// Token-based so each app themes itself from its own CSS variables:
+// admin resolves these to its dark Guma One palette, web/platform to light.
 const variants = {
-  primary: "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm",
-  secondary: "bg-white text-gray-900 border border-gray-200 hover:bg-gray-50",
-  ghost: "bg-transparent text-gray-700 hover:bg-gray-100",
+  primary: "bg-primary text-primary-foreground hover:opacity-90 shadow-sm",
+  secondary:
+    "bg-secondary text-secondary-foreground border border-border hover:bg-muted",
+  ghost: "bg-transparent text-foreground hover:bg-muted",
 } as const;
 
 const sizes = {
@@ -44,7 +47,7 @@ interface CardProps {
 
 export function Card({ children, className = "" }: CardProps) {
   return (
-    <div className={`rounded-2xl border border-gray-100 bg-white p-4 shadow-sm ${className}`}>
+    <div className={`rounded-2xl border border-border bg-card p-4 shadow-sm ${className}`}>
       {children}
     </div>
   );

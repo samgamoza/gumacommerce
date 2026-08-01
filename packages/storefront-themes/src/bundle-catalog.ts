@@ -1,6 +1,6 @@
 /**
  * Master catalog for reference/Free.Bundle.2023 (100 HTML templates).
- * Maps each source zip to a Guma Commerce shop category, integration status,
+ * Maps each source zip to a Guma One shop category, integration status,
  * and nearest already-integrated renderer (if any).
  */
 import type { ShopBusinessCategory } from "./shop-categories";

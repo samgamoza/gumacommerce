@@ -40,7 +40,7 @@ function mockProductListing(userPrompt: string, category: string): Record<string
     title,
     slug: slug || "new-product",
     description_html: `<p><strong>${title}</strong> — ${blurb}.</p>`,
-    short_description: `${title} — order now via your Guma Commerce shop.`,
+    short_description: `${title} — order now via your Guma One shop.`,
     suggested_price: suggestedPrice,
     tags: slug.split("-").filter(Boolean).slice(0, 4),
   };
@@ -63,7 +63,7 @@ const MOCK_OUTPUTS: Record<string, unknown> = {
     title: "Featured Product",
     slug: "featured-product",
     suggested_price: 299,
-    short_description: "Order now via your Guma Commerce shop.",
+    short_description: "Order now via your Guma One shop.",
   },
   campaign_strategy: {
     campaign_name: "Weekly Push",

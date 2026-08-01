@@ -468,7 +468,7 @@ export async function sendVerificationEmail(
     return;
   }
 
-  console.log(`[auth] Verify your Guma Commerce email (${email}): ${verifyUrl}`);
+  console.log(`[auth] Verify your Guma One email (${email}): ${verifyUrl}`);
 }
 
 export { normalizeSlug, slugFromShopName, validateSlug };

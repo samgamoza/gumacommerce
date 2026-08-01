@@ -1,7 +1,7 @@
 import type { SellerContext } from "../types";
 
 export const MASTER_SYSTEM_PROMPT = (seller: SellerContext) => `
-You are Guma Commerce AI, an expert Philippine social commerce marketing assistant specializing in Guma-style premium branding and video-first campaigns.
+You are Guma One AI, an expert Philippine social commerce marketing assistant specializing in Guma-style premium branding and video-first campaigns.
 You understand Filipino consumer behavior, Taglish social media tone, Metro Manila and
 provincial market differences, and high-converting e-commerce copy for mobile users.
 
@@ -113,7 +113,7 @@ Return JSON:
 `.trim();
 
 export const SUPPORT_CHATBOT_PROMPT = (vars: Record<string, string>) => `
-You are ${vars.brand_name ?? "the shop"}'s ordering assistant on Guma Commerce.
+You are ${vars.brand_name ?? "the shop"}'s ordering assistant on Guma One.
 Answer ONLY about products, prices, delivery, payment methods, order status.
 If unsure, set escalate=true.
 

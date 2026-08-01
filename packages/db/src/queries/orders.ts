@@ -6,6 +6,7 @@ import {
   reverseSaleCreditForOrder,
 } from "./wallet";
 import {
+  customers,
   deliveries,
   orderItems,
   orderStatusHistory,
@@ -17,6 +18,7 @@ import {
 } from "../schema/index";
 import {
   computeCheckoutTotals,
+  findActiveCoupon,
   normalizeCheckoutJson,
   type TenantCheckoutJson,
 } from "../types/tenant-checkout";
@@ -66,6 +68,7 @@ export class OrderError extends Error {
       | "PRODUCT_UNAVAILABLE"
       | "OUT_OF_STOCK"
       | "BELOW_MINIMUM"
+      | "COUPON_LIMIT_REACHED"
       | "INVALID_TRANSITION"
       | "ORDER_NOT_FOUND"
   ) {
@@ -222,6 +225,33 @@ export async function createOrderForTenant(input: CreateOrderInput): Promise<Cre
       }
     );
 
+    // Enforce the coupon redemption cap (Constitutional review C1). A coupon only
+    // "redeems" when it would actually apply (active + subtotal >= minSubtotal), so
+    // we only block in that case. Redemptions are counted against prior orders that
+    // recorded this coupon code for the tenant, inside this transaction. Note: under
+    // READ COMMITTED two checkouts of the same coupon racing within the same instant
+    // can each see count = max-1 and both succeed, so the cap is a soft limit with a
+    // narrow over-redemption window; a hard guarantee would need a dedicated counter
+    // row locked FOR UPDATE (deferred — see review remediation).
+    if (input.couponCode) {
+      const coupon = findActiveCoupon(checkoutConfig, input.couponCode);
+      if (coupon && coupon.maxRedemptions && coupon.maxRedemptions > 0) {
+        const wouldApply = subtotalCentavos >= toCentavos(coupon.minSubtotal ?? 0);
+        if (wouldApply) {
+          const [usage] = await tx
+            .select({ count: sql<number>`count(*)` })
+            .from(orders)
+            .where(and(eq(orders.tenantId, tenant.id), eq(orders.couponCode, coupon.code)));
+          if (Number(usage?.count ?? 0) >= coupon.maxRedemptions) {
+            throw new OrderError(
+              "This coupon has reached its redemption limit.",
+              "COUPON_LIMIT_REACHED"
+            );
+          }
+        }
+      }
+    }
+
     const totals = computeCheckoutTotals({
       subtotal: subtotalCentavos / 100,
       deliveryFee: deliveryFeeCentavos / 100,
@@ -248,11 +278,41 @@ export async function createOrderForTenant(input: CreateOrderInput): Promise<Cre
     const claimedSeq = (seqRow?.nextOrderSeq ?? 2) - 1;
     const orderNumber = `${orderNumberPrefix(input.tenantSlug)}-${String(claimedSeq).padStart(4, "0")}`;
 
+    // Upsert the shop-CRM customer by phone (phone is the buyer's identity) and
+    // link this order to it, so guest orders roll up into a repeat-buyer record.
+    const normalizedPhone = (input.customer.phone ?? "").replace(/[^\d+]/g, "");
+    let customerRecordId: string | null = null;
+    if (normalizedPhone) {
+      const nowTs = new Date();
+      const [cust] = await tx
+        .insert(customers)
+        .values({
+          tenantId: tenant.id,
+          phone: normalizedPhone,
+          name: input.customer.name,
+          email: input.customer.email ?? null,
+          firstOrderAt: nowTs,
+          lastOrderAt: nowTs,
+        })
+        .onConflictDoUpdate({
+          target: [customers.tenantId, customers.phone],
+          set: {
+            name: sql`coalesce(nullif(excluded.name, ''), ${customers.name})`,
+            email: sql`coalesce(nullif(excluded.email, ''), ${customers.email})`,
+            lastOrderAt: nowTs,
+            updatedAt: nowTs,
+          },
+        })
+        .returning({ id: customers.id });
+      customerRecordId = cust?.id ?? null;
+    }
+
     const [order] = await tx
       .insert(orders)
       .values({
         tenantId: tenant.id,
         orderNumber,
+        customerRecordId,
         guestName: input.customer.name,
         guestPhone: input.customer.phone,
         guestEmail: input.customer.email,
