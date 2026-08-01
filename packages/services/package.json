@@ -11,11 +11,13 @@
     "zod": "^3.24.1"
   },
   "scripts": {
-    "build": "tsc --noEmit"
+    "build": "tsc --noEmit",
+    "test": "tsx --test src/delivery/orchestrator.test.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
     "@types/web-push": "^3.6.4",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }
 }

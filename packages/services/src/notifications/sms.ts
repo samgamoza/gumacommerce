@@ -49,8 +49,8 @@ export class SemaphoreClient {
     trackingUrl?: string;
   }): Promise<SendSmsResult> {
     const msg = params.trackingUrl
-      ? `Guma Commerce: Order ${params.orderNumber} confirmed! Total ${params.total}. Track: ${params.trackingUrl}`
-      : `Guma Commerce: Order ${params.orderNumber} confirmed! Total ${params.total}. Salamat po!`;
+      ? `Guma One: Order ${params.orderNumber} confirmed! Total ${params.total}. Track: ${params.trackingUrl}`
+      : `Guma One: Order ${params.orderNumber} confirmed! Total ${params.total}. Salamat po!`;
     return this.send({ to: params.to, message: msg, priority: true });
   }
 }
