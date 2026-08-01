@@ -10,7 +10,7 @@ export function DashboardModulesGrid() {
   const { plan, loading } = useTenantPlan();
 
   if (loading) {
-    return <div className="h-40 animate-pulse rounded-2xl bg-gray-100" />;
+    return <div className="h-40 animate-pulse rounded-2xl bg-muted" />;
   }
 
   const modules = DASHBOARD_NAV.flatMap((g) => g.items).filter(
@@ -19,8 +19,8 @@ export function DashboardModulesGrid() {
 
   return (
     <div>
-      <h3 className="font-display text-lg font-bold text-gray-900">Workspace modules</h3>
-      <p className="mt-1 text-sm text-gray-500">
+      <h3 className="font-display text-lg font-bold text-foreground">Workspace modules</h3>
+      <p className="mt-1 text-sm text-muted-foreground">
         Explore everything in your seller dashboard. Locked items require a plan upgrade.
       </p>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -31,14 +31,14 @@ export function DashboardModulesGrid() {
             <Link
               key={item.id}
               href={item.href}
-              className={`group relative rounded-xl border bg-white p-4 transition hover:shadow-md ${
-                locked ? "border-gray-100 opacity-90" : "border-gray-200 hover:border-emerald-200"
+              className={`group relative rounded-xl border bg-card p-4 transition hover:shadow-md ${
+                locked ? "border-border opacity-90" : "border-border hover:border-emerald-200"
               }`}
             >
               <div className="flex items-start justify-between gap-2">
                 <span
                   className={`flex h-9 w-9 items-center justify-center rounded-lg ${
-                    locked ? "bg-gray-100 text-gray-400" : "bg-emerald-50 text-emerald-600"
+                    locked ? "bg-muted text-muted-foreground" : "bg-emerald-50 text-emerald-600"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -52,8 +52,8 @@ export function DashboardModulesGrid() {
                   {locked && item.minPlan ? <PlanTierBadge tier={item.minPlan} /> : null}
                 </div>
               </div>
-              <p className="mt-3 font-semibold text-gray-900">{item.label}</p>
-              <p className="mt-1 line-clamp-2 text-xs text-gray-500">{item.description}</p>
+              <p className="mt-3 font-semibold text-foreground">{item.label}</p>
+              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{item.description}</p>
               {locked && item.minPlan ? (
                 <p className="mt-2 text-[11px] font-medium text-amber-700">
                   Upgrade to unlock →

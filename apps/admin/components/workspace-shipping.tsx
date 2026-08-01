@@ -25,9 +25,9 @@ const EMPTY: ShippingDraft = {
 };
 
 const inputClass =
-  "h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm";
+  "h-11 w-full rounded-xl border border-border bg-card px-3 text-sm";
 const areaClass =
-  "w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm min-h-[72px]";
+  "w-full rounded-xl border border-border bg-card px-3 py-2 text-sm min-h-[72px]";
 
 export function WorkspaceShipping() {
   const [draft, setDraft] = useState<ShippingDraft>(EMPTY);
@@ -247,7 +247,7 @@ export function WorkspaceShipping() {
   }
 
   if (loading) {
-    return <p className="text-sm text-gray-500">Loading shipping…</p>;
+    return <p className="text-sm text-muted-foreground">Loading shipping…</p>;
   }
 
   const publishedMethods = published.profiles?.[0]?.methods?.length ?? 0;
@@ -255,8 +255,8 @@ export function WorkspaceShipping() {
   return (
     <div className="space-y-6">
       <Card className="p-5">
-        <h2 className="font-semibold text-gray-900">Shipping</h2>
-        <p className="mt-1 text-sm text-gray-600">
+        <h2 className="font-semibold text-foreground">Shipping</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
           Configure profiles, zones, rates, couriers, pickup, and ETA. Changes become change
           requests — nothing goes live until you approve &amp; publish in{" "}
           <Link href="/workspace/approvals" className="underline">
@@ -274,11 +274,11 @@ export function WorkspaceShipping() {
       </Card>
 
       <Card className="space-y-4 p-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Courier &amp; rates
         </h3>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium text-gray-700">Provider</span>
+          <span className="mb-1 block font-medium text-foreground">Provider</span>
           <select
             className={inputClass}
             value={provider}
@@ -293,7 +293,7 @@ export function WorkspaceShipping() {
         </label>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-gray-700">Flat / fallback fee (₱)</span>
+            <span className="mb-1 block font-medium text-foreground">Flat / fallback fee (₱)</span>
             <input
               className={inputClass}
               value={flatRate}
@@ -301,7 +301,7 @@ export function WorkspaceShipping() {
             />
           </label>
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-gray-700">Free above subtotal (₱)</span>
+            <span className="mb-1 block font-medium text-foreground">Free above subtotal (₱)</span>
             <input
               className={inputClass}
               value={freeMin}
@@ -309,7 +309,7 @@ export function WorkspaceShipping() {
             />
           </label>
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-gray-700">Local delivery fee (₱)</span>
+            <span className="mb-1 block font-medium text-foreground">Local delivery fee (₱)</span>
             <input
               className={inputClass}
               value={localRate}
@@ -328,11 +328,11 @@ export function WorkspaceShipping() {
       </Card>
 
       <Card className="space-y-4 p-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Zone &amp; ETA
         </h3>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium text-gray-700">
+          <span className="mb-1 block font-medium text-foreground">
             Zone cities (comma-separated)
           </span>
           <input
@@ -343,16 +343,16 @@ export function WorkspaceShipping() {
         </label>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-gray-700">ETA min (minutes)</span>
+            <span className="mb-1 block font-medium text-foreground">ETA min (minutes)</span>
             <input className={inputClass} value={etaMin} onChange={(e) => setEtaMin(e.target.value)} />
           </label>
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-gray-700">ETA max (minutes)</span>
+            <span className="mb-1 block font-medium text-foreground">ETA max (minutes)</span>
             <input className={inputClass} value={etaMax} onChange={(e) => setEtaMax(e.target.value)} />
           </label>
         </div>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium text-gray-700">Pickup / origin address</span>
+          <span className="mb-1 block font-medium text-foreground">Pickup / origin address</span>
           <input
             className={inputClass}
             value={draft.origin?.address ?? ""}
@@ -362,7 +362,7 @@ export function WorkspaceShipping() {
           />
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium text-gray-700">Buyer-facing notes</span>
+          <span className="mb-1 block font-medium text-foreground">Buyer-facing notes</span>
           <textarea
             className={areaClass}
             value={draft.notes ?? ""}
@@ -372,12 +372,12 @@ export function WorkspaceShipping() {
       </Card>
 
       <Card className="p-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Published snapshot
         </h3>
-        <p className="mt-2 text-sm text-gray-600">
+        <p className="mt-2 text-sm text-muted-foreground">
           Live methods:{" "}
-          <span className="font-medium text-gray-900">
+          <span className="font-medium text-foreground">
             {publishedMethods || "(not published yet)"}
           </span>
         </p>
@@ -405,7 +405,7 @@ export function WorkspaceShipping() {
         </Button>
         <Link
           href="/workspace/approvals"
-          className="inline-flex items-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="inline-flex items-center rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
         >
           Open Approvals
         </Link>

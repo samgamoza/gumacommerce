@@ -73,7 +73,7 @@ export function SubscriptionSettingsPage() {
   return (
     <SettingsShell
       title="Subscription"
-      description="Your current Guma Commerce plan and available upgrades."
+      description="Your current Guma One plan and available upgrades."
     >
       {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
       {payError && (
@@ -83,11 +83,11 @@ export function SubscriptionSettingsPage() {
       )}
 
       <Card className="mb-4 border-emerald-100 bg-emerald-50/50 p-5">
-        <p className="text-sm text-gray-600">Current plan</p>
+        <p className="text-sm text-muted-foreground">Current plan</p>
         <p className="mt-1 text-2xl font-bold text-emerald-800">
           {planDisplayName(currentPlan)}
         </p>
-        <p className="mt-2 text-sm text-gray-600">
+        <p className="mt-2 text-sm text-muted-foreground">
           Shop status: <span className="font-medium capitalize">{settings?.status}</span>
         </p>
       </Card>
@@ -95,7 +95,7 @@ export function SubscriptionSettingsPage() {
       {currentPlan === "free" && (
         <Card className="mb-4 border-amber-200 bg-gradient-to-r from-amber-50 to-white p-5">
           <p className="font-semibold text-amber-900">Not sure which plan fits?</p>
-          <p className="mt-1 text-sm text-gray-600">
+          <p className="mt-1 text-sm text-muted-foreground">
             Tour our flagship model store — live selling unlocks on Pro; flash deals and reviews are
             labeled by plan tier so you know exactly what you&apos;re unlocking.
           </p>
@@ -111,14 +111,14 @@ export function SubscriptionSettingsPage() {
       )}
 
       {refSource && (
-        <p className="mb-4 text-xs text-gray-500">
+        <p className="mb-4 text-xs text-muted-foreground">
           You arrived from the model store ({refSource.replace(/-/g, " ")}). Pick a plan below to
           unlock those features on your shop.
         </p>
       )}
 
       <div className="mb-4 flex items-center gap-2">
-        <span className="text-sm text-gray-600">Pay with:</span>
+        <span className="text-sm text-muted-foreground">Pay with:</span>
         {PAY_METHODS.map((m) => (
           <button
             key={m.id}
@@ -127,7 +127,7 @@ export function SubscriptionSettingsPage() {
             className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
               method === m.id
                 ? "bg-emerald-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                : "bg-muted text-muted-foreground hover:bg-muted"
             }`}
           >
             {m.label}
@@ -156,7 +156,7 @@ export function SubscriptionSettingsPage() {
                   <Badge className="bg-amber-100 text-amber-800">Recommended</Badge>
                 )}
               </div>              <p className="mt-2 text-2xl font-bold">{plan.price}</p>
-              <ul className="mt-4 space-y-2 text-sm text-gray-600">
+              <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
                 {plan.features.map((feature) => (
                   <li key={feature}>• {feature}</li>
                 ))}
@@ -188,7 +188,7 @@ export function SubscriptionSettingsPage() {
         })}
       </div>
 
-      <p className="mt-6 text-sm text-gray-500">
+      <p className="mt-6 text-sm text-muted-foreground">
         Plans renew every 30 days via PayMongo (GCash, Maya, or card). Your upgrade activates
         automatically the moment your payment is confirmed. Questions? Email {SUPPORT_EMAIL}.
       </p>

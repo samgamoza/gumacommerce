@@ -57,7 +57,7 @@ export default function OnboardingPage() {
     process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3010";
 
   return (
-    <PatternAdminShell title="Welcome to Guma Commerce">
+    <PatternAdminShell title="Welcome to Guma One">
       <div className="mx-auto max-w-2xl space-y-6">
         <Card>
           <h2 className="text-lg font-semibold">🎉 Your shop is created!</h2>

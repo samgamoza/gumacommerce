@@ -83,7 +83,7 @@ export function KycVerificationFlow({
   }, [hasCamera, isMobile, kycToken, mobileUrl, step]);
 
   if (!session) {
-    return <p className="text-sm text-gray-500">Starting verification…</p>;
+    return <p className="text-sm text-muted-foreground">Starting verification…</p>;
   }
 
   async function savePath(path: KycIdPath) {
@@ -181,7 +181,7 @@ export function KycVerificationFlow({
 
       {step === "path" ? (
         <div className="space-y-3">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Philippine regulations accept either <strong>one primary ID</strong> or{" "}
             <strong>two secondary IDs</strong>, plus a selfie holding your ID.
           </p>
@@ -190,10 +190,10 @@ export function KycVerificationFlow({
               type="button"
               disabled={saving}
               onClick={() => savePath("primary")}
-              className="rounded-xl border-2 border-gray-200 p-4 text-left hover:border-emerald-500 hover:bg-emerald-50/40 disabled:opacity-60"
+              className="rounded-xl border-2 border-border p-4 text-left hover:border-emerald-500 hover:bg-emerald-50/40 disabled:opacity-60"
             >
-              <p className="font-semibold text-gray-900">1 Primary ID</p>
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="font-semibold text-foreground">1 Primary ID</p>
+              <p className="mt-1 text-xs text-muted-foreground">
                 Passport, Driver&apos;s License, UMID, National ID, PRC ID, or Postal ID
               </p>
             </button>
@@ -201,10 +201,10 @@ export function KycVerificationFlow({
               type="button"
               disabled={saving}
               onClick={() => savePath("secondary")}
-              className="rounded-xl border-2 border-gray-200 p-4 text-left hover:border-emerald-500 hover:bg-emerald-50/40 disabled:opacity-60"
+              className="rounded-xl border-2 border-border p-4 text-left hover:border-emerald-500 hover:bg-emerald-50/40 disabled:opacity-60"
             >
-              <p className="font-semibold text-gray-900">2 Secondary IDs</p>
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="font-semibold text-foreground">2 Secondary IDs</p>
+              <p className="mt-1 text-xs text-muted-foreground">
                 SSS, PhilHealth, TIN, Barangay ID, company/school ID, clearances, etc.
               </p>
             </button>
@@ -216,9 +216,9 @@ export function KycVerificationFlow({
         <div className="space-y-4">
           {idPath === "primary" ? (
             <label className="block text-sm">
-              <span className="font-medium text-gray-700">Primary ID type</span>
+              <span className="font-medium text-foreground">Primary ID type</span>
               <select
-                className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
+                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
                 value={primaryIdType}
                 onChange={(e) => setPrimaryIdType(e.target.value)}
               >
@@ -233,9 +233,9 @@ export function KycVerificationFlow({
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="block text-sm">
-                <span className="font-medium text-gray-700">First secondary ID</span>
+                <span className="font-medium text-foreground">First secondary ID</span>
                 <select
-                  className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
+                  className="mt-1 w-full rounded-xl border border-border px-3 py-2"
                   value={secondaryIdType1}
                   onChange={(e) => setSecondaryIdType1(e.target.value)}
                 >
@@ -248,9 +248,9 @@ export function KycVerificationFlow({
                 </select>
               </label>
               <label className="block text-sm">
-                <span className="font-medium text-gray-700">Second secondary ID</span>
+                <span className="font-medium text-foreground">Second secondary ID</span>
                 <select
-                  className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
+                  className="mt-1 w-full rounded-xl border border-border px-3 py-2"
                   value={secondaryIdType2}
                   onChange={(e) => setSecondaryIdType2(e.target.value)}
                 >
@@ -271,7 +271,7 @@ export function KycVerificationFlow({
             <button
               type="button"
               onClick={() => setStep("path")}
-              className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700"
+              className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground"
             >
               Back
             </button>
@@ -297,7 +297,7 @@ export function KycVerificationFlow({
                 and finish verification on mobile. This page updates automatically.
               </p>
               <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row sm:items-start">
-                <div className="rounded-xl bg-white p-3 shadow-sm">
+                <div className="rounded-xl bg-card p-3 shadow-sm">
                   <QRCode value={mobileUrl} size={160} />
                 </div>
                 <div className="text-sm text-emerald-900">
@@ -371,7 +371,7 @@ export function KycVerificationFlow({
             <button
               type="button"
               onClick={() => setStep("ids")}
-              className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700"
+              className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground"
             >
               Back
             </button>
@@ -389,8 +389,8 @@ export function KycVerificationFlow({
 
       {step === "review" ? (
         <div className="space-y-4">
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
-            <p className="font-medium text-gray-900">Review your submission</p>
+          <div className="rounded-xl border border-border bg-muted p-4 text-sm text-foreground">
+            <p className="font-medium text-foreground">Review your submission</p>
             <ul className="mt-2 space-y-1">
               <li>
                 • ID path: {idPath === "primary" ? "1 primary ID" : "2 secondary IDs"}
@@ -411,7 +411,7 @@ export function KycVerificationFlow({
             <button
               type="button"
               onClick={() => setStep("upload")}
-              className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700"
+              className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground"
             >
               Back
             </button>

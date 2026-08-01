@@ -46,7 +46,7 @@ function VerifyEmailContent() {
   }, [token, router]);
 
   return (
-    <AuthLayout title="Email verification" subtitle="Confirming your Guma Commerce account">
+    <AuthLayout title="Email verification" subtitle="Confirming your Guma One account">
       <div className="text-center">
         <p
           className={`text-sm ${

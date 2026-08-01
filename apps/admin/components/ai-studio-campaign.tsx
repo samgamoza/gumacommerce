@@ -38,7 +38,7 @@ const CAMPAIGN_MODULES = [
   {
     id: "auto-publish",
     title: "Auto-publish to social",
-    description: "Schedule and publish approved posts to Meta & TikTok from Guma Commerce.",
+    description: "Schedule and publish approved posts to Meta & TikTok from Guma One.",
     icon: Video,
     status: "soon" as const,
   },
@@ -134,8 +134,8 @@ export function AiStudioCampaign({ embedded = false }: { embedded?: boolean }) {
         <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-fuchsia-500/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-16 left-10 h-48 w-48 rounded-full bg-cyan-400/10 blur-3xl" />
         <div className="relative">
-          <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium uppercase tracking-widest text-violet-200">
-            Guma Commerce · Workspace Marketing
+          <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-card/5 px-3 py-1 text-xs font-medium uppercase tracking-widest text-violet-200">
+            Guma One · Workspace Marketing
           </p>
           <h2 className="mt-4 font-display text-3xl font-bold tracking-tight md:text-4xl">
             Guma Campaign Studio
@@ -176,7 +176,7 @@ export function AiStudioCampaign({ embedded = false }: { embedded?: boolean }) {
               )}
               <Icon className="h-5 w-5 text-violet-600" />
               <h3 className="mt-3 font-semibold">{module.title}</h3>
-              <p className="mt-2 text-sm text-gray-600">{module.description}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{module.description}</p>
             </Card>
           );
         })}
@@ -188,7 +188,7 @@ export function AiStudioCampaign({ embedded = false }: { embedded?: boolean }) {
             <Wand2 className="h-4 w-4 text-violet-600" />
             Generate now
           </h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Uses your live shop data{shop ? ` — ${shop.brandName}` : ""}.
           </p>
           <div className="mt-4 space-y-2">
@@ -200,24 +200,24 @@ export function AiStudioCampaign({ embedded = false }: { embedded?: boolean }) {
                 className={`w-full rounded-xl border p-3 text-left transition ${
                   selected === gen.key
                     ? "border-violet-500 bg-violet-50 ring-1 ring-violet-500"
-                    : "border-gray-200 hover:border-gray-300"
+                    : "border-border hover:border-border"
                 }`}
               >
                 <p className="text-sm font-semibold">{gen.label}</p>
-                <p className="mt-0.5 text-xs text-gray-500">{gen.hint}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{gen.hint}</p>
               </button>
             ))}
           </div>
         </Card>
 
         <Card className="p-5 lg:col-span-3">
-          <label className="text-sm font-medium text-gray-700">Campaign brief</label>
+          <label className="text-sm font-medium text-foreground">Campaign brief</label>
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             rows={5}
             placeholder="e.g. Guma-style summer video campaign — golden hour product shots, whispered Taglish VO, payday promo ₱499 bundle"
-            className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"
+            className="mt-2 w-full rounded-xl border border-border px-4 py-3 text-sm"
           />
           <div className="mt-4 flex flex-wrap gap-3">
             <Button onClick={handleGenerate} disabled={loading || !shop}>
@@ -232,7 +232,7 @@ export function AiStudioCampaign({ embedded = false }: { embedded?: boolean }) {
 
       {result && (
         <Card className="mt-6 overflow-hidden p-0">
-          <div className="border-b border-gray-100 bg-zinc-950 px-5 py-3">
+          <div className="border-b border-border bg-zinc-950 px-5 py-3">
             <p className="text-xs font-semibold uppercase tracking-widest text-violet-300">
               Generated output
             </p>

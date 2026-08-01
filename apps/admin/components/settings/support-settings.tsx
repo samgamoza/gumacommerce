@@ -12,7 +12,7 @@ export function SupportSettingsPage() {
       description="Get help with orders, payouts, subscriptions, and your storefront."
     >
       <SettingsCard title="Contact support">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           Email us at{" "}
           <a href={`mailto:${SUPPORT_EMAIL}`} className="font-medium text-emerald-700 underline">
             {SUPPORT_EMAIL}
@@ -22,7 +22,7 @@ export function SupportSettingsPage() {
       </SettingsCard>
 
       <SettingsCard title="Common topics">
-        <ul className="space-y-2 text-sm text-gray-700">
+        <ul className="space-y-2 text-sm text-foreground">
           <li>
             <a href="/settings/subscription" className="font-medium text-emerald-700 hover:underline">
               Subscription & billing

@@ -32,7 +32,7 @@ const STATUS_STYLE: Record<string, string> = {
   approved: "bg-blue-100 text-blue-800",
   scheduled: "bg-violet-100 text-violet-800",
   posted: "bg-emerald-100 text-emerald-800",
-  skipped: "bg-gray-100 text-gray-600",
+  skipped: "bg-muted text-muted-foreground",
 };
 
 export function AgentsManager({ embedded = false }: { embedded?: boolean }) {
@@ -135,7 +135,7 @@ export function AgentsManager({ embedded = false }: { embedded?: boolean }) {
   }
 
   if (loading) {
-    const loadingBody = <p className="text-gray-500">Loading agent workspace…</p>;
+    const loadingBody = <p className="text-muted-foreground">Loading agent workspace…</p>;
     if (embedded) return loadingBody;
     return <PatternAdminShell title="Agents">{loadingBody}</PatternAdminShell>;
   }
@@ -190,15 +190,15 @@ export function AgentsManager({ embedded = false }: { embedded?: boolean }) {
               <p className="text-xs font-semibold uppercase tracking-widest text-violet-600">
                 Daily briefing · {subscriptionPlan} plan
               </p>
-              <h2 className="mt-2 text-2xl font-bold text-gray-900">{briefing.headline}</h2>
-              <p className="mt-1 text-sm text-gray-600">{briefing.subheadline}</p>
+              <h2 className="mt-2 text-2xl font-bold text-foreground">{briefing.headline}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{briefing.subheadline}</p>
             </div>
-            <div className="rounded-xl bg-white px-4 py-3 text-sm shadow-sm ring-1 ring-violet-100">
-              <p className="font-medium text-gray-900">Best post time</p>
+            <div className="rounded-xl bg-card px-4 py-3 text-sm shadow-sm ring-1 ring-violet-100">
+              <p className="font-medium text-foreground">Best post time</p>
               <p className="text-violet-700">{briefing.bestPostTime}</p>
             </div>
           </div>
-          <ul className="mt-4 space-y-1 text-sm text-gray-700">
+          <ul className="mt-4 space-y-1 text-sm text-foreground">
             {briefing.insights.map((line) => (
               <li key={line}>• {line}</li>
             ))}
@@ -234,10 +234,10 @@ export function AgentsManager({ embedded = false }: { embedded?: boolean }) {
             limit={usage.limits.generationsPerMonth}
           />
           <Card className="p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Models</p>
-            <p className="mt-2 text-sm text-gray-800">Posts: {models.agentPost ?? "—"}</p>
-            <p className="text-sm text-gray-800">Campaign: {models.agentCampaign ?? "—"}</p>
-            <p className="text-sm text-gray-800">Chat: {models.chat ?? "—"}</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Models</p>
+            <p className="mt-2 text-sm text-foreground">Posts: {models.agentPost ?? "—"}</p>
+            <p className="text-sm text-foreground">Campaign: {models.agentCampaign ?? "—"}</p>
+            <p className="text-sm text-foreground">Chat: {models.chat ?? "—"}</p>
           </Card>
         </div>
       )}
@@ -245,7 +245,7 @@ export function AgentsManager({ embedded = false }: { embedded?: boolean }) {
       {orderInsights && (
         <Card className="mb-6 p-5">
           <h3 className="font-semibold">Shop pulse (7 days)</h3>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-muted-foreground">
             {orderInsights.orderCount} orders · ₱
             {orderInsights.revenue.toLocaleString("en-PH")} revenue · trend{" "}
             {orderInsights.trend === "up" ? "📈 up" : orderInsights.trend === "down" ? "📉 down" : "→ flat"}
@@ -258,11 +258,11 @@ export function AgentsManager({ embedded = false }: { embedded?: boolean }) {
           <h3 className="font-semibold">Content calendar</h3>
           <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {queueCalendar.map((day) => (
-              <div key={day.dateKey} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-                <p className="text-sm font-semibold text-gray-900">{day.label}</p>
+              <div key={day.dateKey} className="rounded-xl border border-border bg-muted p-4">
+                <p className="text-sm font-semibold text-foreground">{day.label}</p>
                 <ul className="mt-2 space-y-2">
                   {day.items.slice(0, 3).map((item) => (
-                    <li key={item.id} className="text-xs text-gray-600">
+                    <li key={item.id} className="text-xs text-muted-foreground">
                       <span className="font-medium capitalize">{item.platform}</span> ·{" "}
                       {item.title ?? item.body.slice(0, 40)}…
                     </li>
@@ -303,9 +303,9 @@ export function AgentsManager({ embedded = false }: { embedded?: boolean }) {
                 Weekly campaign agent
               </label>
               <label className="block">
-                <span className="mb-1 block text-gray-600">Cadence</span>
+                <span className="mb-1 block text-muted-foreground">Cadence</span>
                 <select
-                  className="h-10 w-full rounded-xl border border-gray-200 px-3"
+                  className="h-10 w-full rounded-xl border border-border px-3"
                   value={agents.postingSchedule}
                   onChange={(e) =>
                     saveConfig({
@@ -322,17 +322,17 @@ export function AgentsManager({ embedded = false }: { embedded?: boolean }) {
                 </select>
               </label>
               <label className="block">
-                <span className="mb-1 block text-gray-600">Run time (PHT)</span>
+                <span className="mb-1 block text-muted-foreground">Run time (PHT)</span>
                 <input
                   type="time"
-                  className="h-10 w-full rounded-xl border border-gray-200 px-3"
+                  className="h-10 w-full rounded-xl border border-border px-3"
                   value={agents.postingTime}
                   onChange={(e) =>
                     saveConfig({ agents: { ...agents, postingTime: e.target.value } })
                   }
                 />
               </label>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 Cron: <code>/api/cron/agents</code> (daily/weekly) ·{" "}
                 <code>/api/cron/agent-reminders</code> (5 PM PHT SMS on Pro+)
               </p>
@@ -360,9 +360,9 @@ export function AgentsManager({ embedded = false }: { embedded?: boolean }) {
                 Show chatbot on storefront
               </label>
               <label className="block">
-                <span className="mb-1 block text-gray-600">Assistant name</span>
+                <span className="mb-1 block text-muted-foreground">Assistant name</span>
                 <input
-                  className="h-10 w-full rounded-xl border border-gray-200 px-3"
+                  className="h-10 w-full rounded-xl border border-border px-3"
                   value={shopAssistant.name}
                   onChange={(e) =>
                     setShopAssistant({ ...shopAssistant, name: e.target.value })
@@ -371,9 +371,9 @@ export function AgentsManager({ embedded = false }: { embedded?: boolean }) {
                 />
               </label>
               <label className="block">
-                <span className="mb-1 block text-gray-600">Greeting</span>
+                <span className="mb-1 block text-muted-foreground">Greeting</span>
                 <textarea
-                  className="w-full rounded-xl border border-gray-200 px-3 py-2"
+                  className="w-full rounded-xl border border-border px-3 py-2"
                   rows={3}
                   value={shopAssistant.greeting}
                   onChange={(e) =>
@@ -382,7 +382,7 @@ export function AgentsManager({ embedded = false }: { embedded?: boolean }) {
                   onBlur={() => saveConfig({ shopAssistant })}
                 />
               </label>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 Answers product, delivery, and payment questions before checkout.
               </p>
             </div>
@@ -418,12 +418,12 @@ export function AgentsManager({ embedded = false }: { embedded?: boolean }) {
 
       <Card className="mt-6 p-5">
         <h3 className="font-semibold">Content queue</h3>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-muted-foreground">
           Review agent drafts, copy to your social apps, then mark as posted.
         </p>
 
         {queue.length === 0 ? (
-          <p className="mt-6 rounded-xl border border-dashed border-gray-200 py-12 text-center text-sm text-gray-500">
+          <p className="mt-6 rounded-xl border border-dashed border-border py-12 text-center text-sm text-muted-foreground">
             Queue is empty. Run an agent to generate drafts.
           </p>
         ) : (
@@ -431,12 +431,12 @@ export function AgentsManager({ embedded = false }: { embedded?: boolean }) {
             {queue.map((item) => (
               <li
                 key={item.id}
-                className="rounded-2xl border border-gray-100 bg-gray-50/80 p-4"
+                className="rounded-2xl border border-border bg-muted/80 p-4"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs font-semibold uppercase text-gray-500">
+                      <span className="text-xs font-semibold uppercase text-muted-foreground">
                         {PLATFORM_LABEL[item.platform] ?? item.platform}
                       </span>
                       <span
@@ -444,14 +444,14 @@ export function AgentsManager({ embedded = false }: { embedded?: boolean }) {
                       >
                         {item.status}
                       </span>
-                      <span className="text-xs text-gray-400">{item.agentKey} agent</span>
+                      <span className="text-xs text-muted-foreground">{item.agentKey} agent</span>
                     </div>
                     {item.title && (
-                      <p className="mt-2 font-medium text-gray-900">{item.title}</p>
+                      <p className="mt-2 font-medium text-foreground">{item.title}</p>
                     )}
-                    <p className="mt-2 whitespace-pre-wrap text-sm text-gray-700">{item.body}</p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">{item.body}</p>
                     {item.mediaBrief && (
-                      <p className="mt-2 text-xs text-gray-500">Visual: {item.mediaBrief}</p>
+                      <p className="mt-2 text-xs text-muted-foreground">Visual: {item.mediaBrief}</p>
                     )}
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -515,11 +515,11 @@ function UsageMeter({
   const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
   return (
     <Card className="p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</p>
-      <p className="mt-2 text-lg font-bold text-gray-900">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-2 text-lg font-bold text-foreground">
         {used} / {limit >= 999 ? "∞" : limit}
       </p>
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-100">
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
         <div className="h-full rounded-full bg-violet-600" style={{ width: `${pct}%` }} />
       </div>
     </Card>

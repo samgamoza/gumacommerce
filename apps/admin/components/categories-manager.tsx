@@ -75,7 +75,7 @@ export function CategoriesManager() {
           <span className="text-xl">🏷️</span>
           <h2 className="text-lg font-semibold">Product categories</h2>
         </div>
-        <p className="mt-1 text-sm text-gray-600">
+        <p className="mt-1 text-sm text-muted-foreground">
           Organize your catalog like a real Shopify store. Categories appear in your shop menu and
           help customers browse faster.
         </p>
@@ -84,13 +84,13 @@ export function CategoriesManager() {
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <Card className="p-5">
-        <h3 className="font-medium text-gray-900">Add category</h3>
+        <h3 className="font-medium text-foreground">Add category</h3>
         <form onSubmit={handleCreate} className="mt-3 flex flex-wrap gap-3">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Cakes, Best Sellers, Custom Prints"
-            className="h-10 min-w-[240px] flex-1 rounded-xl border border-gray-200 px-3 text-sm"
+            className="h-10 min-w-[240px] flex-1 rounded-xl border border-border px-3 text-sm"
           />
           <Button type="submit" disabled={saving}>
             {saving ? "Adding…" : "Add category"}
@@ -99,28 +99,28 @@ export function CategoriesManager() {
       </Card>
 
       <Card className="overflow-hidden">
-        <div className="border-b border-gray-100 px-5 py-4">
-          <h3 className="font-medium text-gray-900">Your categories</h3>
+        <div className="border-b border-border px-5 py-4">
+          <h3 className="font-medium text-foreground">Your categories</h3>
         </div>
         {loading ? (
-          <p className="px-5 py-8 text-sm text-gray-500">Loading…</p>
+          <p className="px-5 py-8 text-sm text-muted-foreground">Loading…</p>
         ) : categories.length === 0 ? (
-          <p className="px-5 py-8 text-sm text-gray-500">
+          <p className="px-5 py-8 text-sm text-muted-foreground">
             No categories yet. Add one to group products on your storefront menu.
           </p>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-border">
             {categories.map((category) => (
               <li
                 key={category.id}
                 className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
               >
                 <div>
-                  <p className="font-medium text-gray-900">{category.name}</p>
-                  <p className="text-xs text-gray-500">/{category.slug}</p>
+                  <p className="font-medium text-foreground">{category.name}</p>
+                  <p className="text-xs text-muted-foreground">/{category.slug}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Badge className="bg-gray-100 text-gray-700">
+                  <Badge className="bg-muted text-foreground">
                     {category.productCount} product{category.productCount === 1 ? "" : "s"}
                   </Badge>
                   <button

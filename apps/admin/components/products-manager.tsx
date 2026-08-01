@@ -431,7 +431,7 @@ export function ProductsManager() {
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             {shop
               ? `AI listings for ${shop.name}${shop.category ? ` · ${shop.category}` : ""}`
               : "Describe products in plain language — AI writes the listing."}
@@ -453,7 +453,7 @@ export function ProductsManager() {
                 <h3 className="font-semibold">AI product creator</h3>
                 <Badge className="bg-emerald-100 text-emerald-800">New</Badge>
               </div>
-              <p className="mt-1 text-sm text-gray-600">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Describe a {shop?.category ? shop.category.toLowerCase() : "shop"} product —
                 name, size, specs, price. AI writes title, description, and pricing for{" "}
                 <strong>{shop?.name ?? "your shop"}</strong>.
@@ -463,7 +463,7 @@ export function ProductsManager() {
               <button
                 type="button"
                 onClick={startManualEntry}
-                className="shrink-0 text-sm text-gray-500 underline"
+                className="shrink-0 text-sm text-muted-foreground underline"
               >
                 Manual entry
               </button>
@@ -473,7 +473,7 @@ export function ProductsManager() {
           {!draft && !manualMode && (
             <div className="mt-5 space-y-4">
               <label className="block">
-                <span className="mb-1.5 block text-sm font-medium text-gray-700">
+                <span className="mb-1.5 block text-sm font-medium text-foreground">
                   Describe your product
                 </span>
                 <textarea
@@ -481,7 +481,7 @@ export function ProductsManager() {
                   onChange={(e) => setAiPrompt(e.target.value)}
                   rows={3}
                   placeholder={promptPack.placeholder}
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </label>
 
@@ -491,7 +491,7 @@ export function ProductsManager() {
                     key={example}
                     type="button"
                     onClick={() => setAiPrompt(example)}
-                    className="rounded-full border border-emerald-200 bg-white px-3 py-1 text-xs text-emerald-800 transition hover:bg-emerald-50"
+                    className="rounded-full border border-emerald-200 bg-card px-3 py-1 text-xs text-emerald-800 transition hover:bg-emerald-50"
                   >
                     {example.length > 42 ? `${example.slice(0, 42)}…` : example}
                   </button>
@@ -500,7 +500,7 @@ export function ProductsManager() {
 
               <div className="flex flex-wrap items-end gap-3">
                 <label className="block w-full sm:w-40">
-                  <span className="mb-1 block text-xs font-medium text-gray-500">
+                  <span className="mb-1 block text-xs font-medium text-muted-foreground">
                     Price hint (optional)
                   </span>
                   <input
@@ -509,7 +509,7 @@ export function ProductsManager() {
                     value={priceHint}
                     onChange={(e) => setPriceHint(e.target.value)}
                     placeholder={promptPack.priceHintPlaceholder}
-                    className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm"
+                    className="h-10 w-full rounded-xl border border-border bg-card px-3 text-sm"
                   />
                 </label>
                 <Button onClick={handleGenerate} disabled={generating}>
@@ -519,7 +519,7 @@ export function ProductsManager() {
                   <button
                     type="button"
                     onClick={startManualEntry}
-                    className="text-sm text-gray-500 underline"
+                    className="text-sm text-muted-foreground underline"
                   >
                     Skip AI, enter manually
                   </button>
@@ -553,8 +553,8 @@ export function ProductsManager() {
 
               {error && <p className="text-sm text-red-600">{error}</p>}
 
-              <div className="rounded-xl border border-gray-200 bg-white p-4">
-                  <span className="mb-2 block text-sm font-medium text-gray-700">
+              <div className="rounded-xl border border-border bg-card p-4">
+                  <span className="mb-2 block text-sm font-medium text-foreground">
                     Product photo
                   </span>
                   {draft?.imageUrl ? (
@@ -564,16 +564,16 @@ export function ProductsManager() {
                         <img
                           src={productImageSrc(draft.imageUrl)}
                           alt={draft.title || "Product preview"}
-                          className="h-36 w-36 rounded-xl border border-gray-100 object-cover bg-gray-50"
+                          className="h-36 w-36 rounded-xl border border-border object-cover bg-muted"
                         />
                         <div className="space-y-2">
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-muted-foreground">
                             {originalImageUrl && draft.imageUrl !== originalImageUrl
                               ? "Background removed — clean photo selected for your shop."
                               : "Photo ready — remove the background for a cleaner storefront look."}
                           </p>
                           <div className="flex flex-wrap gap-2">
-                            <label className="inline-flex cursor-pointer items-center rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            <label className="inline-flex cursor-pointer items-center rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium text-foreground hover:bg-muted">
                               Replace photo
                               <input
                                 type="file"
@@ -587,7 +587,7 @@ export function ProductsManager() {
                               <button
                                 type="button"
                                 onClick={useOriginalPhoto}
-                                className="rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                className="rounded-xl border border-border px-3 py-2 text-sm text-foreground hover:bg-muted"
                               >
                                 Use original
                               </button>
@@ -606,10 +606,10 @@ export function ProductsManager() {
                       <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div>
-                            <p className="text-sm font-medium text-gray-900">
+                            <p className="text-sm font-medium text-foreground">
                               Remove background (free)
                             </p>
-                            <p className="text-xs text-gray-600">
+                            <p className="text-xs text-muted-foreground">
                               Cuts out your product and places it on a clean white background.
                             </p>
                           </div>
@@ -626,7 +626,7 @@ export function ProductsManager() {
                       </div>
                     </div>
                   ) : (
-                    <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50/80 px-6 py-10 text-center transition hover:border-emerald-400 hover:bg-emerald-50/40">
+                    <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/80 px-6 py-10 text-center transition hover:border-emerald-400 hover:bg-emerald-50/40">
                       <input
                         type="file"
                         accept="image/jpeg,image/png,image/webp,image/gif"
@@ -635,10 +635,10 @@ export function ProductsManager() {
                         disabled={uploadingImage}
                       />
                       <span className="text-3xl">📷</span>
-                      <span className="mt-2 text-sm font-medium text-gray-800">
+                      <span className="mt-2 text-sm font-medium text-foreground">
                         {uploadingImage ? "Uploading…" : "Click to upload a product photo"}
                       </span>
-                      <span className="mt-1 text-xs text-gray-500">
+                      <span className="mt-1 text-xs text-muted-foreground">
                         JPG, PNG, WebP, or GIF · up to 5 MB
                       </span>
                     </label>
@@ -646,23 +646,23 @@ export function ProductsManager() {
                 </div>
 
               <label className="block">
-                <span className="mb-1 block text-sm font-medium text-gray-700">Product name</span>
+                <span className="mb-1 block text-sm font-medium text-foreground">Product name</span>
                 <input
                   required
                   value={draft?.title ?? ""}
                   onChange={(e) =>
                     setDraft((d) => (d ? { ...d, title: e.target.value } : d))
                   }
-                  className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm"
+                  className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm"
                 />
               </label>
 
               {draft?.shortDescription && (
-                <p className="text-sm text-gray-600">{draft.shortDescription}</p>
+                <p className="text-sm text-muted-foreground">{draft.shortDescription}</p>
               )}
 
               <label className="block">
-                <span className="mb-1 block text-sm font-medium text-gray-700">Description</span>
+                <span className="mb-1 block text-sm font-medium text-foreground">Description</span>
                 <textarea
                   value={draft ? stripHtml(draft.descriptionHtml) : ""}
                   onChange={(e) =>
@@ -677,13 +677,13 @@ export function ProductsManager() {
                     )
                   }
                   rows={4}
-                  className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm"
+                  className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
                 />
               </label>
 
               <div className="grid gap-3 sm:grid-cols-3">
                 <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-gray-700">Price (PHP)</span>
+                  <span className="mb-1 block text-sm font-medium text-foreground">Price (PHP)</span>
                   <input
                     required
                     type="number"
@@ -692,11 +692,11 @@ export function ProductsManager() {
                     onChange={(e) =>
                       setDraft((d) => (d ? { ...d, basePrice: e.target.value } : d))
                     }
-                    className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm"
+                    className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm"
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-gray-700">
+                  <span className="mb-1 block text-sm font-medium text-foreground">
                     Compare-at (optional)
                   </span>
                   <input
@@ -707,11 +707,11 @@ export function ProductsManager() {
                       setDraft((d) => (d ? { ...d, compareAtPrice: e.target.value } : d))
                     }
                     placeholder="499"
-                    className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm"
+                    className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm"
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-gray-700">Stock</span>
+                  <span className="mb-1 block text-sm font-medium text-foreground">Stock</span>
                   <input
                     type="number"
                     min="0"
@@ -719,7 +719,7 @@ export function ProductsManager() {
                     onChange={(e) =>
                       setDraft((d) => (d ? { ...d, stockQty: e.target.value } : d))
                     }
-                    className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm"
+                    className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm"
                   />
                 </label>
               </div>
@@ -741,7 +741,7 @@ export function ProductsManager() {
               )}
 
               <label className="block sm:max-w-xs">
-                <span className="mb-1 block text-sm font-medium text-gray-700">Status</span>
+                <span className="mb-1 block text-sm font-medium text-foreground">Status</span>
                 <select
                   value={draft?.status ?? "active"}
                   onChange={(e) =>
@@ -749,7 +749,7 @@ export function ProductsManager() {
                       d ? { ...d, status: e.target.value as "draft" | "active" } : d
                     )
                   }
-                  className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm"
+                  className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm"
                 >
                   <option value="active">Active (visible on storefront)</option>
                   <option value="draft">Draft (hidden)</option>
@@ -761,7 +761,7 @@ export function ProductsManager() {
                   {draft.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600"
+                      className="rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground"
                     >
                       #{tag}
                     </span>
@@ -770,11 +770,11 @@ export function ProductsManager() {
               )}
 
               {draft && draft.photoShotList.length > 0 && (
-                <div className="rounded-xl border border-dashed border-gray-200 bg-white/70 p-3">
-                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                <div className="rounded-xl border border-dashed border-border bg-card/70 p-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     Photo tips from AI
                   </p>
-                  <ul className="mt-2 space-y-1 text-sm text-gray-600">
+                  <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
                     {draft.photoShotList.map((tip) => (
                       <li key={tip}>• {tip}</li>
                     ))}
@@ -811,7 +811,7 @@ export function ProductsManager() {
                     setOriginalImageUrl(null);
                     setError(null);
                   }}
-                  className="px-3 text-sm text-gray-500 underline"
+                  className="px-3 text-sm text-muted-foreground underline"
                 >
                   Start over
                 </button>
@@ -837,11 +837,11 @@ export function ProductsManager() {
       )}
 
       {loading ? (
-        <p className="text-gray-500">Loading products…</p>
+        <p className="text-muted-foreground">Loading products…</p>
       ) : products.length === 0 && !showForm ? (
         <Card className="border-dashed">
           <p className="font-medium">No products yet</p>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Use the AI creator above, then activate your shop from the dashboard.
           </p>
         </Card>
@@ -854,10 +854,10 @@ export function ProductsManager() {
                 <img
                   src={productImageSrc(product.imageUrl)}
                   alt={product.title}
-                  className="h-16 w-16 shrink-0 rounded-xl border border-gray-100 object-cover"
+                  className="h-16 w-16 shrink-0 rounded-xl border border-border object-cover"
                 />
               ) : (
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-xl">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-muted text-xl">
                   🛍️
                 </div>
               )}
@@ -871,13 +871,13 @@ export function ProductsManager() {
                     className={
                       product.status === "active"
                         ? "bg-emerald-100 text-emerald-800"
-                        : "bg-gray-100 text-gray-600"
+                        : "bg-muted text-muted-foreground"
                     }
                   >
                     {product.status}
                   </Badge>
                 </div>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-muted-foreground">
                   {formatPrice(Number(product.basePrice))} · Stock: {product.stockQty} · /
                   {product.slug}
                 </p>
@@ -886,7 +886,7 @@ export function ProductsManager() {
                 <button
                   type="button"
                   onClick={() => startEdit(product)}
-                  className="rounded-xl border border-gray-200 px-3 py-1.5 text-sm text-gray-700 transition hover:bg-gray-50"
+                  className="rounded-xl border border-border px-3 py-1.5 text-sm text-foreground transition hover:bg-muted"
                 >
                   Edit
                 </button>

@@ -75,7 +75,7 @@ export function KycSettingsPage() {
 
       <SettingsCard title="Verification status">
         {loading ? (
-          <p className="text-sm text-gray-500">Loading…</p>
+          <p className="text-sm text-muted-foreground">Loading…</p>
         ) : verified ? (
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
             <p className="font-semibold">Verified</p>
@@ -90,7 +90,7 @@ export function KycSettingsPage() {
           </div>
         )}
 
-        <ul className="mt-4 space-y-2 text-sm text-gray-600">
+        <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
           <li>
             • <strong>Option A:</strong> 1 primary ID (Passport, Driver&apos;s License, UMID,
             National ID, PRC, or Postal ID)

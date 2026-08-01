@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     const paymongo = createPayMongoClient();
     const intent = await paymongo.createPaymentIntent({
       amountCentavos: amountPhp * 100,
-      description: `Guma Commerce ${body.plan} plan (30 days) — ${session.tenantName}`,
+      description: `Guma One ${body.plan} plan (30 days) — ${session.tenantName}`,
       methods: [body.method as PayMongoMethod],
       metadata: {
         purpose: "plan_upgrade",

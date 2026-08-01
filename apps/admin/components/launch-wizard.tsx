@@ -231,7 +231,7 @@ export function LaunchWizard() {
   if (loading) {
     return (
       <PatternAdminShell title="GUMA Launch">
-        <p className="text-sm text-gray-500">Preparing your launch…</p>
+        <p className="text-sm text-muted-foreground">Preparing your launch…</p>
       </PatternAdminShell>
     );
   }
@@ -243,8 +243,8 @@ export function LaunchWizard() {
           <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
             Freemium · Zero AI cost
           </p>
-          <h1 className="mt-1 text-2xl font-bold text-gray-900">Launch {shopName}</h1>
-          <p className="mt-1 text-sm text-gray-600">
+          <h1 className="mt-1 text-2xl font-bold text-foreground">Launch {shopName}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Confirm your Store DNA, pick one of three recommended templates, personalize, then
             publish. You stay in control — AI does not generate layouts.
           </p>
@@ -265,7 +265,7 @@ export function LaunchWizard() {
               className={`rounded-full px-3 py-1 ${
                 step === id
                   ? "bg-emerald-600 text-white"
-                  : "bg-gray-100 text-gray-600"
+                  : "bg-muted text-muted-foreground"
               }`}
             >
               {label}
@@ -277,15 +277,15 @@ export function LaunchWizard() {
 
         {step === "dna" && (
           <Card className="space-y-4 p-5">
-            <h2 className="font-semibold text-gray-900">Store DNA</h2>
-            <p className="text-sm text-gray-600">
+            <h2 className="font-semibold text-foreground">Store DNA</h2>
+            <p className="text-sm text-muted-foreground">
               We inferred this from signup. Confirm or adjust — used only for template scoring.
             </p>
 
             <label className="block text-sm">
-              <span className="font-medium text-gray-700">Category</span>
+              <span className="font-medium text-foreground">Category</span>
               <select
-                className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
+                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
               >
@@ -298,7 +298,7 @@ export function LaunchWizard() {
             </label>
 
             <div>
-              <p className="text-sm font-medium text-gray-700">Vibe</p>
+              <p className="text-sm font-medium text-foreground">Vibe</p>
               <div className="mt-2 grid gap-2 sm:grid-cols-2">
                 {SHOP_VIBES.map((v) => (
                   <button
@@ -308,20 +308,20 @@ export function LaunchWizard() {
                     className={`rounded-xl border p-3 text-left text-sm ${
                       vibe === v.id
                         ? "border-emerald-500 bg-emerald-50"
-                        : "border-gray-200 bg-white"
+                        : "border-border bg-card"
                     }`}
                   >
                     <span className="font-medium">
                       {v.emoji} {v.label}
                     </span>
-                    <span className="mt-0.5 block text-xs text-gray-500">{v.description}</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">{v.description}</span>
                   </button>
                 ))}
               </div>
             </div>
 
             <div>
-              <p className="text-sm font-medium text-gray-700">Product count</p>
+              <p className="text-sm font-medium text-foreground">Product count</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {PRODUCT_HINTS.map((h) => (
                   <button
@@ -331,7 +331,7 @@ export function LaunchWizard() {
                     className={`rounded-full px-3 py-1.5 text-sm ${
                       productCountHint === h.id
                         ? "bg-emerald-600 text-white"
-                        : "bg-gray-100 text-gray-700"
+                        : "bg-muted text-foreground"
                     }`}
                   >
                     {h.label}
@@ -341,7 +341,7 @@ export function LaunchWizard() {
             </div>
 
             <div>
-              <p className="text-sm font-medium text-gray-700">Goals</p>
+              <p className="text-sm font-medium text-foreground">Goals</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {GOALS.map((g) => (
                   <button
@@ -351,7 +351,7 @@ export function LaunchWizard() {
                     className={`rounded-full px-3 py-1.5 text-sm ${
                       goals.includes(g.id)
                         ? "bg-emerald-600 text-white"
-                        : "bg-gray-100 text-gray-700"
+                        : "bg-muted text-foreground"
                     }`}
                   >
                     {g.label}
@@ -361,7 +361,7 @@ export function LaunchWizard() {
             </div>
 
             <div>
-              <p className="text-sm font-medium text-gray-700">Selling channels</p>
+              <p className="text-sm font-medium text-foreground">Selling channels</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {CHANNELS.map((c) => (
                   <button
@@ -371,7 +371,7 @@ export function LaunchWizard() {
                     className={`rounded-full px-3 py-1.5 text-sm ${
                       sellingChannels.includes(c.id)
                         ? "bg-emerald-600 text-white"
-                        : "bg-gray-100 text-gray-700"
+                        : "bg-muted text-foreground"
                     }`}
                   >
                     {c.label}
@@ -381,9 +381,9 @@ export function LaunchWizard() {
             </div>
 
             <label className="block text-sm">
-              <span className="font-medium text-gray-700">Audience (optional)</span>
+              <span className="font-medium text-foreground">Audience (optional)</span>
               <input
-                className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
+                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
                 value={audience}
                 onChange={(e) => setAudience(e.target.value)}
                 placeholder="e.g. Busy moms in Metro Manila"
@@ -399,8 +399,8 @@ export function LaunchWizard() {
         {step === "templates" && (
           <Card className="space-y-5 p-5">
             <div>
-              <h2 className="font-semibold text-gray-900">Top templates for {category}</h2>
-              <p className="mt-1 text-sm text-gray-600">
+              <h2 className="font-semibold text-foreground">Top templates for {category}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
                 Scored from the <strong>live storefront library</strong> (ported HTML themes + Guma
                 skins), boosted by matches in the Free Bundle catalog (~100). Pick one to install —
                 layout is fixed; you only personalize colors and copy next.
@@ -417,10 +417,10 @@ export function LaunchWizard() {
                   className={`overflow-hidden rounded-2xl border text-left transition hover:border-emerald-400 ${
                     selectedTemplateId === t.id
                       ? "border-emerald-500 ring-2 ring-emerald-500"
-                      : "border-gray-200"
+                      : "border-border"
                   } ${!t.installable ? "opacity-70" : ""}`}
                 >
-                  <div className="relative aspect-[16/9] w-full bg-gray-100">
+                  <div className="relative aspect-[16/9] w-full bg-muted">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={t.previewImageUrl}
@@ -447,13 +447,13 @@ export function LaunchWizard() {
                   </div>
                   <div className="space-y-1 p-4">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold text-gray-900">{t.label}</p>
-                      <span className="text-xs text-gray-400">Score {t.score}</span>
+                      <p className="font-semibold text-foreground">{t.label}</p>
+                      <span className="text-xs text-muted-foreground">Score {t.score}</span>
                     </div>
-                    <p className="text-sm text-gray-600">{t.description}</p>
+                    <p className="text-sm text-muted-foreground">{t.description}</p>
                     <p className="text-xs text-emerald-700">{t.reasons.join(" · ")}</p>
                     {t.librarySource && (
-                      <p className="text-[11px] text-gray-500">
+                      <p className="text-[11px] text-muted-foreground">
                         Free Bundle match: {t.librarySource.label} ({t.librarySource.status})
                       </p>
                     )}
@@ -463,11 +463,11 @@ export function LaunchWizard() {
             </div>
 
             {libraryMatches.length > 0 && (
-              <div className="border-t border-gray-100 pt-4">
-                <h3 className="text-sm font-semibold text-gray-900">
+              <div className="border-t border-border pt-4">
+                <h3 className="text-sm font-semibold text-foreground">
                   Also in the Free Bundle library for {category}
                 </h3>
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-muted-foreground">
                   Not every catalog entry is ported yet. Choosing one installs the closest live
                   storefront package.
                 </p>
@@ -478,7 +478,7 @@ export function LaunchWizard() {
                       type="button"
                       disabled={saving || !m.installTemplateId}
                       onClick={() => m.installTemplateId && void selectTemplate(m.installTemplateId)}
-                      className="overflow-hidden rounded-xl border border-gray-200 text-left hover:border-emerald-400 disabled:opacity-50"
+                      className="overflow-hidden rounded-xl border border-border text-left hover:border-emerald-400 disabled:opacity-50"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -487,11 +487,11 @@ export function LaunchWizard() {
                         className="aspect-[16/10] w-full object-cover"
                       />
                       <div className="p-3">
-                        <p className="text-sm font-semibold text-gray-900">{m.label}</p>
-                        <p className="mt-0.5 text-[11px] uppercase tracking-wide text-gray-400">
+                        <p className="text-sm font-semibold text-foreground">{m.label}</p>
+                        <p className="mt-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
                           {m.status.replace(/-/g, " ")}
                         </p>
-                        <p className="mt-1 line-clamp-2 text-xs text-gray-500">{m.notes}</p>
+                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{m.notes}</p>
                       </div>
                     </button>
                   ))}
@@ -501,7 +501,7 @@ export function LaunchWizard() {
 
             <button
               type="button"
-              className="text-sm text-gray-500 underline"
+              className="text-sm text-muted-foreground underline"
               onClick={() => setStep("dna")}
             >
               ← Back to Store DNA
@@ -511,13 +511,13 @@ export function LaunchWizard() {
 
         {step === "personalize" && (
           <Card className="space-y-4 p-5">
-            <h2 className="font-semibold text-gray-900">Personalize</h2>
-            <p className="text-sm text-gray-600">
+            <h2 className="font-semibold text-foreground">Personalize</h2>
+            <p className="text-sm text-muted-foreground">
               Colors and copy only — the template layout stays intact.
             </p>
 
             <div>
-              <p className="text-sm font-medium text-gray-700">Palette</p>
+              <p className="text-sm font-medium text-foreground">Palette</p>
               <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {BRAND_PALETTES.slice(0, 12).map((p) => (
                   <button
@@ -525,7 +525,7 @@ export function LaunchWizard() {
                     type="button"
                     onClick={() => applyPalette(p.id)}
                     className={`rounded-xl border p-2 text-left text-xs ${
-                      paletteId === p.id ? "border-emerald-500 ring-1 ring-emerald-500" : "border-gray-200"
+                      paletteId === p.id ? "border-emerald-500 ring-1 ring-emerald-500" : "border-border"
                     }`}
                   >
                     <span
@@ -564,7 +564,7 @@ export function LaunchWizard() {
             <label className="block text-sm">
               Tagline
               <input
-                className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
+                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
                 value={tagline}
                 onChange={(e) => setTagline(e.target.value)}
               />
@@ -572,7 +572,7 @@ export function LaunchWizard() {
             <label className="block text-sm">
               Promo title
               <input
-                className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
+                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
                 value={promoTitle}
                 onChange={(e) => setPromoTitle(e.target.value)}
               />
@@ -580,7 +580,7 @@ export function LaunchWizard() {
             <label className="block text-sm">
               Promo subtitle
               <input
-                className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
+                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
                 value={promoSubtitle}
                 onChange={(e) => setPromoSubtitle(e.target.value)}
               />
@@ -592,7 +592,7 @@ export function LaunchWizard() {
               </Button>
               <button
                 type="button"
-                className="text-sm text-gray-500 underline"
+                className="text-sm text-muted-foreground underline"
                 onClick={() => setStep("templates")}
               >
                 ← Change template
@@ -603,26 +603,26 @@ export function LaunchWizard() {
 
         {step === "preview" && (
           <Card className="space-y-4 p-5">
-            <h2 className="font-semibold text-gray-900">Preview & publish</h2>
-            <p className="text-sm text-gray-600">
+            <h2 className="font-semibold text-foreground">Preview & publish</h2>
+            <p className="text-sm text-muted-foreground">
               Review your draft, then publish. Publishing does not go live to buyers until you
               activate the shop (add a product first).
             </p>
             <div
-              className="rounded-2xl border border-gray-200 p-6"
+              className="rounded-2xl border border-border p-6"
               style={{
                 background: `linear-gradient(135deg, ${primaryColor}22, ${accentColor}33)`,
               }}
             >
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {selectedTemplateId}
               </p>
               <h3 className="mt-1 text-xl font-bold" style={{ color: primaryColor }}>
                 {shopName}
               </h3>
-              <p className="mt-1 text-sm text-gray-700">{tagline}</p>
-              <p className="mt-3 font-semibold text-gray-900">{promoTitle}</p>
-              <p className="text-sm text-gray-600">{promoSubtitle}</p>
+              <p className="mt-1 text-sm text-foreground">{tagline}</p>
+              <p className="mt-3 font-semibold text-foreground">{promoTitle}</p>
+              <p className="text-sm text-muted-foreground">{promoSubtitle}</p>
             </div>
             {urls && (
               <a
@@ -640,7 +640,7 @@ export function LaunchWizard() {
               </Button>
               <button
                 type="button"
-                className="text-sm text-gray-500 underline"
+                className="text-sm text-muted-foreground underline"
                 onClick={() => setStep("personalize")}
               >
                 ← Edit personalization
@@ -652,15 +652,15 @@ export function LaunchWizard() {
         {step === "done" && (
           <Card className="space-y-4 p-5">
             <h2 className="font-semibold text-emerald-800">Storefront published</h2>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Your template is installed and personalized. Next: add a product, then activate{" "}
-              <code className="rounded bg-gray-100 px-1 text-xs">/{slug}</code> from the dashboard.
+              <code className="rounded bg-muted px-1 text-xs">/{slug}</code> from the dashboard.
             </p>
             <div className="flex flex-wrap gap-2">
               <Button onClick={() => router.push("/products")}>Add products</Button>
               <Link
                 href="/"
-                className="inline-flex items-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium"
+                className="inline-flex items-center rounded-xl border border-border px-4 py-2 text-sm font-medium"
               >
                 Go to dashboard
               </Link>

@@ -42,7 +42,7 @@ export function AccountSettingsPage() {
             onChange={(e) => setConfirmPassword(e.target.value)}
           />
         </SettingsField>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted-foreground">
           Password reset via email is coming soon. Contact support if you are locked out.
         </p>
         <SettingsActions onSave={() => undefined} saving={false} saved={false} />

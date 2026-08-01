@@ -40,7 +40,7 @@ const EMPTY: CheckoutDraft = {
 };
 
 const inputClass =
-  "h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm";
+  "h-11 w-full rounded-xl border border-border bg-card px-3 text-sm";
 
 export function WorkspaceCheckout() {
   const [draft, setDraft] = useState<CheckoutDraft>(EMPTY);
@@ -189,14 +189,14 @@ export function WorkspaceCheckout() {
   }
 
   if (loading) {
-    return <p className="text-sm text-gray-500">Loading checkout…</p>;
+    return <p className="text-sm text-muted-foreground">Loading checkout…</p>;
   }
 
   return (
     <div className="space-y-6">
       <Card className="p-5">
-        <h2 className="font-semibold text-gray-900">Checkout</h2>
-        <p className="mt-1 text-sm text-gray-600">
+        <h2 className="font-semibold text-foreground">Checkout</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
           Configure taxes, coupons, payment adapters, and customer fields. Changes become
           change requests — nothing goes live until you approve &amp; publish in{" "}
           <Link href="/workspace/approvals" className="underline">
@@ -214,7 +214,7 @@ export function WorkspaceCheckout() {
       </Card>
 
       <Card className="space-y-4 p-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Basics
         </h3>
         <label className="flex items-center gap-2 text-sm">
@@ -226,7 +226,7 @@ export function WorkspaceCheckout() {
           Cash on Delivery enabled
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium text-gray-700">Minimum order (₱)</span>
+          <span className="mb-1 block font-medium text-foreground">Minimum order (₱)</span>
           <input
             type="number"
             className={inputClass}
@@ -237,7 +237,7 @@ export function WorkspaceCheckout() {
           />
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium text-gray-700">
+          <span className="mb-1 block font-medium text-foreground">
             Abandoned after (minutes)
           </span>
           <input
@@ -255,7 +255,7 @@ export function WorkspaceCheckout() {
       </Card>
 
       <Card className="space-y-4 p-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Taxes</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Taxes</h3>
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -267,7 +267,7 @@ export function WorkspaceCheckout() {
           Collect tax
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block font-medium text-gray-700">Rate %</span>
+          <span className="mb-1 block font-medium text-foreground">Rate %</span>
           <input
             type="number"
             className={inputClass}
@@ -293,10 +293,10 @@ export function WorkspaceCheckout() {
       </Card>
 
       <Card className="space-y-4 p-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Coupons
         </h3>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted-foreground">
           Format: <code>WELCOME10:10%</code>, <code>SAVE50:₱50</code> (comma-separated)
         </p>
         <input
@@ -308,7 +308,7 @@ export function WorkspaceCheckout() {
       </Card>
 
       <Card className="space-y-4 p-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Payment adapters
         </h3>
         {(
@@ -346,7 +346,7 @@ export function WorkspaceCheckout() {
       </Card>
 
       <Card className="space-y-4 p-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Customer &amp; address
         </h3>
         <label className="flex items-center gap-2 text-sm">
@@ -378,12 +378,12 @@ export function WorkspaceCheckout() {
       </Card>
 
       <Card className="p-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Published snapshot
         </h3>
-        <p className="mt-2 text-sm text-gray-600">
+        <p className="mt-2 text-sm text-muted-foreground">
           Live min order:{" "}
-          <span className="font-medium text-gray-900">
+          <span className="font-medium text-foreground">
             ₱{published.minOrderAmount ?? "—"} · COD{" "}
             {published.codEnabled !== false ? "on" : "off"}
           </span>
@@ -433,7 +433,7 @@ export function WorkspaceCheckout() {
         </Button>
         <Link
           href="/workspace/approvals"
-          className="inline-flex items-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="inline-flex items-center rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
         >
           Open Approvals
         </Link>

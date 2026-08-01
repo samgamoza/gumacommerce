@@ -11,19 +11,24 @@ export function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
-      <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-12">
+    <div className="relative min-h-screen overflow-hidden bg-guma-navy">
+      {/* Ambient background */}
+      <div className="pointer-events-none absolute inset-0 grid-bg grid-bg-fade opacity-60" />
+      <div className="pointer-events-none absolute -top-40 left-1/4 h-[480px] w-[480px] rounded-full bg-guma-purple/15 blur-[120px]" />
+      <div className="pointer-events-none absolute -bottom-40 right-1/4 h-[420px] w-[420px] rounded-full bg-guma-emerald/10 blur-[120px]" />
+
+      <div className="relative mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-12">
         <Link href="/" className="mb-8 flex items-center justify-center gap-2.5">
-          <GumaMark className="h-10 w-10 drop-shadow-sm" />
-          <span className="text-xl font-bold tracking-tight text-emerald-900">
-            Guma<span className="text-emerald-600">Commerce</span>
+          <GumaMark className="h-10 w-10" title="Guma One" />
+          <span className="font-display text-xl font-bold tracking-tight text-white">
+            Guma <span className="gradient-text-purple">One</span>
           </span>
         </Link>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xl shadow-emerald-900/5 sm:p-8">
+        <div className="rounded-2xl glass-strong p-6 shadow-2xl shadow-black/40 sm:p-8">
           <div className="mb-6 text-center">
-            <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-            <p className="mt-2 text-sm text-gray-500">{subtitle}</p>
+            <h1 className="font-display text-2xl font-bold text-white">{title}</h1>
+            <p className="mt-2 text-sm text-slate-400">{subtitle}</p>
           </div>
           {children}
         </div>
@@ -43,7 +48,7 @@ export function AuthField({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-gray-700">
+      <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-slate-300">
         {label}
       </label>
       {children}
@@ -52,12 +57,12 @@ export function AuthField({
 }
 
 export const authInputClassName =
-  "h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100";
+  "h-11 w-full rounded-xl border border-white/10 bg-guma-navy/60 px-3 text-sm text-white placeholder:text-slate-500 outline-none transition focus:border-guma-purple/50 focus:ring-2 focus:ring-guma-purple/20";
 
 export function AuthError({ message }: { message: string | null }) {
   if (!message) return null;
   return (
-    <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+    <div className="rounded-xl border border-guma-rose/25 bg-guma-rose/10 px-3 py-2 text-sm text-guma-rose">
       {message}
     </div>
   );
@@ -74,7 +79,7 @@ export function AuthSubmitButton({
     <button
       type="submit"
       disabled={loading}
-      className="flex h-11 w-full items-center justify-center rounded-xl bg-emerald-600 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+      className="flex h-11 w-full items-center justify-center rounded-xl gradient-accent text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
     >
       {loading ? "Please wait..." : children}
     </button>

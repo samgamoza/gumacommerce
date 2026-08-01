@@ -41,9 +41,9 @@ const EMPTY: SeoDraft = {
 };
 
 const inputClass =
-  "h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm";
+  "h-11 w-full rounded-xl border border-border bg-card px-3 text-sm";
 const areaClass =
-  "w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm";
+  "w-full rounded-xl border border-border bg-card px-3 py-2 text-sm";
 
 export function WorkspaceSeo() {
   const [draft, setDraft] = useState<SeoDraft>(EMPTY);
@@ -158,14 +158,14 @@ export function WorkspaceSeo() {
   }
 
   if (loading) {
-    return <p className="text-sm text-gray-500">Loading SEO…</p>;
+    return <p className="text-sm text-muted-foreground">Loading SEO…</p>;
   }
 
   return (
     <div className="space-y-6">
       <Card className="p-5">
-        <h2 className="font-semibold text-gray-900">Store SEO</h2>
-        <p className="mt-1 text-sm text-gray-600">
+        <h2 className="font-semibold text-foreground">Store SEO</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
           Draft metadata and social cards here. AI suggestions and your edits become change
           requests — nothing goes live until you approve &amp; publish in{" "}
           <Link href="/workspace/approvals" className="underline">
@@ -183,7 +183,7 @@ export function WorkspaceSeo() {
       </Card>
 
       <Card className="space-y-4 p-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Store SEO</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Store SEO</h3>
         <Field label="Site title">
           <input
             className={inputClass}
@@ -237,7 +237,7 @@ export function WorkspaceSeo() {
       </Card>
 
       <Card className="space-y-4 p-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Social / Open Graph
         </h3>
         <Field label="OG title">
@@ -270,7 +270,7 @@ export function WorkspaceSeo() {
       </Card>
 
       <Card className="space-y-4 p-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Twitter Card
         </h3>
         <Field label="Card type">
@@ -318,12 +318,12 @@ export function WorkspaceSeo() {
       </Card>
 
       <Card className="p-5">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Published snapshot
         </h3>
-        <p className="mt-2 text-sm text-gray-600">
+        <p className="mt-2 text-sm text-muted-foreground">
           Live title:{" "}
-          <span className="font-medium text-gray-900">
+          <span className="font-medium text-foreground">
             {published.siteTitle || "(not published yet)"}
           </span>
         </p>
@@ -351,7 +351,7 @@ export function WorkspaceSeo() {
         </Button>
         <Link
           href="/workspace/approvals"
-          className="inline-flex items-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="inline-flex items-center rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
         >
           Open Approvals
         </Link>
@@ -363,7 +363,7 @@ export function WorkspaceSeo() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-sm font-medium text-gray-700">{label}</span>
+      <span className="mb-1 block text-sm font-medium text-foreground">{label}</span>
       {children}
     </label>
   );

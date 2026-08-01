@@ -136,7 +136,7 @@ export function WalletSettingsPage() {
       description="Sales are credited automatically after payment. Cleared funds can be withdrawn manually or on auto-payout."
     >
       {loading ? (
-        <p className="text-sm text-gray-500">Loading wallet…</p>
+        <p className="text-sm text-muted-foreground">Loading wallet…</p>
       ) : (
         <>
           {error ? (
@@ -152,38 +152,38 @@ export function WalletSettingsPage() {
 
           <div className="grid gap-4 sm:grid-cols-3">
             <SettingsCard title="Available balance">
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-3xl font-bold text-foreground">
                 {formatPhp(summary?.availableBalance ?? 0)}
               </p>
-              <p className="mt-1 text-xs text-gray-500">Ready to withdraw</p>
+              <p className="mt-1 text-xs text-muted-foreground">Ready to withdraw</p>
             </SettingsCard>
             <SettingsCard title="Pending clearance">
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-3xl font-bold text-foreground">
                 {formatPhp(summary?.pendingBalance ?? 0)}
               </p>
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Released on delivery or after ~48 hours
               </p>
             </SettingsCard>
             <SettingsCard title="Total withdrawn">
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-3xl font-bold text-foreground">
                 {formatPhp(summary?.totalWithdrawn ?? 0)}
               </p>
-              <p className="mt-1 text-xs text-gray-500">Lifetime payouts</p>
+              <p className="mt-1 text-xs text-muted-foreground">Lifetime payouts</p>
             </SettingsCard>
           </div>
 
           <div className="mt-6">
             <SettingsCard title="Auto-payout">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 When enabled, cleared balance (₱500 minimum) is automatically sent to your linked
                 account on a daily schedule. Platform fee (2.5% + ₱5) is deducted per paid order.
               </p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <label className="block text-sm">
-                  <span className="font-medium text-gray-700">Payout method</span>
+                  <span className="font-medium text-foreground">Payout method</span>
                   <select
-                    className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
+                    className="mt-1 w-full rounded-xl border border-border px-3 py-2"
                     value={walletSettings.payoutMethod ?? ""}
                     onChange={(e) =>
                       setWalletSettings((s) => ({
@@ -199,9 +199,9 @@ export function WalletSettingsPage() {
                   </select>
                 </label>
                 <label className="block text-sm">
-                  <span className="font-medium text-gray-700">Account number</span>
+                  <span className="font-medium text-foreground">Account number</span>
                   <input
-                    className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
+                    className="mt-1 w-full rounded-xl border border-border px-3 py-2"
                     placeholder="09XX XXX XXXX"
                     value={walletSettings.payoutAccount ?? ""}
                     onChange={(e) =>
@@ -210,9 +210,9 @@ export function WalletSettingsPage() {
                   />
                 </label>
                 <label className="block text-sm sm:col-span-2">
-                  <span className="font-medium text-gray-700">Account name</span>
+                  <span className="font-medium text-foreground">Account name</span>
                   <input
-                    className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2"
+                    className="mt-1 w-full rounded-xl border border-border px-3 py-2"
                     placeholder="Name on account"
                     value={walletSettings.payoutAccountName ?? ""}
                     onChange={(e) =>
@@ -221,7 +221,7 @@ export function WalletSettingsPage() {
                   />
                 </label>
               </div>
-              <label className="mt-4 flex items-center gap-2 text-sm text-gray-700">
+              <label className="mt-4 flex items-center gap-2 text-sm text-foreground">
                 <input
                   type="checkbox"
                   checked={walletSettings.autoPayoutEnabled === true}
@@ -245,7 +245,7 @@ export function WalletSettingsPage() {
           <div ref={requestRef} className="mt-6">
             <SettingsCard title="Request payout">
               {!kycVerified ? (
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Complete{" "}
                   <Link href="/settings/kyc" className="font-medium text-emerald-700 underline">
                     KYC verification
@@ -253,22 +253,22 @@ export function WalletSettingsPage() {
                   before your first payout.
                 </p>
               ) : !canPayout ? (
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Save a payout destination above before requesting funds.
                 </p>
               ) : (
                 <>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     Withdraw to {walletSettings.payoutMethod?.toUpperCase()}{" "}
                     {maskAccount(walletSettings.payoutAccount ?? "")}.
                   </p>
                   <label className="mt-3 block text-sm">
-                    <span className="font-medium text-gray-700">Amount (PHP)</span>
+                    <span className="font-medium text-foreground">Amount (PHP)</span>
                     <input
                       type="number"
                       min={100}
                       step={0.01}
-                      className="mt-1 w-full max-w-xs rounded-xl border border-gray-200 px-3 py-2"
+                      className="mt-1 w-full max-w-xs rounded-xl border border-border px-3 py-2"
                       value={payoutAmount}
                       onChange={(e) => setPayoutAmount(e.target.value)}
                     />
@@ -289,21 +289,21 @@ export function WalletSettingsPage() {
           <div className="mt-6">
             <SettingsCard title="Recent activity">
               {ledger.length === 0 ? (
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   No wallet activity yet. Paid orders will appear here automatically.
                 </p>
               ) : (
-                <ul className="divide-y divide-gray-100">
+                <ul className="divide-y divide-border">
                   {ledger.map((entry) => (
                     <li
                       key={entry.id}
                       className="flex items-start justify-between gap-4 py-3 text-sm"
                     >
                       <div>
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-foreground">
                           {entry.description ?? entry.type.replace("_", " ")}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           {formatDate(entry.createdAt)}
                           {entry.status === "pending" && entry.availableAt
                             ? ` · clears ${formatDate(entry.availableAt)}`
@@ -312,7 +312,7 @@ export function WalletSettingsPage() {
                       </div>
                       <span
                         className={
-                          Number(entry.netAmount) >= 0 ? "text-emerald-700" : "text-gray-900"
+                          Number(entry.netAmount) >= 0 ? "text-emerald-700" : "text-foreground"
                         }
                       >
                         {Number(entry.netAmount) >= 0 ? "+" : ""}
@@ -328,20 +328,20 @@ export function WalletSettingsPage() {
           <div className="mt-6">
             <SettingsCard title="Payout history">
               {payouts.length === 0 ? (
-                <p className="text-sm text-gray-500">No payouts yet.</p>
+                <p className="text-sm text-muted-foreground">No payouts yet.</p>
               ) : (
-                <ul className="divide-y divide-gray-100">
+                <ul className="divide-y divide-border">
                   {payouts.map((payout) => (
                     <li
                       key={payout.id}
                       className="flex items-start justify-between gap-4 py-3 text-sm"
                     >
                       <div>
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-foreground">
                           {formatPhp(payout.amount)} → {payout.method.toUpperCase()}{" "}
                           {maskAccount(payout.destinationAccount)}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           {formatDate(payout.createdAt)}
                           {payout.autoTriggered ? " · auto" : ""} · {payout.status}
                         </p>

@@ -66,11 +66,11 @@ export function KycDocumentSlot({
       : null;
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4">
+    <div className="rounded-xl border border-border bg-card p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="font-medium text-gray-900">{label}</p>
-          <p className="mt-0.5 text-xs text-gray-500">{hint}</p>
+          <p className="font-medium text-foreground">{label}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>
         </div>
         {uploaded ? (
           <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" aria-hidden />
@@ -82,7 +82,7 @@ export function KycDocumentSlot({
         <img
           src={previewUrl}
           alt={label}
-          className="mt-3 h-36 w-full rounded-lg border border-gray-100 object-cover"
+          className="mt-3 h-36 w-full rounded-lg border border-border object-cover"
         />
       ) : null}
 
@@ -104,7 +104,7 @@ export function KycDocumentSlot({
           type="button"
           disabled={uploading}
           onClick={() => inputRef.current?.click()}
-          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-60"
         >
           {uploading ? (
             <Loader2 className="h-4 w-4 animate-spin" />

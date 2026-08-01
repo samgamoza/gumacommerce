@@ -145,7 +145,7 @@ export function DashboardView({ displayName }: { displayName: string }) {
 
   return (
     <div className="space-y-6">
-      <Card className="relative overflow-hidden border-emerald-100">
+      <Card className="glass relative overflow-hidden border-guma-purple/20">
         <div className="absolute inset-0 hero-glow opacity-60" />
         <div className="absolute inset-0 bg-grid-pattern bg-grid opacity-30 [mask-image:linear-gradient(to_bottom,white,transparent)]" />
         <div className="relative flex flex-wrap items-start justify-between gap-4">
@@ -235,7 +235,7 @@ export function DashboardView({ displayName }: { displayName: string }) {
                 key={step.id}
                 className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 ${
                   step.completed
-                    ? "border-transparent bg-emerald-50/60"
+                    ? "border-transparent bg-guma-emerald/10"
                     : "border-border/60 bg-card"
                 }`}
               >
@@ -287,7 +287,7 @@ export function DashboardView({ displayName }: { displayName: string }) {
           </div>
         </div>
         <div className="mt-3 flex items-center gap-2 rounded-xl border border-border/60 bg-muted/50 px-3 py-2.5">
-          <code className="min-w-0 flex-1 truncate text-xs text-emerald-700">
+          <code className="min-w-0 flex-1 truncate text-xs text-guma-emerald">
             {urls.orderLink}
           </code>
           <button
@@ -300,7 +300,7 @@ export function DashboardView({ displayName }: { displayName: string }) {
           </button>
         </div>
         {!isLive && (
-          <p className="mt-2 text-xs text-amber-700">
+          <p className="mt-2 text-xs text-guma-amber">
             Link goes live after you add at least one active product (or tap Activate shop).
           </p>
         )}

@@ -109,7 +109,7 @@ export function GoogleShopSetupForm() {
   if (checkingSession) {
     return (
       <AuthLayout title="Setting up your shop" subtitle="Loading your Google account...">
-        <p className="text-center text-sm text-gray-500">Please wait...</p>
+        <p className="text-center text-sm text-muted-foreground">Please wait...</p>
       </AuthLayout>
     );
   }
@@ -135,7 +135,7 @@ export function GoogleShopSetupForm() {
 
         <AuthField label="Shop URL" id="shopSlug">
           <div className="flex items-center gap-2">
-            <span className="shrink-0 text-sm text-gray-400">{shopUrlDisplayPrefix()}</span>
+            <span className="shrink-0 text-sm text-muted-foreground">{shopUrlDisplayPrefix()}</span>
             <input
               id="shopSlug"
               required

@@ -13,6 +13,7 @@ import {
   ShoppingBag,
   Sparkles,
   Store,
+  Users,
 } from "lucide-react";
 import { resolveStorePattern } from "@guma-commerce/storefront-themes";
 import type { StorePatternId } from "@guma-commerce/storefront-themes";
@@ -21,6 +22,7 @@ const SWEET_TABS = [
   { id: "overview", label: "Overview", href: "/", icon: LayoutDashboard },
   { id: "products", label: "Products", href: "/products", icon: Package },
   { id: "orders", label: "Orders", href: "/orders", icon: ShoppingBag },
+  { id: "customers", label: "Customers", href: "/customers", icon: Users },
   { id: "ai", label: "Workspace", href: "/workspace", icon: Sparkles },
   { id: "agents", label: "Automations", href: "/workspace/automations", icon: Bot },
   { id: "settings", label: "Settings", href: "/settings/shop", icon: Settings },

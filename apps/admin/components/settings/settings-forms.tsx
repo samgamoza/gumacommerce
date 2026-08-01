@@ -57,7 +57,7 @@ export function SettingsCard({
 }) {
   return (
     <Card className="p-5">
-      <h3 className="font-medium text-gray-900">{title}</h3>
+      <h3 className="font-medium text-foreground">{title}</h3>
       <div className="mt-4 space-y-4">{children}</div>
     </Card>
   );
@@ -74,9 +74,9 @@ export function SettingsField({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-sm font-medium text-gray-700">{label}</span>
+      <span className="mb-1 block text-sm font-medium text-foreground">{label}</span>
       {children}
-      {hint && <p className="mt-1 text-xs text-gray-500">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
     </label>
   );
 }
@@ -101,9 +101,9 @@ export function SettingsActions({
 }
 
 export function inputClassName() {
-  return "h-10 w-full rounded-xl border border-gray-200 px-3 text-sm";
+  return "h-10 w-full rounded-xl border border-border px-3 text-sm";
 }
 
 export function textareaClassName() {
-  return "w-full rounded-xl border border-gray-200 px-3 py-2 text-sm";
+  return "w-full rounded-xl border border-border px-3 py-2 text-sm";
 }

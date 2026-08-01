@@ -34,7 +34,7 @@ export default function KycMobileClient({ token }: { token: string }) {
       <div className="mx-auto max-w-lg">
         <div className="mb-6 text-center">
           <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-            Guma Commerce
+            Guma One
           </p>
           <h1 className="mt-1 text-2xl font-bold text-gray-900">Identity verification</h1>
           <p className="mt-2 text-sm text-gray-600">

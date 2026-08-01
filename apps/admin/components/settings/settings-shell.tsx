@@ -13,7 +13,7 @@ export function SettingsPageLayout({
 }) {
   return (
     <PatternAdminShell title={title}>
-      <p className="mb-6 text-sm text-gray-500">{description}</p>
+      <p className="mb-6 text-sm text-muted-foreground">{description}</p>
       {children}
     </PatternAdminShell>
   );

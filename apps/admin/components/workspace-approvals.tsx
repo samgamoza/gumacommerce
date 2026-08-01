@@ -141,14 +141,14 @@ function DiffPanel({
   });
 
   return (
-    <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-gray-50 text-xs">
-      <div className="grid grid-cols-2 border-b border-gray-200 bg-white px-3 py-2 font-semibold text-gray-700">
+    <div className="mt-3 overflow-hidden rounded-xl border border-border bg-muted text-xs">
+      <div className="grid grid-cols-2 border-b border-border bg-card px-3 py-2 font-semibold text-foreground">
         <span>Before</span>
         <span>After</span>
       </div>
       <div className="max-h-56 overflow-auto">
         {keys.length === 0 ? (
-          <p className="p-3 text-gray-500">No snapshot fields</p>
+          <p className="p-3 text-muted-foreground">No snapshot fields</p>
         ) : (
           keys.map((key) => {
             const b = before?.[key];
@@ -157,17 +157,17 @@ function DiffPanel({
             return (
               <div
                 key={key}
-                className={`grid grid-cols-2 gap-2 border-b border-gray-100 px-3 py-2 ${
+                className={`grid grid-cols-2 gap-2 border-b border-border px-3 py-2 ${
                   changed ? "bg-amber-50/80" : ""
                 }`}
               >
                 <div>
-                  <p className="font-medium text-gray-500">{key}</p>
-                  <p className="break-all text-gray-800">{formatDiffValue(b)}</p>
+                  <p className="font-medium text-muted-foreground">{key}</p>
+                  <p className="break-all text-foreground">{formatDiffValue(b)}</p>
                 </div>
                 <div>
-                  <p className="font-medium text-gray-500">{key}</p>
-                  <p className="break-all text-gray-800">{formatDiffValue(a)}</p>
+                  <p className="font-medium text-muted-foreground">{key}</p>
+                  <p className="break-all text-foreground">{formatDiffValue(a)}</p>
                 </div>
               </div>
             );
@@ -175,8 +175,8 @@ function DiffPanel({
         )}
       </div>
       {domain === "catalog" && after?.descriptionHtml != null && (
-        <div className="border-t border-gray-200 bg-white px-3 py-2 text-gray-600">
-          <p className="font-medium text-gray-500">description (preview)</p>
+        <div className="border-t border-border bg-card px-3 py-2 text-muted-foreground">
+          <p className="font-medium text-muted-foreground">description (preview)</p>
           <p className="mt-1 line-clamp-4">{formatDiffValue(after.descriptionHtml)}</p>
         </div>
       )}
@@ -235,7 +235,7 @@ export function WorkspaceApprovals() {
   }
 
   if (loading) {
-    return <p className="text-sm text-gray-500">Loading approvals…</p>;
+    return <p className="text-sm text-muted-foreground">Loading approvals…</p>;
   }
 
   const pending = requests.filter((r) =>
@@ -248,8 +248,8 @@ export function WorkspaceApprovals() {
   return (
     <div className="space-y-6">
       <Card className="p-5">
-        <h2 className="font-semibold text-gray-900">Approvals</h2>
-        <p className="mt-1 text-sm text-gray-600">
+        <h2 className="font-semibold text-foreground">Approvals</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
           Crown jewel: theme, catalog, pricing, and SEO changes land as reviewable requests with
           before/after diff and audit.
         </p>
@@ -257,11 +257,11 @@ export function WorkspaceApprovals() {
       </Card>
 
       <div>
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Pending / actionable
         </h3>
         {pending.length === 0 ? (
-          <Card className="border-dashed p-5 text-sm text-gray-500">
+          <Card className="border-dashed p-5 text-sm text-muted-foreground">
             No pending change requests. Publish from GUMA Launch or generate an AI product listing
             to create the next audited change.
           </Card>
@@ -271,8 +271,8 @@ export function WorkspaceApprovals() {
               <Card key={r.id} className="p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-gray-900">{r.summary ?? r.scope}</p>
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="font-semibold text-foreground">{r.summary ?? r.scope}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {r.domain} · {r.status} · {r.approvalLevel} ·{" "}
                       {new Date(r.createdAt).toLocaleString()}
                     </p>
@@ -331,19 +331,19 @@ export function WorkspaceApprovals() {
       </div>
 
       <div>
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Published history
         </h3>
         {history.length === 0 ? (
-          <p className="text-sm text-gray-500">No published/rejected requests yet.</p>
+          <p className="text-sm text-muted-foreground">No published/rejected requests yet.</p>
         ) : (
           <div className="space-y-3">
             {history.map((r) => (
               <Card key={r.id} className="p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="font-medium text-gray-900">{r.summary ?? r.scope}</p>
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="font-medium text-foreground">{r.summary ?? r.scope}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {r.domain} · {r.status} · {new Date(r.createdAt).toLocaleString()}
                     </p>
                   </div>
@@ -369,23 +369,23 @@ export function WorkspaceApprovals() {
       </div>
 
       <div>
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
+        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Tenant audit trail
         </h3>
         {audit.length === 0 ? (
-          <p className="text-sm text-gray-500">No tenant-scoped audit entries yet.</p>
+          <p className="text-sm text-muted-foreground">No tenant-scoped audit entries yet.</p>
         ) : (
-          <Card className="divide-y divide-gray-100 p-0">
+          <Card className="divide-y divide-border p-0">
             {audit.map((row) => (
               <div key={row.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
                 <div>
-                  <p className="font-medium text-gray-900">{row.action}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="font-medium text-foreground">{row.action}</p>
+                  <p className="text-xs text-muted-foreground">
                     {row.entityType}
                     {row.entityLabel ? ` · ${row.entityLabel}` : ""} · {row.actorEmail ?? "system"}
                   </p>
                 </div>
-                <p className="text-xs text-gray-400">{new Date(row.createdAt).toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">{new Date(row.createdAt).toLocaleString()}</p>
               </div>
             ))}
           </Card>

@@ -185,7 +185,7 @@ export function SignupWizard() {
 
             <AuthField label="Shop URL" id="shopSlug">
               <div className="flex items-center gap-2">
-                <span className="shrink-0 text-sm text-gray-400">{shopUrlDisplayPrefix()}</span>
+                <span className="shrink-0 text-sm text-muted-foreground">{shopUrlDisplayPrefix()}</span>
                 <input
                   id="shopSlug"
                   required
@@ -233,7 +233,7 @@ export function SignupWizard() {
             <button
               type="button"
               onClick={() => setStep(1)}
-              className="h-11 flex-1 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="h-11 flex-1 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-muted"
             >
               Back
             </button>
@@ -246,7 +246,7 @@ export function SignupWizard() {
         </div>
       </form>
 
-      <p className="mt-6 text-center text-sm text-gray-500">
+      <p className="mt-6 text-center text-sm text-muted-foreground">
         Already have an account?{" "}
         <Link href="/login" className="font-medium text-emerald-700 hover:underline">
           Sign in

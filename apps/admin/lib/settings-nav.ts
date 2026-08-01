@@ -16,7 +16,7 @@ export const SETTINGS_SECTIONS = [
     href: "/settings/subscription",
     label: "Subscription",
     icon: "💳",
-    description: "Your Guma Commerce plan",
+    description: "Your Guma One plan",
   },
   {
     href: "/settings/wallet",
@@ -52,7 +52,7 @@ export const SETTINGS_SECTIONS = [
     href: "/settings/support",
     label: "Help & support",
     icon: "🆘",
-    description: "Contact Guma Commerce support",
+    description: "Contact Guma One support",
   },
 ] as const;
 

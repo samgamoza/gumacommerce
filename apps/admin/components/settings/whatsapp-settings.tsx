@@ -98,10 +98,10 @@ export function WhatsappSettingsPage() {
                 </div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-semibold text-gray-900">{phone}</p>
+                    <p className="font-semibold text-foreground">{phone}</p>
                     <Badge className="bg-emerald-100 text-emerald-800">Connected</Badge>
                   </div>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-sm text-muted-foreground">
                     Active since {formatConnectedDate(connectedAt)}
                   </p>
                 </div>
@@ -112,7 +112,7 @@ export function WhatsappSettingsPage() {
                     href={chatUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm font-semibold text-gray-900 transition hover:bg-gray-50"
+                    className="inline-flex items-center justify-center rounded-xl border border-border bg-card px-3 py-1.5 text-sm font-semibold text-foreground transition hover:bg-muted"
                   >
                     Open conversation
                     <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
@@ -127,11 +127,11 @@ export function WhatsappSettingsPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+            <div className="rounded-2xl border border-border bg-muted p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Auto-reply preview
               </p>
-              <div className="mt-3 max-w-md rounded-2xl rounded-bl-sm bg-white p-4 text-sm text-gray-800 shadow-sm">
+              <div className="mt-3 max-w-md rounded-2xl rounded-bl-sm bg-card p-4 text-sm text-foreground shadow-sm">
                 {previewMessage}
               </div>
               <p className="mt-3 flex items-center gap-1.5 text-xs text-emerald-700">
@@ -167,15 +167,15 @@ export function WhatsappSettingsPage() {
               />
             </SettingsField>
             {shopLink && (
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 Your shop link <span className="font-medium">{shopLink}</span> is appended
                 automatically.
               </p>
             )}
 
-            <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Preview</p>
-              <p className="mt-2 whitespace-pre-wrap text-sm text-gray-700">{previewMessage}</p>
+            <div className="rounded-2xl border border-dashed border-border bg-muted p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Preview</p>
+              <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">{previewMessage}</p>
             </div>
           </SettingsCard>
         )}

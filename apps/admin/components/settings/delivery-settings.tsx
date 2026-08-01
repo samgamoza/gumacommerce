@@ -75,10 +75,10 @@ export function DeliverySettingsPage() {
 
       <div className="space-y-4">
         <SettingsCard title="Checkout preview">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Based on a sample order of ₱{previewSubtotal}, customers will see:
           </p>
-          <ul className="mt-3 space-y-2 text-sm text-gray-700">
+          <ul className="mt-3 space-y-2 text-sm text-foreground">
             <li>
               • {codEnabled ? "COD available" : "COD hidden"} · Min order ₱
               {Number(minOrderAmount) || 0}
@@ -139,7 +139,7 @@ export function DeliverySettingsPage() {
                 onChange={(e) => setPickupAddress(e.target.value)}
                 placeholder="123 Kalayaan Ave, Brgy. Central, Quezon City"
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Customers get live Lalamove quotes from this address. Leave blank to use the
                 flat fee below.
               </p>

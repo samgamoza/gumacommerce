@@ -94,8 +94,8 @@ export function LoginForm() {
         <AuthSubmitButton loading={loading}>Sign in</AuthSubmitButton>
       </form>
 
-      <p className="mt-6 text-center text-sm text-gray-500">
-        New to Guma Commerce?{" "}
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        New to Guma One?{" "}
         <Link href="/signup" className="font-medium text-emerald-700 hover:underline">
           Start free
         </Link>

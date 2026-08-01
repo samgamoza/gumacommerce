@@ -66,7 +66,7 @@ function canCancel(status: OrderStatus): boolean {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  pending_payment: "bg-gray-100 text-gray-600",
+  pending_payment: "bg-muted text-muted-foreground",
   paid: "bg-blue-50 text-blue-700",
   accepted: "bg-violet-50 text-violet-700",
   preparing: "bg-amber-50 text-amber-700",
@@ -251,7 +251,7 @@ export function OrdersManager() {
               className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition ${
                 tab === tabDef.id
                   ? "bg-emerald-600 text-white"
-                  : "bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50"
+                  : "bg-card text-muted-foreground ring-1 ring-gray-200 hover:bg-muted"
               }`}
             >
               {tabDef.label}
@@ -276,7 +276,7 @@ export function OrdersManager() {
 
       {loading ? (
         <Card>
-          <p className="text-gray-500">Loading orders...</p>
+          <p className="text-muted-foreground">Loading orders...</p>
         </Card>
       ) : visible.length === 0 ? (
         <Card className="text-center">
@@ -284,7 +284,7 @@ export function OrdersManager() {
           <h2 className="mt-3 font-semibold">
             {orders.length === 0 ? "No orders yet" : "Nothing here"}
           </h2>
-          <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
+          <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
             {orders.length === 0
               ? "Share your shop link on Facebook, TikTok, or Instagram — new orders will appear here the moment a customer checks out."
               : "No orders in this tab right now."}
@@ -300,18 +300,18 @@ export function OrdersManager() {
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-semibold">{order.customerName}</p>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-muted-foreground">
                         · {relativeTime(order.createdAt)}
                       </span>
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          STATUS_STYLES[order.status] ?? "bg-gray-100 text-gray-600"
+                          STATUS_STYLES[order.status] ?? "bg-muted text-muted-foreground"
                         }`}
                       >
                         {STATUS_LABELS[order.status] ?? order.status}
                       </span>
                     </div>
-                    <p className="mt-0.5 text-sm text-gray-500">
+                    <p className="mt-0.5 text-sm text-muted-foreground">
                       {order.orderNumber} ·{" "}
                       <a href={`tel:${order.customerPhone}`} className="hover:text-emerald-700">
                         {order.customerPhone}
@@ -322,7 +322,7 @@ export function OrdersManager() {
                         ? " (collect on delivery)"
                         : ""}
                     </p>
-                    <p className="mt-0.5 truncate text-sm text-gray-600">{order.itemsSummary}</p>
+                    <p className="mt-0.5 truncate text-sm text-muted-foreground">{order.itemsSummary}</p>
                     <p className="mt-1 font-bold text-emerald-700">
                       {formatPrice(Number(order.total))}
                     </p>
@@ -349,7 +349,7 @@ export function OrdersManager() {
                           }
                         }}
                         disabled={updatingId === order.id}
-                        className="rounded-lg px-3 py-2 text-xs font-medium text-gray-400 hover:bg-red-50 hover:text-red-600"
+                        className="rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-red-50 hover:text-red-600"
                       >
                         Cancel
                       </button>
@@ -359,7 +359,7 @@ export function OrdersManager() {
                         <button
                           onClick={() => refundOrder(order)}
                           disabled={updatingId === order.id}
-                          className="rounded-lg px-3 py-2 text-xs font-medium text-gray-400 hover:bg-red-50 hover:text-red-600"
+                          className="rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-red-50 hover:text-red-600"
                         >
                           Refund
                         </button>

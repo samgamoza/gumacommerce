@@ -10,7 +10,7 @@ export function GoogleSignInButton({
   return (
     <a
       href={`/api/auth/google?intent=${intent}`}
-      className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+      className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-card text-sm font-semibold text-foreground transition hover:bg-muted"
     >
       <GoogleIcon />
       {label}
@@ -45,10 +45,10 @@ export function AuthDivider() {
   return (
     <div className="relative my-4">
       <div className="absolute inset-0 flex items-center">
-        <div className="w-full border-t border-gray-200" />
+        <div className="w-full border-t border-border" />
       </div>
       <div className="relative flex justify-center text-xs uppercase">
-        <span className="bg-white px-2 text-gray-400">or</span>
+        <span className="bg-card px-2 text-muted-foreground">or</span>
       </div>
     </div>
   );

@@ -309,7 +309,7 @@ export function ShopBuilder() {
   }
 
   if (loading) {
-    return <p className="text-sm text-gray-500">Loading shop builder…</p>;
+    return <p className="text-sm text-muted-foreground">Loading shop builder…</p>;
   }
 
   return (
@@ -322,7 +322,7 @@ export function ShopBuilder() {
               <h2 className="text-lg font-semibold">Appearance</h2>
               <Badge className="bg-emerald-100 text-emerald-800">Draft</Badge>
             </div>
-            <p className="mt-1 max-w-2xl text-sm text-gray-600">
+            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
               Edits save as a <strong>draft</strong>. Publish from{" "}
               <a href="/launch" className="font-medium text-emerald-700 underline">
                 GUMA Launch
@@ -336,7 +336,7 @@ export function ShopBuilder() {
                 href={urls.preview}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-xl border border-emerald-200 bg-white px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-50"
+                className="rounded-xl border border-emerald-200 bg-card px-4 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-50"
               >
                 Your live preview ↗
               </a>
@@ -351,7 +351,7 @@ export function ShopBuilder() {
             </div>
           )}
         </div>
-        <p className="mt-3 text-xs text-gray-500">
+        <p className="mt-3 text-xs text-muted-foreground">
           Plan: <span className="font-medium capitalize">{subscriptionPlan}</span> · Basic templates
           included free · Standard & Advanced unlock with Pro / Advance
         </p>
@@ -368,7 +368,7 @@ export function ShopBuilder() {
                 {lockedPrompt.label} requires{" "}
                 {lockedPrompt.minPlan === "pro" ? "Advance" : "Pro"}
               </p>
-              <p className="mt-1 max-w-xl text-sm text-gray-600">
+              <p className="mt-1 max-w-xl text-sm text-muted-foreground">
                 Preview how flagship shops look with live selling, flash deals, and more on our model
                 store — then upgrade to unlock{" "}
                 {lockedPrompt.minPlan === "pro" ? "Advance" : "Pro"} templates for your shop.
@@ -376,7 +376,7 @@ export function ShopBuilder() {
             </div>
             <button
               type="button"
-              className="text-sm text-gray-400 hover:text-gray-600"
+              className="text-sm text-muted-foreground hover:text-muted-foreground"
               onClick={() => setLockedPrompt(null)}
               aria-label="Dismiss"
             >
@@ -403,9 +403,9 @@ export function ShopBuilder() {
       )}
 
       {subscriptionPlan === "free" && urls && (
-        <Card className="border-gray-200 p-5">
-          <h3 className="font-semibold text-gray-900">Compare: your shop vs flagship</h3>
-          <p className="mt-1 text-sm text-gray-500">
+        <Card className="border-border p-5">
+          <h3 className="font-semibold text-foreground">Compare: your shop vs flagship</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
             Open both side by side on your phone. The model store shows what Pro &amp; Advance
             features feel like — your live preview is what customers see today on Free.
           </p>
@@ -414,11 +414,11 @@ export function ShopBuilder() {
               href={urls.preview}
               target="_blank"
               rel="noreferrer"
-              className="rounded-xl border border-gray-200 bg-white p-4 transition hover:border-emerald-300 hover:shadow-sm"
+              className="rounded-xl border border-border bg-card p-4 transition hover:border-emerald-300 hover:shadow-sm"
             >
               <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">Your shop</p>
-              <p className="mt-1 font-medium text-gray-900">{shopName}</p>
-              <p className="mt-2 text-xs text-gray-500">Current plan · Basic templates</p>
+              <p className="mt-1 font-medium text-foreground">{shopName}</p>
+              <p className="mt-2 text-xs text-muted-foreground">Current plan · Basic templates</p>
             </a>
             <a
               href={modelStoreUrl("shop-builder")}
@@ -428,7 +428,7 @@ export function ShopBuilder() {
             >
               <p className="text-xs font-bold uppercase tracking-wide text-amber-300">Model store</p>
               <p className="mt-1 font-medium">Guma Supply Co.</p>
-              <p className="mt-2 text-xs text-gray-300">Pro + Advance features · Staged demo</p>
+              <p className="mt-2 text-xs text-muted-foreground">Pro + Advance features · Staged demo</p>
             </a>
           </div>
         </Card>
@@ -439,8 +439,8 @@ export function ShopBuilder() {
           {tiers.map((tier) => (
             <section key={tier.tier}>
               <div className="mb-3">
-                <h3 className="font-semibold text-gray-900">{tier.label}</h3>
-                <p className="text-sm text-gray-500">{tier.description}</p>
+                <h3 className="font-semibold text-foreground">{tier.label}</h3>
+                <p className="text-sm text-muted-foreground">{tier.description}</p>
               </div>
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {tier.templates.map((template) => {
@@ -453,10 +453,10 @@ export function ShopBuilder() {
                       onClick={() => selectTemplate(template)}
                       className={`rounded-2xl border p-3 text-left transition ${
                         selected
-                          ? "border-emerald-500 bg-white ring-2 ring-emerald-500"
+                          ? "border-emerald-500 bg-card ring-2 ring-emerald-500"
                           : template.locked
-                            ? "cursor-not-allowed border-gray-200 bg-gray-50 opacity-70"
-                            : "border-gray-200 bg-white hover:border-gray-300"
+                            ? "cursor-not-allowed border-border bg-muted opacity-70"
+                            : "border-border bg-card hover:border-border"
                       }`}
                     >
                       <div
@@ -464,16 +464,16 @@ export function ShopBuilder() {
                         style={{ background: template.previewGradient }}
                       />
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-medium text-gray-900">{template.label}</p>
+                        <p className="font-medium text-foreground">{template.label}</p>
                         {selected && <Badge>Active</Badge>}
                         {template.locked && (
-                          <Badge className="bg-gray-100 text-gray-600 capitalize">
+                          <Badge className="bg-muted text-muted-foreground capitalize">
                             {template.minPlan}
                           </Badge>
                         )}
                       </div>
-                      <p className="mt-1 text-xs text-gray-500">{template.description}</p>
-                      <p className="mt-2 text-[11px] font-medium uppercase tracking-wide text-gray-400">
+                      <p className="mt-1 text-xs text-muted-foreground">{template.description}</p>
+                      <p className="mt-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                         {template.mood}
                       </p>
                     </button>
@@ -486,8 +486,8 @@ export function ShopBuilder() {
           <Card className="p-5">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
-                <h3 className="font-semibold text-gray-900">Customize copy & colors</h3>
-                <p className="mt-1 text-sm text-gray-500">
+                <h3 className="font-semibold text-foreground">Customize copy & colors</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
                   Fine-tune your tagline, promo banner, brand colors, and font on top of the
                   template.
                 </p>
@@ -495,14 +495,14 @@ export function ShopBuilder() {
               <button
                 type="button"
                 onClick={shuffleStyle}
-                className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
               >
                 🎲 Surprise me
               </button>
             </div>
 
             <div className="mt-4">
-              <span className="mb-2 block text-xs font-medium text-gray-600">Color palettes</span>
+              <span className="mb-2 block text-xs font-medium text-muted-foreground">Color palettes</span>
               <div className="flex flex-wrap gap-2">
                 {BRAND_PALETTES.map((palette) => {
                   const active =
@@ -517,7 +517,7 @@ export function ShopBuilder() {
                       className={`flex h-9 items-center gap-0 overflow-hidden rounded-full border transition ${
                         active
                           ? "border-emerald-500 ring-2 ring-emerald-500"
-                          : "border-gray-200 hover:border-gray-400"
+                          : "border-border hover:border-border"
                       }`}
                     >
                       <span className="h-9 w-6" style={{ backgroundColor: palette.primary }} />
@@ -529,7 +529,7 @@ export function ShopBuilder() {
             </div>
 
             <div className="mt-4">
-              <span className="mb-2 block text-xs font-medium text-gray-600">Display font</span>
+              <span className="mb-2 block text-xs font-medium text-muted-foreground">Display font</span>
               <div className="grid grid-cols-3 gap-2">
                 {FONT_OPTIONS.map((font) => (
                   <button
@@ -542,17 +542,17 @@ export function ShopBuilder() {
                     className={`rounded-xl border p-2.5 text-left transition ${
                       displayFont === font.id
                         ? "border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500"
-                        : "border-gray-200 bg-white hover:border-gray-300"
+                        : "border-border bg-card hover:border-border"
                     }`}
                   >
                     <p
-                      className={`text-sm font-semibold text-gray-900 ${
+                      className={`text-sm font-semibold text-foreground ${
                         font.id === "mono-accent" ? "font-mono" : ""
                       }`}
                     >
                       {font.label}
                     </p>
-                    <p className="mt-0.5 text-[11px] text-gray-500">{font.hint}</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">{font.hint}</p>
                   </button>
                 ))}
               </div>
@@ -560,46 +560,46 @@ export function ShopBuilder() {
 
             <form onSubmit={handleSaveDetails} className="mt-4 grid gap-4 md:grid-cols-2">
               <label className="block md:col-span-2">
-                <span className="mb-1 block text-xs font-medium text-gray-600">Shop tagline</span>
+                <span className="mb-1 block text-xs font-medium text-muted-foreground">Shop tagline</span>
                 <input
                   value={tagline}
                   onChange={(e) => setTagline(e.target.value)}
                   placeholder="Premium cakes, made to order 🎂"
-                  className="h-10 w-full rounded-xl border border-gray-200 px-3 text-sm"
+                  className="h-10 w-full rounded-xl border border-border px-3 text-sm"
                 />
               </label>
               <label className="block">
-                <span className="mb-1 block text-xs font-medium text-gray-600">Promo headline</span>
+                <span className="mb-1 block text-xs font-medium text-muted-foreground">Promo headline</span>
                 <input
                   value={promoTitle}
                   onChange={(e) => setPromoTitle(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-gray-200 px-3 text-sm"
+                  className="h-10 w-full rounded-xl border border-border px-3 text-sm"
                 />
               </label>
               <label className="block">
-                <span className="mb-1 block text-xs font-medium text-gray-600">Promo subtext</span>
+                <span className="mb-1 block text-xs font-medium text-muted-foreground">Promo subtext</span>
                 <input
                   value={promoSubtitle}
                   onChange={(e) => setPromoSubtitle(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-gray-200 px-3 text-sm"
+                  className="h-10 w-full rounded-xl border border-border px-3 text-sm"
                 />
               </label>
               <label className="block">
-                <span className="mb-1 block text-xs font-medium text-gray-600">Primary color</span>
+                <span className="mb-1 block text-xs font-medium text-muted-foreground">Primary color</span>
                 <input
                   type="color"
                   value={primaryColor}
                   onChange={(e) => setPrimaryColor(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-gray-200 bg-white px-2"
+                  className="h-10 w-full rounded-xl border border-border bg-card px-2"
                 />
               </label>
               <label className="block">
-                <span className="mb-1 block text-xs font-medium text-gray-600">Accent color</span>
+                <span className="mb-1 block text-xs font-medium text-muted-foreground">Accent color</span>
                 <input
                   type="color"
                   value={accentColor}
                   onChange={(e) => setAccentColor(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-gray-200 bg-white px-2"
+                  className="h-10 w-full rounded-xl border border-border bg-card px-2"
                 />
               </label>
               <div className="md:col-span-2">
@@ -621,11 +621,11 @@ export function ShopBuilder() {
 
         <aside className="xl:sticky xl:top-6 xl:self-start">
           <Card className="p-4">
-            <p className="mb-3 text-sm font-medium text-gray-900">Live preview</p>
+            <p className="mb-3 text-sm font-medium text-foreground">Live preview</p>
             {livePreviewTheme && (
               <ShopPreviewMock shopName={shopName} theme={livePreviewTheme} />
             )}
-            <p className="mt-3 text-xs text-gray-500">
+            <p className="mt-3 text-xs text-muted-foreground">
               Your customers see the full layout on mobile — cards, hero, and header all change
               with the template you pick.
             </p>

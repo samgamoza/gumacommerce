@@ -121,7 +121,12 @@ export function AdminShell({
   const showUpgrade = plan !== "pro";
 
   return (
-    <div className="min-h-screen bg-[#f8f9fb] lg:flex">
+    <div className="relative min-h-screen bg-guma-navy text-slate-200 lg:flex">
+      {/* Ambient background */}
+      <div className="pointer-events-none fixed inset-0 grid-bg grid-bg-fade opacity-60" />
+      <div className="pointer-events-none fixed -top-40 -left-20 h-[480px] w-[480px] rounded-full bg-guma-purple/10 blur-[120px]" />
+      <div className="pointer-events-none fixed top-1/3 -right-32 h-[420px] w-[420px] rounded-full bg-guma-emerald/[0.08] blur-[120px]" />
+
       <UpgradeGateModal
         open={gateTarget !== null}
         onClose={() => setGateTarget(null)}
@@ -136,34 +141,36 @@ export function AdminShell({
         refSource={gateTarget ? `nav-${gateTarget.item.id}` : undefined}
       />
 
-      {/* Sidebar — Base44-style */}
-      <aside className="flex w-full flex-col border-b border-gray-200 bg-white lg:sticky lg:top-0 lg:h-screen lg:w-[240px] lg:shrink-0 lg:border-b-0 lg:border-r">
-        <Link href="/" className="flex items-center gap-2.5 border-b border-gray-100 px-4 py-4">
-          <GumaMark className="h-8 w-8 shrink-0" />
+      {/* Sidebar — Guma One */}
+      <aside className="relative z-10 flex w-full flex-col border-b border-white/[0.08] glass-strong lg:sticky lg:top-0 lg:h-screen lg:w-[260px] lg:shrink-0 lg:border-b-0 lg:border-r">
+        <Link href="/" className="flex items-center gap-2.5 px-5 py-5">
+          <GumaMark className="h-9 w-9 shrink-0" title="Guma One" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold text-gray-900">
+            <p className="truncate text-sm font-bold text-white">
               {user?.tenantName ?? tenant?.name ?? "Your shop"}
             </p>
-            <p className="truncate text-[11px] text-gray-500">
+            <p className="truncate text-[11px] text-slate-400">
               {user?.displayName ?? "Seller workspace"}
             </p>
           </div>
         </Link>
 
-        <div className="border-b border-gray-100 px-3 py-3">
+        <div className="px-5 pb-1 mono-label">Seller Console</div>
+
+        <div className="px-4 py-3">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
             <input
               type="search"
               placeholder="Search…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-8 pr-3 text-xs text-gray-800 placeholder:text-gray-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="w-full rounded-xl border border-white/10 bg-guma-navy/60 py-2 pl-9 pr-3 text-xs text-white placeholder:text-slate-500 focus:border-guma-purple/50 focus:outline-none"
             />
           </div>
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-2">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-1">
           {filteredNav.map((group) => {
             if (group.id === "settings") return null;
             const isCollapsible = group.collapsible && group.label;
@@ -178,7 +185,7 @@ export function AdminShell({
                       onClick={() =>
                         setOpenGroups((g) => ({ ...g, [group.id]: !expanded }))
                       }
-                      className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 hover:text-gray-600"
+                      className="mono-label flex w-full items-center justify-between px-2 py-1.5 hover:text-slate-300"
                     >
                       {group.label}
                       <ChevronDown
@@ -186,9 +193,7 @@ export function AdminShell({
                       />
                     </button>
                   ) : (
-                    <p className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                      {group.label}
-                    </p>
+                    <p className="mono-label px-2 py-1.5">{group.label}</p>
                   )
                 ) : null}
 
@@ -202,20 +207,23 @@ export function AdminShell({
                         key={item.id}
                         href={item.href}
                         onClick={(e) => handleNavClick(e, item)}
-                        className={`group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition ${
+                        className={`group relative flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all ${
                           active
-                            ? "bg-emerald-50 font-semibold text-emerald-800"
+                            ? "glass border-guma-purple/30 text-white"
                             : locked
-                              ? "text-gray-400 hover:bg-gray-50"
-                              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                              ? "text-slate-500 hover:bg-white/5"
+                              : "text-slate-400 hover:bg-white/5 hover:text-white"
                         }`}
                       >
+                        {active ? (
+                          <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full gradient-accent" />
+                        ) : null}
                         <Icon
-                          className={`h-4 w-4 shrink-0 ${active ? "text-emerald-600" : "text-gray-400"}`}
+                          className={`h-[18px] w-[18px] shrink-0 ${active ? "text-white" : "text-slate-500 group-hover:text-slate-300"}`}
                         />
                         <span className="flex-1 truncate">{item.label}</span>
                         {item.badge === "new" ? (
-                          <span className="rounded bg-violet-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-violet-700">
+                          <span className="rounded bg-guma-purple/15 px-1.5 py-0.5 text-[9px] font-bold uppercase text-guma-purple">
                             New
                           </span>
                         ) : null}
@@ -230,7 +238,7 @@ export function AdminShell({
           })}
 
           {/* Full settings tree */}
-          <div className="border-t border-gray-100 pt-2">
+          <div className="mt-2 border-t border-white/[0.08] pt-2">
             <button
               type="button"
               onClick={() => {
@@ -239,30 +247,30 @@ export function AdminShell({
                   router.push("/settings/shop");
                 }
               }}
-              className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-[13px] font-medium ${
+              className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all ${
                 pathname.startsWith("/settings")
-                  ? "bg-emerald-50 font-semibold text-emerald-800"
-                  : "text-gray-600 hover:bg-gray-50"
+                  ? "glass border-guma-purple/30 text-white"
+                  : "text-slate-400 hover:bg-white/5 hover:text-white"
               }`}
             >
               <span className="flex items-center gap-2.5">
-                <Settings className="h-4 w-4 text-gray-400" />
+                <Settings className="h-[18px] w-[18px] text-slate-500" />
                 Settings
               </span>
               <ChevronDown
-                className={`h-3.5 w-3.5 text-gray-400 transition ${settingsOpen ? "rotate-180" : ""}`}
+                className={`h-3.5 w-3.5 text-slate-500 transition ${settingsOpen ? "rotate-180" : ""}`}
               />
             </button>
             {settingsOpen ? (
-              <div className="ml-2 mt-0.5 space-y-0.5 border-l border-gray-200 pl-2">
+              <div className="ml-3 mt-0.5 space-y-0.5 border-l border-white/10 pl-2">
                 {SETTINGS_SECTIONS.map((section) => (
                   <Link
                     key={section.href}
                     href={section.href}
-                    className={`block rounded-lg px-2.5 py-1.5 text-xs ${
+                    className={`block rounded-lg px-2.5 py-1.5 text-xs transition ${
                       pathname === section.href
-                        ? "font-semibold text-emerald-700"
-                        : "text-gray-500 hover:text-gray-800"
+                        ? "font-semibold text-guma-purple"
+                        : "text-slate-500 hover:text-slate-200"
                     }`}
                   >
                     {section.label}
@@ -273,30 +281,33 @@ export function AdminShell({
           </div>
         </nav>
 
-        {/* AI credits strip — Base44 pattern */}
+        {/* AI credits strip */}
         {!planLoading && credits ? (
-          <div className="mx-2 mb-2 rounded-xl border border-amber-100 bg-amber-50/80 p-3">
-            <p className="text-xs font-medium text-amber-900">
-              {credits.generationsLeft} AI generations left this month
-            </p>
-            <p className="mt-0.5 text-[10px] text-amber-800/80">
-              {planLabel} plan · {credits.chatLeft} chats today
-            </p>
-            {showUpgrade ? (
-              <Link
-                href={upgradeHref(plan === "free" ? "growth" : "pro", "sidebar-credits")}
-                className="mt-2 inline-flex text-[11px] font-semibold text-amber-700 underline"
-              >
-                View plans
-              </Link>
-            ) : null}
+          <div className="relative mx-3 mb-3 overflow-hidden rounded-2xl glass border-guma-purple/20 p-3">
+            <div className="absolute -top-8 -right-8 h-24 w-24 rounded-full bg-guma-purple/30 blur-2xl" />
+            <div className="relative">
+              <p className="text-xs font-medium text-white">
+                {credits.generationsLeft} AI generations left this month
+              </p>
+              <p className="mt-0.5 text-[10px] text-slate-400">
+                {planLabel} plan · {credits.chatLeft} chats today
+              </p>
+              {showUpgrade ? (
+                <Link
+                  href={upgradeHref(plan === "free" ? "growth" : "pro", "sidebar-credits")}
+                  className="mt-2 inline-flex text-[11px] font-semibold text-guma-purple underline"
+                >
+                  View plans
+                </Link>
+              ) : null}
+            </div>
           </div>
         ) : null}
 
-        <div className="hidden border-t border-gray-100 p-3 lg:block">
+        <div className="hidden border-t border-white/[0.08] p-3 lg:block">
           {user ? (
             <div className="mb-2 flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">
+              <span className="grid h-8 w-8 place-items-center rounded-xl gradient-accent text-[10px] font-bold text-white">
                 {user.displayName
                   .split(" ")
                   .map((p) => p[0])
@@ -305,15 +316,15 @@ export function AdminShell({
                   .toUpperCase()}
               </span>
               <div className="min-w-0 text-xs">
-                <p className="truncate font-semibold text-gray-900">{user.displayName}</p>
-                <p className="truncate text-gray-500">{user.email}</p>
+                <p className="truncate font-semibold text-white">{user.displayName}</p>
+                <p className="truncate text-slate-400">{user.email}</p>
               </div>
             </div>
           ) : null}
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 py-2 text-xs font-medium text-slate-300 hover:bg-white/5 hover:text-white"
           >
             <LogOut className="h-3.5 w-3.5" />
             Sign out
@@ -322,23 +333,23 @@ export function AdminShell({
       </aside>
 
       {/* Main */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="relative z-10 flex min-w-0 flex-1 flex-col">
         {/* Top bar */}
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-gray-200 bg-white/95 px-4 py-2.5 backdrop-blur-md lg:px-6">
-          <div className="flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 p-0.5 text-xs font-medium">
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-white/[0.08] glass-strong px-4 py-2.5 lg:px-6">
+          <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-guma-navy/60 p-0.5 text-xs font-medium">
             {slug ? (
               <a
                 href={`${storefrontBase}/${slug}?preview=1`}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-gray-600 hover:bg-white hover:text-gray-900"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-slate-400 hover:bg-white/5 hover:text-white"
               >
                 <Monitor className="h-3.5 w-3.5" />
                 Preview
               </a>
             ) : null}
-            <span className="flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 font-semibold text-gray-900 shadow-sm">
-              <Store className="h-3.5 w-3.5 text-emerald-600" />
+            <span className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 font-semibold text-white">
+              <Store className="h-3.5 w-3.5 text-guma-emerald" />
               Dashboard
             </span>
           </div>
@@ -347,7 +358,7 @@ export function AdminShell({
             {showUpgrade ? (
               <Link
                 href={upgradeHref(plan === "free" ? "growth" : "pro", "topbar")}
-                className="hidden items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 transition hover:bg-amber-100 sm:inline-flex"
+                className="hidden items-center gap-1.5 rounded-xl border border-guma-amber/25 bg-guma-amber/10 px-3 py-1.5 text-xs font-semibold text-guma-amber transition hover:bg-guma-amber/20 sm:inline-flex"
               >
                 <Gem className="h-3.5 w-3.5" />
                 Upgrade
@@ -358,7 +369,7 @@ export function AdminShell({
                 href={`${storefrontBase}/${slug}`}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-gray-800"
+                className="inline-flex items-center gap-1.5 rounded-xl gradient-accent px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
               >
                 <Rocket className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">View shop</span>
@@ -368,7 +379,7 @@ export function AdminShell({
             <button
               type="button"
               onClick={handleLogout}
-              className="rounded-lg px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-100 lg:hidden"
+              className="rounded-lg px-2 py-1.5 text-xs text-slate-400 hover:bg-white/5 lg:hidden"
             >
               Sign out
             </button>
@@ -376,7 +387,7 @@ export function AdminShell({
         </header>
 
         {user && !user.emailVerified && pathname !== "/onboarding" ? (
-          <div className="border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900 lg:px-6">
+          <div className="border-b border-guma-amber/25 bg-guma-amber/10 px-4 py-2.5 text-sm text-guma-amber lg:px-6">
             Verify your email to unlock all features.{" "}
             <Link href="/onboarding" className="font-semibold underline">
               Complete setup
@@ -386,9 +397,9 @@ export function AdminShell({
 
         <div className="flex-1 px-4 py-6 lg:px-8">
           <div className="mb-6">
-            <h1 className="font-display text-2xl font-bold tracking-tight text-gray-900">{title}</h1>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-white">{title}</h1>
             {description ? (
-              <p className="mt-1 max-w-2xl text-sm text-gray-500">{description}</p>
+              <p className="mt-1 max-w-2xl text-sm text-slate-400">{description}</p>
             ) : null}
           </div>
           {children}

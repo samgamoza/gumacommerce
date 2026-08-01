@@ -30,9 +30,9 @@ function TrackingStatus({ active, label }: { active: boolean; label: string }) {
 
   return (
 
-    <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+    <div className="flex items-center justify-between rounded-xl border border-border bg-muted px-4 py-3">
 
-      <span className="text-sm font-medium text-gray-700">{label}</span>
+      <span className="text-sm font-medium text-foreground">{label}</span>
 
       {active ? (
 
@@ -46,7 +46,7 @@ function TrackingStatus({ active, label }: { active: boolean; label: string }) {
 
       ) : (
 
-        <Badge className="bg-gray-100 text-gray-600">Not connected</Badge>
+        <Badge className="bg-muted text-muted-foreground">Not connected</Badge>
 
       )}
 
@@ -114,7 +114,7 @@ export function TrackingSettingsPage() {
 
         <SettingsCard title="Live status">
 
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
 
             Pixels load on your public shop pages after you save valid IDs below.
 

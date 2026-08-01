@@ -45,14 +45,14 @@ export async function POST() {
       siteTitle: `${state.name} | ${state.category ?? "Online Shop"} — Order Online`,
       metaDescription: `Shop ${state.name}${
         state.category ? ` for ${state.category}` : ""
-      }. Fast checkout, COD & e-wallets. Trusted Filipino sellers on Guma Commerce.`,
+      }. Fast checkout, COD & e-wallets. Trusted Filipino sellers on Guma One.`,
       keywords: [
         state.name,
         state.category ?? "shop",
         "Philippines",
         "COD",
         "online store",
-        "Guma Commerce",
+        "Guma One",
       ].filter(Boolean) as string[],
       openGraph: {
         title: `${state.name} — ${state.category ?? "Shop"}`,

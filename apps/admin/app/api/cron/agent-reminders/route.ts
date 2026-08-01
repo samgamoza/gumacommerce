@@ -55,7 +55,7 @@ export async function GET(request: Request) {
     if (owner.phone) {
       await sms.send({
         to: owner.phone,
-        message: `Guma Commerce: ${draftQueue.length} post${draftQueue.length === 1 ? "" : "s"} ready for ${tenant.name}. Review: ${adminBase}/agents`,
+        message: `Guma One: ${draftQueue.length} post${draftQueue.length === 1 ? "" : "s"} ready for ${tenant.name}. Review: ${adminBase}/agents`,
       });
     }
 

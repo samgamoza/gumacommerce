@@ -165,20 +165,20 @@ export function NotificationsSettingsPage() {
 
       <div className="space-y-4">
         <SettingsCard title="Push notifications">
-          <div className="flex items-start justify-between gap-4 rounded-xl border border-gray-100 p-3">
+          <div className="flex items-start justify-between gap-4 rounded-xl border border-border p-3">
             <span>
-              <span className="block text-sm font-medium text-gray-900">
+              <span className="block text-sm font-medium text-foreground">
                 Browser push for new orders
               </span>
-              <span className="mt-0.5 block text-xs text-gray-500">
+              <span className="mt-0.5 block text-xs text-muted-foreground">
                 Get an instant notification on this device the moment a payment lands — even
                 when the dashboard tab is closed.
               </span>
             </span>
             {push.state === "unsupported" ? (
-              <span className="shrink-0 text-xs text-gray-400">Not supported here</span>
+              <span className="shrink-0 text-xs text-muted-foreground">Not supported here</span>
             ) : push.state === "unavailable" ? (
-              <span className="shrink-0 text-xs text-gray-400">Not configured</span>
+              <span className="shrink-0 text-xs text-muted-foreground">Not configured</span>
             ) : (
               <button
                 type="button"
@@ -187,7 +187,7 @@ export function NotificationsSettingsPage() {
                 className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
                   push.state === "on"
                     ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    : "bg-muted text-foreground hover:bg-muted"
                 }`}
               >
                 {push.state === "busy" ? "…" : push.state === "on" ? "On — tap to turn off" : "Turn on"}
@@ -198,7 +198,7 @@ export function NotificationsSettingsPage() {
 
         <SettingsCard title="Seller alerts">
           {TOGGLES.filter((toggle) => toggle.group === "seller").map((toggle) => (
-            <label key={toggle.key} className="flex gap-3 rounded-xl border border-gray-100 p-3">
+            <label key={toggle.key} className="flex gap-3 rounded-xl border border-border p-3">
               <input
                 type="checkbox"
                 className="mt-1"
@@ -206,8 +206,8 @@ export function NotificationsSettingsPage() {
                 onChange={(e) => setters[toggle.key](e.target.checked)}
               />
               <span>
-                <span className="block text-sm font-medium text-gray-900">{toggle.title}</span>
-                <span className="mt-0.5 block text-xs text-gray-500">{toggle.description}</span>
+                <span className="block text-sm font-medium text-foreground">{toggle.title}</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">{toggle.description}</span>
               </span>
             </label>
           ))}
@@ -215,7 +215,7 @@ export function NotificationsSettingsPage() {
 
         <SettingsCard title="Customer updates">
           {TOGGLES.filter((toggle) => toggle.group === "customer").map((toggle) => (
-            <label key={toggle.key} className="flex gap-3 rounded-xl border border-gray-100 p-3">
+            <label key={toggle.key} className="flex gap-3 rounded-xl border border-border p-3">
               <input
                 type="checkbox"
                 className="mt-1"
@@ -223,8 +223,8 @@ export function NotificationsSettingsPage() {
                 onChange={(e) => setters[toggle.key](e.target.checked)}
               />
               <span>
-                <span className="block text-sm font-medium text-gray-900">{toggle.title}</span>
-                <span className="mt-0.5 block text-xs text-gray-500">{toggle.description}</span>
+                <span className="block text-sm font-medium text-foreground">{toggle.title}</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">{toggle.description}</span>
               </span>
             </label>
           ))}
