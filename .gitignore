@@ -40,3 +40,8 @@ apps/web/public/uploads/products/**
 
 # Private KYC uploads (local dev)
 apps/admin/.data/
+
+# Reference material and imports - kept on disk, never tracked.
+# These held zips over GitHub's 100MB hard limit and blocked every push.
+reference/
+v0-import/
