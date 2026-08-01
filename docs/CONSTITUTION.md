@@ -77,6 +77,8 @@ Significant business changes follow:
 
 AI may suggest, prepare, analyze, and automate **approved** workflows. AI must not perform critical actions without merchant authorization unless the merchant explicitly enables that.
 
+Authority is tiered by blast radius — `automatic`, `human_review`, `admin_only` — with money-out (refunds) entrenched at `admin_only` on every plan. The binding capability-by-plan schedule and its enforcement in code are defined in **Article VI — The AI Promise** (`docs/CONSTITUTION-ARTICLE-VI-AI-PROMISE.md`).
+
 ---
 
 ## Engineering principles
@@ -109,6 +111,7 @@ Prices (PHP/mo): Free ₱0 · Pro (growth) ₱499 · Advance (pro) ₱999
 
 ## Related docs
 
+- `docs/CONSTITUTION-ARTICLE-VI-AI-PROMISE.md` — **Article VI: The AI Promise** (binding capability schedule + enforcement)
 - `docs/ARCHITECTURE.md` — domain map and folder conventions
 - `docs/CONSTITUTIONAL-REFACTORING-ASSESSMENT.md` — assessment & roadmap
 - `docs/COMPREHENSIVE-HANDOFF-2026-07-12.md` — repo state snapshot
