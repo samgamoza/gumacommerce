@@ -3,11 +3,13 @@
 import { revalidatePath } from "next/cache";
 import {
   moderateContentItem,
+  setActiveLanding,
   setTenantPlan,
   setTenantStatus,
   setUserRole,
   setUserStatus,
   writeAudit,
+  type ActiveLanding,
   type TenantStatus,
   type UserStatus,
 } from "@guma-commerce/db";
@@ -158,6 +160,27 @@ export async function moderateContentAction(
       metadata: input as Record<string, unknown>,
     });
     revalidatePath("/moderation");
+    return { ok: true };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+// ─── Frontends ───────────────────────────────────────────────────────────────
+
+export async function setActiveLandingAction(value: ActiveLanding): Promise<ActionResult> {
+  try {
+    const session = await guard();
+    await setActiveLanding(value);
+    await writeAudit({
+      actorId: session.userId,
+      actorEmail: session.email,
+      action: "active_landing_changed",
+      entityType: "platform_setting",
+      entityLabel: value === "frontend2" ? "Guma One.ai" : "GumaCommerce",
+      metadata: { key: "active_landing", value },
+    });
+    revalidatePath("/frontends");
     return { ok: true };
   } catch (error) {
     return fail(error);

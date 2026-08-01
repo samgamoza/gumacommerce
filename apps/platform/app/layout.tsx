@@ -15,7 +15,7 @@ const bricolage = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
-  title: "Guma Commerce — Platform Console",
+  title: "Guma One — Platform Console",
   description: "Super-admin console for tenants, subscriptions, users, and moderation.",
 };
 

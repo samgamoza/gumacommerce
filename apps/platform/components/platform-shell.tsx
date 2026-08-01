@@ -6,6 +6,7 @@ import { useState } from "react";
 import {
   CreditCard,
   LayoutDashboard,
+  LayoutTemplate,
   LogOut,
   Menu,
   ScrollText,
@@ -24,6 +25,7 @@ const NAV = [
   { href: "/users", label: "Users", icon: Users },
   { href: "/moderation", label: "Moderation", icon: ShieldCheck },
   { href: "/orders", label: "Orders", icon: ShoppingCart },
+  { href: "/frontends", label: "Frontends", icon: LayoutTemplate },
   { href: "/audit", label: "Audit Log", icon: ScrollText },
 ];
 
