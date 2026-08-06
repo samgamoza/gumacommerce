@@ -29,7 +29,7 @@ export default function FaqPage() {
       <PageHeader
         eyebrow="Support"
         title="Frequently asked questions"
-        description="Everything you need to know about selling on social media with Guma One — payments, delivery, AI tools, and compliance."
+        description="Payments, delivery, plans, and compliance — answered for how Guma Commerce actually works in soft launch."
       />
 
       <ContentSection>

@@ -1,16 +1,29 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import {
   Breadcrumb,
-  ContentSection,
+  LegalDocLayout,
   MarketingShell,
   PageHeader,
 } from "@/components/landing/marketing-shell";
 import { company } from "@/lib/site-content";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Guma One",
-  description: "How Guma One collects, uses, and protects your personal data under the Philippine Data Privacy Act.",
+  title: "Privacy Policy — Guma Commerce",
+  description:
+    "How Guma Commerce collects, uses, and protects personal data under the Philippine Data Privacy Act.",
 };
+
+const toc = [
+  { id: "dpa", label: "1. DPA compliance" },
+  { id: "collect", label: "2. Information we collect" },
+  { id: "use", label: "3. How we use data" },
+  { id: "sharing", label: "4. Data sharing" },
+  { id: "rights", label: "5. Your rights" },
+  { id: "retention", label: "6. Retention" },
+  { id: "security", label: "7. Security" },
+  { id: "dpo", label: "8. Contact DPO" },
+];
 
 export default function PrivacyPage() {
   return (
@@ -19,65 +32,73 @@ export default function PrivacyPage() {
       <PageHeader
         eyebrow="Legal"
         title="Privacy Policy"
-        description={`Last updated: July 3, 2026 · ${company.name}`}
+        description={`How ${company.product} handles personal information for sellers and shoppers.`}
+        meta={`Last updated: August 6, 2026 · ${company.name}`}
       />
 
-      <ContentSection>
+      <LegalDocLayout toc={toc}>
         <p>
           This Privacy Policy explains how {company.product} (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or
           &ldquo;our&rdquo;) collects, uses, discloses, and protects personal information when you
           use our platform, in compliance with the{" "}
-          <strong className="text-foreground">Data Privacy Act of 2012 (Republic Act No. 10173)</strong>{" "}
-          and issuances of the National Privacy Commission (NPC).
+          <strong>Data Privacy Act of 2012 (Republic Act No. 10173)</strong> and issuances of the
+          National Privacy Commission (NPC).
         </p>
 
         <h2 id="dpa">1. Data Privacy Act compliance</h2>
         <p>
           We act as a Personal Information Controller (PIC) for seller account data and as a
           processor for end-customer order data on behalf of sellers. We implement organizational,
-          physical, and technical security measures per NPC Circular No. 2023-06.
+          physical, and technical security measures consistent with NPC guidance.
         </p>
 
-        <h2>2. Information we collect</h2>
+        <h2 id="collect">2. Information we collect</h2>
         <ul>
           <li>
-            <strong className="text-foreground">Seller accounts:</strong> Name, email, phone, business
-            details, bank/e-wallet payout information
+            <strong>Seller accounts:</strong> Name, email, phone, business details, and receiving
+            account details you enter for GCash / Maya / bank (manual payout path)
           </li>
           <li>
-            <strong className="text-foreground">Customer orders:</strong> Name, phone, delivery address,
-            order details (collected on behalf of sellers)
+            <strong>Customer orders:</strong> Name, phone, delivery address, and order details
+            (collected on behalf of sellers)
           </li>
           <li>
-            <strong className="text-foreground">Payment data:</strong> Processed by licensed partners
-            (PayMongo/Xendit) — we do not store full card numbers
+            <strong>Payment data:</strong> For manual e-wallet checkout, we store payment references
+            and optional proof you or the buyer uploads. When PayMongo gateway mode is enabled with
+            live keys, card/e-wallet processing is handled by that partner — we do not store full
+            card numbers
           </li>
           <li>
-            <strong className="text-foreground">Usage data:</strong> IP address, device type, pages
-            visited, UTM/referral sources
+            <strong>Support tickets:</strong> Name, email, and message content you submit via Contact
+            or seller Help &amp; support
+          </li>
+          <li>
+            <strong>Usage data:</strong> IP address, device type, pages visited, UTM/referral sources
           </li>
         </ul>
 
-        <h2>3. How we use your information</h2>
+        <h2 id="use">3. How we use your information</h2>
         <ul>
-          <li>Provide and improve the Guma One platform</li>
-          <li>Process orders, payments, and delivery bookings</li>
-          <li>Send transactional SMS/email (order confirmations, status updates)</li>
-          <li>Generate AI content at your request</li>
+          <li>Provide and improve the Guma Commerce platform</li>
+          <li>Process orders, payment confirmation workflows, and delivery booking</li>
+          <li>Send transactional SMS/email when those integrations are configured</li>
+          <li>Generate AI-assisted content only when you request it</li>
+          <li>Operate platform helpdesk and respond to support requests</li>
           <li>Comply with legal obligations</li>
         </ul>
 
-        <h2>4. Data sharing</h2>
-        <p>We share data only with:</p>
+        <h2 id="sharing">4. Data sharing</h2>
+        <p>We share data only as needed with:</p>
         <ul>
-          <li>Payment processors (PayMongo, Xendit)</li>
-          <li>Delivery partners (Lalamove)</li>
-          <li>SMS providers (Semaphore)</li>
-          <li>Cloud infrastructure providers (Neon, Vercel, Cloudflare)</li>
+          <li>Payment partners (e.g. PayMongo) when gateway mode is enabled</li>
+          <li>Delivery partners (e.g. Lalamove, Grab Express) when you book a courier</li>
+          <li>SMS providers (e.g. Semaphore) when notifications are configured</li>
+          <li>Email providers (e.g. Resend) for transactional and helpdesk mail</li>
+          <li>Cloud infrastructure providers (e.g. Neon, Vercel)</li>
           <li>Law enforcement when required by Philippine law</li>
         </ul>
 
-        <h2>5. Your rights (Data Subject Rights)</h2>
+        <h2 id="rights">5. Your rights (Data Subject Rights)</h2>
         <p>Under the DPA, you have the right to:</p>
         <ul>
           <li>Be informed of data collection</li>
@@ -88,36 +109,34 @@ export default function PrivacyPage() {
         </ul>
         <p>
           To exercise these rights, email{" "}
-          <a href={`mailto:${company.privacy}`} className="text-primary hover:underline">
-            {company.privacy}
-          </a>
-          .
+          <a href={`mailto:${company.privacy}`}>{company.privacy}</a>.
         </p>
 
-        <h2>6. Data retention</h2>
+        <h2 id="retention">6. Data retention</h2>
         <p>
           Order records are retained for 7 years for tax and legal compliance. Account data is kept
           while your account is active and deleted within 90 days of closure, unless law requires
           longer retention.
         </p>
 
-        <h2>7. Security</h2>
+        <h2 id="security">7. Security</h2>
         <p>
           We use TLS encryption, access controls, audit logging, and regular security reviews. In
-          the event of a data breach, we will notify affected users and the NPC within 72 hours as
-          required by law.
+          the event of a personal data breach that meets notification thresholds, we will notify
+          affected users and the NPC as required by law.
         </p>
 
-        <h2>8. Contact our Data Protection Officer</h2>
+        <h2 id="dpo">8. Contact our Data Protection Officer</h2>
         <p>
-          Email:{" "}
-          <a href={`mailto:${company.privacy}`} className="text-primary hover:underline">
-            {company.privacy}
-          </a>
+          Email: <a href={`mailto:${company.privacy}`}>{company.privacy}</a>
           <br />
           Address: {company.address}
         </p>
-      </ContentSection>
+        <p className="!mt-8 text-sm">
+          See also our <Link href="/terms">Terms of Service</Link> and{" "}
+          <Link href="/refunds">Refund Policy</Link>.
+        </p>
+      </LegalDocLayout>
     </MarketingShell>
   );
 }

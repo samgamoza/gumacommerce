@@ -14,29 +14,29 @@ export const company = {
 export const footerLinks = {
   product: [
     { label: "Features", href: "/#features" },
+    { label: "How it works", href: "/#how-it-works" },
     { label: "Pricing", href: "/pricing" },
     { label: "Demo shop", href: "/demo" },
-    {
-      label: "Start free",
-      href: `${process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3001"}/signup`,
-    },
+    { label: "Model store", href: "/model" },
+  ],
+  sellers: [
+    { label: "Seller login", href: `${process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3001"}/login` },
+    { label: "Start free", href: `${process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3001"}/signup` },
+    { label: "Seller guide", href: "/help/sellers" },
+    { label: "Help center", href: "/help" },
+    { label: "FAQs", href: "/faq" },
+    { label: "System status", href: "/status" },
   ],
   company: [
-    { label: "About us", href: "/about" },
+    { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
     { label: "Careers", href: "/careers" },
     { label: "Blog", href: "/blog" },
   ],
-  support: [
-    { label: "Help center", href: "/help" },
-    { label: "FAQs", href: "/faq" },
-    { label: "Seller guide", href: "/help/sellers" },
-    { label: "Status", href: "/status" },
-  ],
   legal: [
-    { label: "Privacy policy", href: "/privacy" },
-    { label: "Terms of service", href: "/terms" },
-    { label: "Refund policy", href: "/refunds" },
+    { label: "Privacy", href: "/privacy" },
+    { label: "Terms", href: "/terms" },
+    { label: "Refunds", href: "/refunds" },
     { label: "Data privacy (DPA)", href: "/privacy#dpa" },
   ],
 };

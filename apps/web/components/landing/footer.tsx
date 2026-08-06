@@ -2,28 +2,37 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Mail, MapPin } from "lucide-react";
+import { ArrowRight, Mail, MapPin } from "lucide-react";
 import { GumaMark } from "@guma-commerce/ui";
+import { Button } from "@/components/ui/button";
 import { company, footerLinks } from "@/lib/site-content";
 import { adminUrl } from "@/lib/utils";
 
-function FooterColumn({ title, links }: { title: string; links: { label: string; href: string }[] }) {
+function FooterColumn({
+  title,
+  links,
+}: {
+  title: string;
+  links: { label: string; href: string }[];
+}) {
   return (
-    <div>
-      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-      <ul className="mt-4 space-y-2.5">
+    <nav aria-label={title}>
+      <h3 className="font-display text-sm font-semibold tracking-tight text-foreground">
+        {title}
+      </h3>
+      <ul className="mt-4 space-y-3">
         {links.map((link) => (
           <li key={`${link.label}-${link.href}`}>
             <Link
               href={link.href}
-              className="text-sm text-muted-foreground transition hover:text-primary"
+              className="text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               {link.label}
             </Link>
           </li>
         ))}
       </ul>
-    </div>
+    </nav>
   );
 }
 
@@ -32,81 +41,116 @@ export function LandingFooter() {
   const onFrontend1Preview = pathname === "/frontend1" || pathname.startsWith("/frontend1/");
   const home = onFrontend1Preview ? "/frontend1" : "/";
   const featuresHref = onFrontend1Preview ? "/frontend1#features" : "/#features";
+  const howHref = onFrontend1Preview ? "/frontend1#how-it-works" : "/#how-it-works";
 
-  const productLinks = footerLinks.product.map((link) =>
-    link.label === "Features" ? { ...link, href: featuresHref } : link
-  );
+  const productLinks = footerLinks.product.map((link) => {
+    if (link.label === "Features") return { ...link, href: featuresHref };
+    if (link.label === "How it works") return { ...link, href: howHref };
+    return link;
+  });
 
   return (
-    <footer className="border-t border-border/60 bg-muted/30">
-      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-6">
-          <div className="sm:col-span-2 lg:col-span-2">
-            <Link href={home} className="flex items-center gap-2.5">
-              <GumaMark className="h-9 w-9 drop-shadow-sm" />
-              <span className="font-display text-xl font-bold tracking-tight">
+    <footer className="relative overflow-hidden border-t border-border/50">
+      {/* Atmosphere — matches landing emerald/amber language without a flat slab */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-muted/40 via-background to-emerald-50/50"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-24 bottom-0 h-64 w-64 rounded-full bg-emerald-400/10 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-16 top-10 h-56 w-56 rounded-full bg-amber-400/10 blur-3xl"
+      />
+
+      <div className="relative mx-auto max-w-6xl px-4 pb-10 pt-14 sm:px-6 sm:pt-16">
+        {/* Brand + CTA band */}
+        <div className="flex flex-col gap-8 border-b border-border/50 pb-12 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-md">
+            <Link href={home} className="group inline-flex items-center gap-2.5">
+              <GumaMark className="h-10 w-10 drop-shadow-sm transition-transform group-hover:-rotate-3 group-hover:scale-105" />
+              <span className="font-display text-2xl font-bold tracking-tight">
                 Guma<span className="text-gradient">Commerce</span>
               </span>
             </Link>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
-              The social commerce platform built for Philippine sellers. Turn posts into orders
-              with AI, local payments, and delivery.
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+              Branded storefronts for Philippine social sellers — guest checkout, seller inbox,
+              and Book / Assign courier when you&apos;re ready to ship.
             </p>
-            <div className="mt-5 space-y-2 text-sm text-muted-foreground">
-              <a href={`mailto:${company.email}`} className="flex items-center gap-2 hover:text-primary">
-                <Mail className="h-4 w-4 shrink-0" />
+            <div className="mt-5 flex flex-col gap-2.5 text-sm text-muted-foreground sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-5">
+              <a
+                href={`mailto:${company.email}`}
+                className="inline-flex items-center gap-2 transition-colors hover:text-foreground"
+              >
+                <Mail className="h-4 w-4 shrink-0 text-primary" aria-hidden />
                 {company.email}
               </a>
-              <p className="flex items-start gap-2">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
+              <span className="inline-flex items-center gap-2">
+                <MapPin className="h-4 w-4 shrink-0 text-primary" aria-hidden />
                 {company.address}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+            <Link href={`${adminUrl}/signup`} className="sm:min-w-[10.5rem]">
+              <Button className="w-full gap-1.5">
+                Start free
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link href="/contact" className="sm:min-w-[10.5rem]">
+              <Button variant="secondary" className="w-full">
+                Contact support
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Link columns */}
+        <div className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-3">
+          <FooterColumn title="Product" links={productLinks} />
+          <FooterColumn title="For sellers" links={footerLinks.sellers} />
+          <FooterColumn title="Company" links={footerLinks.company} />
+        </div>
+
+        {/* Legal / meta */}
+        <div className="flex flex-col gap-5 border-t border-border/50 pt-8">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-2 text-center lg:text-left">
+              <p className="text-xs text-muted-foreground">
+                © {new Date().getFullYear()} {company.name}. All rights reserved.
+              </p>
+              <p className="inline-flex max-w-xl items-start justify-center gap-2 rounded-full border border-amber-200/80 bg-amber-50/80 px-3 py-1 text-[11px] leading-snug text-amber-900/90 lg:justify-start">
+                <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" aria-hidden />
+                {company.registry}
               </p>
             </div>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link
-                href="/contact"
-                className="text-sm text-muted-foreground transition hover:text-primary"
-              >
-                Contact us
-              </Link>
-            </div>
+
+            <nav
+              aria-label="Legal"
+              className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground lg:justify-end"
+            >
+              {footerLinks.legal.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
           </div>
 
-          <FooterColumn title="Product" links={productLinks} />
-          <FooterColumn title="Company" links={footerLinks.company} />
-          <FooterColumn title="Support" links={footerLinks.support} />
-          <FooterColumn title="Legal" links={footerLinks.legal} />
+          <p className="max-w-3xl text-center text-[11px] leading-relaxed text-muted-foreground/85 lg:text-left">
+            Built for RA 10173 (Data Privacy Act) and RA 11967 (Internet Transactions Act). Soft-launch
+            payments are typically direct GCash / Maya / COD; PayMongo is used only when enabled with
+            live credentials.
+          </p>
         </div>
-
-        <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-border/60 pt-8 sm:flex-row">
-          <div className="text-center text-xs text-muted-foreground sm:text-left">
-            <p>
-              © {new Date().getFullYear()} {company.name}. All rights reserved.
-            </p>
-            <p className="mt-1">{company.registry}</p>
-          </div>
-          <div className="flex flex-wrap justify-center gap-4 text-xs text-muted-foreground">
-            <Link href="/privacy" className="hover:text-primary">
-              Privacy
-            </Link>
-            <Link href="/terms" className="hover:text-primary">
-              Terms
-            </Link>
-            <Link href="/refunds" className="hover:text-primary">
-              Refunds
-            </Link>
-            <Link href={`${adminUrl}/login`} className="hover:text-primary">
-              Seller portal
-            </Link>
-          </div>
-        </div>
-
-        <p className="mt-6 text-center text-[11px] leading-relaxed text-muted-foreground/80">
-          Guma One is built to comply with the Philippine Data Privacy Act (RA 10173), Internet
-          Transactions Act (RA 11967), and DTI e-commerce guidelines. Soft-launch payments are
-          typically direct GCash/Maya/COD; gateway partners (e.g. PayMongo) are used only when
-          enabled with live credentials.
-        </p>
       </div>
     </footer>
   );
