@@ -1,4 +1,5 @@
 import { createGrabClient, type GrabClient } from "../grab";
+import { allowIntegrationMocks } from "../../config/integrations";
 import {
   haversineKm,
   type DeliveryBooking,
@@ -16,7 +17,7 @@ export class GrabAdapter implements DeliveryProvider {
   constructor(private client: GrabClient = createGrabClient()) {}
 
   isEnabled(): boolean {
-    return true;
+    return this.client.configured || allowIntegrationMocks();
   }
 
   async isServiceable(request: DeliveryQuoteRequest): Promise<boolean> {

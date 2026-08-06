@@ -130,7 +130,7 @@ export function DeliverySettingsPage() {
               <option value="grab">GrabExpress</option>
             </select>
           </SettingsField>
-          {provider === "lalamove" && (
+          {(provider === "lalamove" || provider === "grab") && (
             <SettingsField label="Store pickup address (for courier quotes)">
               <textarea
                 className={textareaClassName()}
@@ -140,10 +140,18 @@ export function DeliverySettingsPage() {
                 placeholder="123 Kalayaan Ave, Brgy. Central, Quezon City"
               />
               <p className="mt-1 text-xs text-muted-foreground">
-                Customers get live Lalamove quotes from this address. Leave blank to use the
-                flat fee below.
+                Customers get live {provider === "grab" ? "GrabExpress" : "Lalamove"} quotes from
+                this address (with automatic failover to the other connected courier when
+                available). Leave blank to use the flat fee below.
               </p>
             </SettingsField>
+          )}
+          {provider === "manual" && (
+            <p className="rounded-lg border border-border/60 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+              Manual mode: use flat fee at checkout, then assign Angkas / Move It / own riders
+              from Orders → Assign rider. You can still tap “Book rider” to record a self-delivery
+              booking.
+            </p>
           )}
           <SettingsField label="Flat delivery fee (₱)">
             <input

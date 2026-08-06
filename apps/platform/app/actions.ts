@@ -2,14 +2,18 @@
 
 import { revalidatePath } from "next/cache";
 import {
+  addSupportTicketMessage,
   moderateContentItem,
   setActiveLanding,
   setTenantPlan,
   setTenantStatus,
   setUserRole,
   setUserStatus,
+  updateSupportTicket,
   writeAudit,
   type ActiveLanding,
+  type SupportTicketPriority,
+  type SupportTicketStatus,
   type TenantStatus,
   type UserStatus,
 } from "@guma-commerce/db";
@@ -181,6 +185,71 @@ export async function setActiveLandingAction(value: ActiveLanding): Promise<Acti
       metadata: { key: "active_landing", value },
     });
     revalidatePath("/frontends");
+    return { ok: true };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+// ─── Helpdesk ────────────────────────────────────────────────────────────────
+
+export async function replySupportTicketAction(
+  ticketId: string,
+  body: string,
+  isInternal = false
+): Promise<ActionResult> {
+  try {
+    const session = await guard();
+    const trimmed = body.trim();
+    if (trimmed.length < 1) return { ok: false, error: "Message is empty." };
+    await addSupportTicketMessage({
+      ticketId,
+      authorType: "agent",
+      authorUserId: session.userId,
+      authorName: session.displayName || session.email,
+      body: trimmed,
+      isInternal,
+    });
+    await writeAudit({
+      actorId: session.userId,
+      actorEmail: session.email,
+      action: isInternal ? "support_internal_note" : "support_reply",
+      entityType: "support_ticket",
+      entityId: ticketId,
+    });
+    revalidatePath("/helpdesk");
+    revalidatePath(`/helpdesk/${ticketId}`);
+    return { ok: true };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+export async function updateSupportTicketAction(
+  ticketId: string,
+  patch: {
+    status?: SupportTicketStatus;
+    priority?: SupportTicketPriority;
+    assignToMe?: boolean;
+  }
+): Promise<ActionResult> {
+  try {
+    const session = await guard();
+    await updateSupportTicket(ticketId, {
+      status: patch.status,
+      priority: patch.priority,
+      assigneeId: patch.assignToMe ? session.userId : undefined,
+    });
+    await writeAudit({
+      actorId: session.userId,
+      actorEmail: session.email,
+      action: "support_ticket_updated",
+      entityType: "support_ticket",
+      entityId: ticketId,
+      metadata: patch as Record<string, unknown>,
+    });
+    revalidatePath("/helpdesk");
+    revalidatePath(`/helpdesk/${ticketId}`);
     return { ok: true };
   } catch (error) {
     return fail(error);

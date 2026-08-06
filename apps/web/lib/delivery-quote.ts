@@ -1,23 +1,41 @@
-import { createLalamoveClient, geocodeAddress } from "@guma-commerce/services";
+import {
+  autoSelect,
+  geocodeAddress,
+  quoteAll,
+  type DeliveryProviderId,
+  type DeliveryQuote,
+} from "@guma-commerce/services";
 import type { StorefrontStoreSettings } from "./storefront-settings";
 
 export interface CheckoutDeliveryQuote {
   fee: number;
   etaMinutes?: number;
+  provider: "lalamove" | "grab";
   quotationId: string;
-  stopIds: { pickup: string; dropoff: string };
+  /** Opaque booking meta (e.g. Lalamove stopIds). */
+  meta?: Record<string, unknown>;
+}
+
+function preferredLiveProviders(
+  preferred: StorefrontStoreSettings["delivery"]["provider"]
+): DeliveryProviderId[] {
+  if (preferred === "grab") return ["grab", "lalamove"];
+  if (preferred === "lalamove") return ["lalamove", "grab"];
+  return [];
 }
 
 /**
- * Live Lalamove quote for a checkout. Returns null whenever a live quote
- * isn't possible (provider not Lalamove, no pickup address, geocoding or API
- * failure) so callers fall back to the seller's flat rate.
+ * Live courier quote for checkout. Tries the seller's preferred app first,
+ * then the other connected courier. Returns null so callers fall back to flat rate.
  */
-export async function getLalamoveCheckoutQuote(
+export async function getCheckoutDeliveryQuote(
   settings: StorefrontStoreSettings,
   dropoffAddress: string
 ): Promise<CheckoutDeliveryQuote | null> {
-  if (settings.delivery.provider !== "lalamove") return null;
+  const preferred = settings.delivery.provider;
+  const allow = preferredLiveProviders(preferred);
+  if (!allow.length) return null;
+
   const pickupAddress = settings.delivery.pickupAddress.trim();
   if (!pickupAddress || dropoffAddress.trim().length < 10) return null;
 
@@ -28,23 +46,45 @@ export async function getLalamoveCheckoutQuote(
     ]);
     if (!pickup || !dropoff) return null;
 
-    const lalamove = createLalamoveClient();
-    const quote = await lalamove.getQuotation({
-      pickup: { address: pickupAddress, coordinates: { lat: pickup.lat, lng: pickup.lng } },
+    const request = {
+      pickup: {
+        address: pickupAddress,
+        coordinates: { lat: String(pickup.lat), lng: String(pickup.lng) },
+      },
       dropoff: {
         address: dropoffAddress,
-        coordinates: { lat: dropoff.lat, lng: dropoff.lng },
+        coordinates: { lat: String(dropoff.lat), lng: String(dropoff.lng) },
       },
-    });
+    };
+
+    const attempts = await quoteAll(request, { allow });
+    const quotes = attempts
+      .map((a) => a.quote)
+      .filter((q): q is DeliveryQuote => {
+        if (!q) return false;
+        return q.provider === "lalamove" || q.provider === "grab";
+      });
+
+    if (!quotes.length) return null;
+
+    const preferredQuote = quotes.find((q) => q.provider === preferred);
+    const selected = preferredQuote ?? autoSelect(quotes);
+    if (!selected || (selected.provider !== "lalamove" && selected.provider !== "grab")) {
+      return null;
+    }
 
     return {
-      fee: quote.fee,
-      etaMinutes: quote.etaMinutes,
-      quotationId: quote.quotationId,
-      stopIds: quote.stopIds,
+      fee: selected.fee,
+      etaMinutes: selected.etaMinutes,
+      provider: selected.provider,
+      quotationId: selected.quoteRef,
+      meta: selected.meta,
     };
   } catch (error) {
-    console.error("[delivery-quote] Lalamove quote failed:", error);
+    console.error("[delivery-quote] Live courier quote failed:", error);
     return null;
   }
 }
+
+/** @deprecated Use getCheckoutDeliveryQuote — kept for any leftover imports. */
+export const getLalamoveCheckoutQuote = getCheckoutDeliveryQuote;

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   CreditCard,
+  Headphones,
   LayoutDashboard,
   LayoutTemplate,
   LogOut,
@@ -23,6 +24,7 @@ const NAV = [
   { href: "/tenants", label: "Tenants", icon: Store },
   { href: "/subscriptions", label: "Subscriptions", icon: CreditCard },
   { href: "/users", label: "Users", icon: Users },
+  { href: "/helpdesk", label: "Helpdesk", icon: Headphones },
   { href: "/moderation", label: "Moderation", icon: ShieldCheck },
   { href: "/orders", label: "Orders", icon: ShoppingCart },
   { href: "/frontends", label: "Frontends", icon: LayoutTemplate },

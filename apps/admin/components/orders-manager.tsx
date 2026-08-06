@@ -27,6 +27,8 @@ interface OrderRow {
   itemsSummary: string;
   itemCount: number;
   createdAt: string;
+  paymentReference?: string | null;
+  paymentProofUrl?: string | null;
 }
 
 const TABS = [
@@ -44,6 +46,8 @@ type TabId = (typeof TABS)[number]["id"];
 function nextAction(order: OrderRow): { label: string; status: OrderStatus } | null {
   const isPickup = order.deliveryType === "pickup";
   switch (order.status) {
+    case "pending_payment":
+      return null; // confirmed via confirmPayment(), not status patch
     case "paid":
       return { label: "Accept order", status: "accepted" };
     case "accepted":
@@ -109,6 +113,15 @@ export function OrdersManager() {
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [bookedIds, setBookedIds] = useState<Set<string>>(new Set());
   const [notice, setNotice] = useState<string | null>(null);
+  const [assignOrder, setAssignOrder] = useState<OrderRow | null>(null);
+  const [assignSaving, setAssignSaving] = useState(false);
+  const [assignForm, setAssignForm] = useState({
+    courierLabel: "Angkas",
+    driverName: "",
+    driverPhone: "",
+    driverPlateNumber: "",
+    trackingUrl: "",
+  });
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -170,15 +183,79 @@ export function OrdersManager() {
         return;
       }
       setBookedIds((current) => new Set(current).add(order.id));
+      const provider = data.delivery.provider ? String(data.delivery.provider) : "courier";
       setNotice(
         data.delivery.trackingUrl
-          ? `Rider booked for ${order.orderNumber} (₱${data.delivery.fee}). Track: ${data.delivery.trackingUrl}`
-          : `Rider booked for ${order.orderNumber} (₱${data.delivery.fee}).`
+          ? `${provider} rider booked for ${order.orderNumber} (₱${data.delivery.fee}). Track: ${data.delivery.trackingUrl}`
+          : `${provider} rider booked for ${order.orderNumber} (₱${data.delivery.fee}).`
       );
     } catch {
       setError("Network error while booking the rider.");
     } finally {
       setBookingId(null);
+    }
+  }
+
+  async function submitAssignRider() {
+    if (!assignOrder) return;
+    setAssignSaving(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch(`/api/orders/${assignOrder.id}/assign-rider`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(assignForm),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        setError(data.error ?? "Could not save rider.");
+        return;
+      }
+      setBookedIds((current) => new Set(current).add(assignOrder.id));
+      setNotice(
+        `Rider ${assignForm.driverName} assigned on ${assignOrder.orderNumber} (${assignForm.courierLabel}).`
+      );
+      setAssignOrder(null);
+    } catch {
+      setError("Network error while saving rider details.");
+    } finally {
+      setAssignSaving(false);
+    }
+  }
+
+  async function confirmPayment(order: OrderRow) {
+    const confirmed = window.confirm(
+      `Confirm that you received ${formatPrice(Number(order.total))} for ${order.orderNumber} via ${order.paymentMethod.toUpperCase()}?`
+    );
+    if (!confirmed) return;
+
+    setUpdatingId(order.id);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch(`/api/orders/${order.id}/confirm-payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        setError(data.error ?? "Could not confirm payment.");
+        return;
+      }
+      setOrders((current) =>
+        current.map((row) =>
+          row.id === order.id
+            ? { ...row, status: "paid", paymentStatus: "paid" }
+            : row
+        )
+      );
+      setNotice(`Payment confirmed for ${order.orderNumber}.`);
+    } catch {
+      setError("Network error while confirming payment.");
+    } finally {
+      setUpdatingId(null);
     }
   }
 
@@ -323,23 +400,70 @@ export function OrdersManager() {
                         : ""}
                     </p>
                     <p className="mt-0.5 truncate text-sm text-muted-foreground">{order.itemsSummary}</p>
+                    {(order.paymentReference || order.paymentProofUrl) &&
+                      order.status === "pending_payment" && (
+                        <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
+                          {order.paymentReference ? (
+                            <p>
+                              Ref: <span className="font-semibold">{order.paymentReference}</span>
+                            </p>
+                          ) : null}
+                          {order.paymentProofUrl ? (
+                            <a
+                              href={order.paymentProofUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-1 inline-block font-medium text-emerald-700 underline"
+                            >
+                              View payment screenshot
+                            </a>
+                          ) : null}
+                        </div>
+                      )}
                     <p className="mt-1 font-bold text-emerald-700">
                       {formatPrice(Number(order.total))}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
+                    {order.status === "pending_payment" &&
+                      order.paymentMethod !== "cod" && (
+                        <button
+                          onClick={() => confirmPayment(order)}
+                          disabled={updatingId === order.id}
+                          className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                        >
+                          {updatingId === order.id ? "Confirming…" : "Confirm payment"}
+                        </button>
+                      )}
                     {order.deliveryType === "delivery" &&
                       ["paid", "accepted", "preparing", "ready_for_pickup"].includes(
                         order.status
                       ) &&
                       !bookedIds.has(order.id) && (
-                        <button
-                          onClick={() => bookRider(order)}
-                          disabled={bookingId === order.id}
-                          className="rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-medium text-orange-700 transition hover:bg-orange-100 disabled:opacity-50"
-                        >
-                          {bookingId === order.id ? "Booking…" : "Book rider"}
-                        </button>
+                        <>
+                          <button
+                            onClick={() => bookRider(order)}
+                            disabled={bookingId === order.id}
+                            className="rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-medium text-orange-700 transition hover:bg-orange-100 disabled:opacity-50"
+                          >
+                            {bookingId === order.id ? "Booking…" : "Book courier"}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setAssignOrder(order);
+                              setAssignForm({
+                                courierLabel: "Angkas",
+                                driverName: "",
+                                driverPhone: "",
+                                driverPlateNumber: "",
+                                trackingUrl: "",
+                              });
+                            }}
+                            className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground transition hover:bg-muted"
+                          >
+                            Assign rider
+                          </button>
+                        </>
                       )}
                     {canCancel(order.status) && (
                       <button
@@ -378,6 +502,97 @@ export function OrdersManager() {
               </Card>
             );
           })}
+        </div>
+      )}
+
+      {assignOrder && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-background p-5 shadow-xl">
+            <h3 className="font-display text-lg font-bold">Assign rider</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              For Angkas, Move It, Grab booked outside the app, or your own rider —{" "}
+              {assignOrder.orderNumber}.
+            </p>
+            <div className="mt-4 space-y-3">
+              <label className="block text-xs font-medium text-muted-foreground">
+                Courier
+                <select
+                  className="mt-1 h-10 w-full rounded-lg border border-border px-3 text-sm"
+                  value={assignForm.courierLabel}
+                  onChange={(e) =>
+                    setAssignForm((f) => ({ ...f, courierLabel: e.target.value }))
+                  }
+                >
+                  <option>Angkas</option>
+                  <option>Move It</option>
+                  <option>Grab (manual)</option>
+                  <option>Lalamove (manual)</option>
+                  <option>Own rider</option>
+                  <option>Other</option>
+                </select>
+              </label>
+              <label className="block text-xs font-medium text-muted-foreground">
+                Rider name
+                <input
+                  className="mt-1 h-10 w-full rounded-lg border border-border px-3 text-sm"
+                  value={assignForm.driverName}
+                  onChange={(e) =>
+                    setAssignForm((f) => ({ ...f, driverName: e.target.value }))
+                  }
+                  placeholder="Juan D."
+                />
+              </label>
+              <label className="block text-xs font-medium text-muted-foreground">
+                Rider phone
+                <input
+                  className="mt-1 h-10 w-full rounded-lg border border-border px-3 text-sm"
+                  value={assignForm.driverPhone}
+                  onChange={(e) =>
+                    setAssignForm((f) => ({ ...f, driverPhone: e.target.value }))
+                  }
+                  placeholder="09XXXXXXXXX"
+                />
+              </label>
+              <label className="block text-xs font-medium text-muted-foreground">
+                Plate (optional)
+                <input
+                  className="mt-1 h-10 w-full rounded-lg border border-border px-3 text-sm"
+                  value={assignForm.driverPlateNumber}
+                  onChange={(e) =>
+                    setAssignForm((f) => ({ ...f, driverPlateNumber: e.target.value }))
+                  }
+                />
+              </label>
+              <label className="block text-xs font-medium text-muted-foreground">
+                Tracking link (optional)
+                <input
+                  className="mt-1 h-10 w-full rounded-lg border border-border px-3 text-sm"
+                  value={assignForm.trackingUrl}
+                  onChange={(e) =>
+                    setAssignForm((f) => ({ ...f, trackingUrl: e.target.value }))
+                  }
+                  placeholder="https://"
+                />
+              </label>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted"
+                onClick={() => setAssignOrder(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={assignSaving}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+                onClick={() => submitAssignRider()}
+              >
+                {assignSaving ? "Saving…" : "Save rider"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>

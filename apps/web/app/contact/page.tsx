@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Clock, Mail, MapPin, Phone } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ContactForm } from "@/components/landing/contact-form";
 import {
   Breadcrumb,
   ContentSection,
@@ -79,36 +79,8 @@ export default function ContactPage() {
             <CardHeader>
               <CardTitle>Send us a message</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <input
-                placeholder="Your name"
-                className="h-11 w-full rounded-xl border border-border/60 bg-muted/30 px-4 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
-              />
-              <input
-                placeholder="Email address"
-                type="email"
-                className="h-11 w-full rounded-xl border border-border/60 bg-muted/30 px-4 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
-              />
-              <select className="h-11 w-full rounded-xl border border-border/60 bg-muted/30 px-4 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10">
-                <option>I want to become a seller</option>
-                <option>I need technical support</option>
-                <option>Partnership inquiry</option>
-                <option>Press / media</option>
-                <option>Other</option>
-              </select>
-              <textarea
-                placeholder="How can we help?"
-                rows={5}
-                className="w-full rounded-xl border border-border/60 bg-muted/30 px-4 py-3 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
-              />
-              <Button className="w-full">Send message</Button>
-              <p className="text-center text-xs">
-                By submitting, you agree to our{" "}
-                <a href="/privacy" className="text-primary hover:underline">
-                  Privacy Policy
-                </a>
-                .
-              </p>
+            <CardContent>
+              <ContactForm />
             </CardContent>
           </Card>
         </div>

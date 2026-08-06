@@ -2,18 +2,25 @@
  * GrabExpress (Grab Partner API) client.
  *
  * Auth is OAuth2 client-credentials against GrabID, then quote/create against
- * the deliveries API. Mirrors LalamoveClient's shape, including a mock mode
- * when credentials are absent so local dev and tests keep working.
+ * the deliveries API. Mock mode is allowed only in non-production runtimes
+ * (see allowIntegrationMocks); production missing credentials fail clearly.
  *
  * NOTE: endpoint paths and payload shapes follow Grab's partner deliveries API;
  * verify against the partner docs tied to your merchant account before enabling
  * in production (set GRAB_ENV=production).
  */
 
+import {
+  assertIntegrationReady,
+  allowIntegrationMocks,
+} from "../config/integrations";
+import { createLogger } from "../logging";
+
 const SANDBOX_BASE = "https://partner-api.stg-myteksi.com";
 const PROD_BASE = "https://partner-api.grab.com";
 const OAUTH_PATH = "/grabid/v1/oauth2/token";
 const OAUTH_SCOPE = "grab_express.partner_deliveries";
+const log = createLogger("grab");
 
 export interface GrabLatLng {
   lat: string;
@@ -39,6 +46,7 @@ export interface GrabQuoteResult {
   distanceKm?: number;
   expiresAt?: string;
   serviceType: string;
+  mock?: boolean;
 }
 
 export interface GrabBookInput {
@@ -57,6 +65,7 @@ export interface GrabBookResult {
   deliveryId: string;
   status: string;
   trackingUrl?: string;
+  mock?: boolean;
 }
 
 interface CachedToken {
@@ -125,6 +134,8 @@ export class GrabClient {
     const serviceType = input.serviceType ?? "INSTANT";
 
     if (!this.configured) {
+      assertIntegrationReady("grab", { operation: "getQuote" });
+      log.warn("Using explicit Grab mock for getQuote (credentials missing)");
       return {
         quoteId: `grab_quote_mock_${Date.now()}`,
         fee: 95,
@@ -132,6 +143,7 @@ export class GrabClient {
         etaMinutes: 40,
         expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
         serviceType,
+        mock: true,
       };
     }
 
@@ -194,10 +206,17 @@ export class GrabClient {
 
   async book(input: GrabBookInput): Promise<GrabBookResult> {
     if (input.quoteId.startsWith("grab_quote_mock_")) {
+      if (!allowIntegrationMocks()) {
+        throw new Error(
+          "Refusing to book a mock Grab quotation outside mock-allowed runtimes. Configure GRAB_CLIENT_ID and GRAB_CLIENT_SECRET."
+        );
+      }
+      log.warn("Booking mock Grab delivery (explicit mock quotation)");
       return {
         deliveryId: `grab_mock_${Date.now()}`,
         status: "ALLOCATING",
         trackingUrl: "https://grab.com/track/mock",
+        mock: true,
       };
     }
 

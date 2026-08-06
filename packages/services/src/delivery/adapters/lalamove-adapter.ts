@@ -1,4 +1,5 @@
 import { createLalamoveClient, type LalamoveClient } from "../lalamove";
+import { allowIntegrationMocks } from "../../config/integrations";
 import {
   haversineKm,
   type DeliveryBooking,
@@ -11,8 +12,7 @@ import {
 
 /**
  * Wraps the existing LalamoveClient in the shared provider contract.
- * Intentionally behavior-preserving — the underlying client (including its
- * no-credentials mock mode) is untouched.
+ * Enabled when credentials exist, or when explicit mocks are allowed.
  */
 export class LalamoveAdapter implements DeliveryProvider {
   readonly id = "lalamove" as const;
@@ -21,9 +21,10 @@ export class LalamoveAdapter implements DeliveryProvider {
   constructor(private client: LalamoveClient = createLalamoveClient()) {}
 
   isEnabled(): boolean {
-    // The client falls back to a mock quote without credentials, which keeps
-    // local dev working; treat it as enabled either way.
-    return true;
+    const hasKeys = Boolean(
+      process.env.LALAMOVE_API_KEY?.trim() && process.env.LALAMOVE_API_SECRET?.trim()
+    );
+    return hasKeys || allowIntegrationMocks();
   }
 
   async isServiceable(request: DeliveryQuoteRequest): Promise<boolean> {

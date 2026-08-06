@@ -1,7 +1,13 @@
 import { createHmac } from "crypto";
+import {
+  assertIntegrationReady,
+  allowIntegrationMocks,
+} from "../config/integrations";
+import { createLogger } from "../logging";
 
 const SANDBOX_BASE = "https://rest.sandbox.lalamove.com/v3";
 const PROD_BASE = "https://rest.lalamove.com/v3";
+const log = createLogger("lalamove");
 
 export interface LatLng {
   lat: string;
@@ -26,6 +32,7 @@ export interface QuotationResult {
   etaMinutes?: number;
   expiresAt: string;
   stopIds: { pickup: string; dropoff: string };
+  mock?: boolean;
 }
 
 export interface BookDeliveryInput {
@@ -42,6 +49,7 @@ export interface BookDeliveryResult {
   orderId: string;
   status: string;
   trackingUrl?: string;
+  mock?: boolean;
 }
 
 export class LalamoveClient {
@@ -53,6 +61,17 @@ export class LalamoveClient {
     env: "sandbox" | "production" = "sandbox"
   ) {
     this.baseUrl = env === "production" ? PROD_BASE : SANDBOX_BASE;
+  }
+
+  private configured(): boolean {
+    return Boolean(this.apiKey.trim() && this.apiSecret.trim());
+  }
+
+  private ensureLiveOrMock(operation: string): "live" | "mock" {
+    if (this.configured()) return "live";
+    assertIntegrationReady("lalamove", { operation });
+    log.warn(`Using explicit Lalamove mock for ${operation} (credentials missing)`);
+    return "mock";
   }
 
   private sign(method: string, path: string, body: string, timestamp: string): string {
@@ -73,7 +92,7 @@ export class LalamoveClient {
   }
 
   async getQuotation(input: QuotationInput): Promise<QuotationResult> {
-    if (!this.apiKey) {
+    if (this.ensureLiveOrMock("getQuotation") === "mock") {
       return {
         quotationId: `quote_mock_${Date.now()}`,
         fee: 89,
@@ -81,6 +100,7 @@ export class LalamoveClient {
         etaMinutes: 35,
         expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
         stopIds: { pickup: "stop_pickup_mock", dropoff: "stop_dropoff_mock" },
+        mock: true,
       };
     }
 
@@ -129,12 +149,21 @@ export class LalamoveClient {
 
   async bookDelivery(input: BookDeliveryInput): Promise<BookDeliveryResult> {
     if (input.quotationId.startsWith("quote_mock_")) {
+      if (!allowIntegrationMocks()) {
+        throw new Error(
+          "Refusing to book a mock Lalamove quotation outside mock-allowed runtimes. Configure LALAMOVE_API_KEY and LALAMOVE_API_SECRET."
+        );
+      }
+      log.warn("Booking mock Lalamove delivery (explicit mock quotation)");
       return {
         orderId: `lalamove_mock_${Date.now()}`,
         status: "ASSIGNING_DRIVER",
         trackingUrl: "https://share.lalamove.com/mock",
+        mock: true,
       };
     }
+
+    this.ensureLiveOrMock("bookDelivery");
 
     const path = "/v3/orders";
     const body = JSON.stringify({

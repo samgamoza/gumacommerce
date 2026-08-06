@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getTenantStorefrontBySlug } from "@guma-commerce/db";
 import { resolveShippingFee } from "@guma-commerce/db/shipping";
 import { clientIpFrom, rateLimit } from "@guma-commerce/services";
-import { getLalamoveCheckoutQuote } from "@/lib/delivery-quote";
+import { getCheckoutDeliveryQuote } from "@/lib/delivery-quote";
 import {
   computeDeliveryFee,
   resolveStorefrontSettings,
@@ -41,13 +41,13 @@ export async function POST(request: Request) {
       tenant.checkoutPublishedJson,
       tenant.shippingPublishedJson
     );
-    const quote = await getLalamoveCheckoutQuote(settings, body.address);
+    const quote = await getCheckoutDeliveryQuote(settings, body.address);
 
     if (quote) {
       return NextResponse.json({
         ok: true,
         live: true,
-        provider: "lalamove",
+        provider: quote.provider,
         fee: quote.fee,
         etaMinutes: quote.etaMinutes ?? null,
       });
