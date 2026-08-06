@@ -30,11 +30,12 @@ import {
 } from "@guma-commerce/db/checkout";
 
 const ALL_PAYMENT_METHODS = [
-  { id: "gcash", label: "GCash", icon: "💙", desc: "Pay via GCash app" },
-  { id: "paymaya", label: "Maya", icon: "💚", desc: "Pay via Maya app" },
-  { id: "qrph", label: "QR Ph", icon: "📱", desc: "Scan to pay" },
+  { id: "gcash", label: "GCash", icon: "💙", desc: "Send to shop GCash" },
+  { id: "paymaya", label: "Maya", icon: "💚", desc: "Send to shop Maya" },
+  { id: "bank", label: "Bank transfer", icon: "🏦", desc: "Direct bank deposit" },
+  { id: "qrph", label: "QR Ph", icon: "📱", desc: "Scan to pay (PayMongo)" },
   { id: "cod", label: "Cash on Delivery", icon: "💵", desc: "Pay rider on arrival" },
-  { id: "card", label: "Card", icon: "💳", desc: "Visa / Mastercard" },
+  { id: "card", label: "Card", icon: "💳", desc: "Visa / Mastercard (PayMongo)" },
 ];
 
 const PH_MOBILE = /^(09\d{9}|\+639\d{9})$/;
@@ -109,7 +110,8 @@ export function CheckoutForm({
 
   // Live Lalamove quote once the customer has typed a usable address.
   const wantsLiveQuote =
-    storeSettings.delivery.provider === "lalamove" &&
+    (storeSettings.delivery.provider === "lalamove" ||
+      storeSettings.delivery.provider === "grab") &&
     fulfillment === "delivery" &&
     address.trim().length >= 10;
   const quoteAddress = wantsLiveQuote ? address.trim() : "";

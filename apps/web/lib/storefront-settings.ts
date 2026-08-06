@@ -40,9 +40,22 @@ export interface StorefrontStoreSettings {
     name: string;
     greeting: string;
     tone: "friendly_taglish" | "professional_en" | "gen_z_taglish";
+    humanInbox: boolean;
   };
   checkout: TenantCheckoutJson;
   shipping: TenantShippingJson;
+  payments: {
+    mode: "manual_ewallet" | "paymongo" | "both";
+    receiving: {
+      gcashNumber: string;
+      gcashName: string;
+      mayaNumber: string;
+      mayaName: string;
+      bankName: string;
+      bankAccountName: string;
+      bankAccountNumber: string;
+    };
+  };
 }
 
 export const DEFAULT_STOREFRONT_SETTINGS: StorefrontStoreSettings = {
@@ -70,9 +83,11 @@ export const DEFAULT_STOREFRONT_SETTINGS: StorefrontStoreSettings = {
   },
   shopAssistant: {
     enabled: true,
-    name: "Shop Assistant",
-    greeting: "Hi! 👋 Ask me about products, delivery, or payment before you order.",
+    name: "Shop chat",
+    greeting:
+      "Hi! Message the seller about products, payment, or changes. Quick answers can help with hours and delivery — the shop confirms payments.",
     tone: "friendly_taglish",
+    humanInbox: true,
   },
   checkout: checkoutFromLegacySettings({
     codEnabled: true,
@@ -85,6 +100,18 @@ export const DEFAULT_STOREFRONT_SETTINGS: StorefrontStoreSettings = {
     freeDeliveryMin: 500,
     pickupEnabled: true,
   }),
+  payments: {
+    mode: "manual_ewallet",
+    receiving: {
+      gcashNumber: "",
+      gcashName: "",
+      mayaNumber: "",
+      mayaName: "",
+      bankName: "",
+      bankAccountName: "",
+      bankAccountNumber: "",
+    },
+  },
 };
 
 type SettingsJson = {
@@ -95,6 +122,10 @@ type SettingsJson = {
   whatsapp?: Partial<StorefrontStoreSettings["whatsapp"]>;
   tracking?: Partial<StorefrontStoreSettings["tracking"]>;
   shopAssistant?: Partial<StorefrontStoreSettings["shopAssistant"]>;
+  payments?: {
+    mode?: StorefrontStoreSettings["payments"]["mode"];
+    receiving?: Partial<StorefrontStoreSettings["payments"]["receiving"]>;
+  };
 };
 
 export function resolveStorefrontSettings(
@@ -111,6 +142,7 @@ export function resolveStorefrontSettings(
     ? normalizeShippingJson(shippingPublishedJson)
     : shippingFromLegacyDelivery(settingsJson?.delivery);
   const mirrored = legacyDeliveryFromShipping(shipping);
+  const receiving = settingsJson?.payments?.receiving;
 
   return {
     codEnabled: checkout.codEnabled ?? settingsJson?.codEnabled ?? defaults.codEnabled,
@@ -146,9 +178,22 @@ export function resolveStorefrontSettings(
       name: settingsJson?.shopAssistant?.name ?? defaults.shopAssistant.name,
       greeting: settingsJson?.shopAssistant?.greeting ?? defaults.shopAssistant.greeting,
       tone: settingsJson?.shopAssistant?.tone ?? defaults.shopAssistant.tone,
+      humanInbox: settingsJson?.shopAssistant?.humanInbox !== false,
     },
     checkout,
     shipping,
+    payments: {
+      mode: settingsJson?.payments?.mode ?? defaults.payments.mode,
+      receiving: {
+        gcashNumber: receiving?.gcashNumber ?? "",
+        gcashName: receiving?.gcashName ?? "",
+        mayaNumber: receiving?.mayaNumber ?? "",
+        mayaName: receiving?.mayaName ?? "",
+        bankName: receiving?.bankName ?? "",
+        bankAccountName: receiving?.bankAccountName ?? "",
+        bankAccountNumber: receiving?.bankAccountNumber ?? "",
+      },
+    },
   };
 }
 

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MessageCircle, Send, X } from "lucide-react";
 import type { StorefrontStoreSettings } from "@/lib/storefront-settings";
 
 type ChatMessage = {
   id: string;
-  role: "user" | "assistant";
+  role: "buyer" | "assistant" | "seller" | "user";
   content: string;
 };
 
@@ -14,21 +14,69 @@ function sessionKey(tenantSlug: string): string {
   return `guma-chat-${tenantSlug}`;
 }
 
+/**
+ * MVP Beta shop chat: owner-led by default (Message seller).
+ * AI FAQ is optional via "Quick answers" when assistant.enabled.
+ */
 export function ShopAssistant({
   tenantSlug,
   shopName,
   assistant,
+  orderNumber,
+  defaultOpen,
+  initialMode,
+  whatsappUrl,
+  hideLauncher,
+  onClose,
 }: {
   tenantSlug: string;
   shopName: string;
   assistant: StorefrontStoreSettings["shopAssistant"];
+  orderNumber?: string;
+  defaultOpen?: boolean;
+  /** Prefer seller for payment/order; auto only when AI FAQ is enabled. */
+  initialMode?: "auto" | "seller";
+  whatsappUrl?: string | null;
+  /** Hide the floating bubble (use with an external CTA). */
+  hideLauncher?: boolean;
+  onClose?: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const humanOnly = assistant.humanInbox !== false;
+  const aiEnabled = Boolean(assistant.enabled);
+  const chatAvailable = humanOnly || aiEnabled;
+
+  const defaultMode: "auto" | "seller" =
+    initialMode ?? (aiEnabled && !orderNumber ? "auto" : "seller");
+
+  const [open, setOpen] = useState(Boolean(defaultOpen));
   const [sessionId, setSessionId] = useState("");
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<"auto" | "seller">(defaultMode);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const loadHistory = useCallback(
+    async (sid: string) => {
+      try {
+        const res = await fetch(
+          `/api/chat?tenantSlug=${encodeURIComponent(tenantSlug)}&sessionId=${encodeURIComponent(sid)}`
+        );
+        const data = await res.json();
+        if (!data.ok || !Array.isArray(data.messages) || data.messages.length === 0) return;
+        setMessages(
+          data.messages.map((m: { id: string; role: string; content: string }) => ({
+            id: m.id,
+            role: m.role as ChatMessage["role"],
+            content: m.content,
+          }))
+        );
+      } catch {
+        // keep greeting
+      }
+    },
+    [tenantSlug]
+  );
 
   useEffect(() => {
     const stored = localStorage.getItem(sessionKey(tenantSlug));
@@ -39,16 +87,36 @@ export function ShopAssistant({
       {
         id: "greeting",
         role: "assistant",
-        content: assistant.greeting.replace("{shop}", shopName),
+        content: orderNumber
+          ? `Hi! Message ${shopName} about order ${orderNumber} — payment proof, changes, or questions. They reply in this chat.`
+          : assistant.greeting.replace("{shop}", shopName),
       },
     ]);
-  }, [tenantSlug, shopName, assistant.greeting]);
+    void loadHistory(id);
+  }, [tenantSlug, shopName, assistant.greeting, loadHistory, orderNumber]);
+
+  useEffect(() => {
+    if (initialMode) setMode(initialMode);
+  }, [initialMode]);
+
+  useEffect(() => {
+    if (!open || !sessionId) return;
+    const timer = window.setInterval(() => {
+      void loadHistory(sessionId);
+    }, 4000);
+    return () => window.clearInterval(timer);
+  }, [open, sessionId, loadHistory]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, open]);
 
-  if (!assistant.enabled) return null;
+  function closeChat() {
+    setOpen(false);
+    onClose?.();
+  }
+
+  if (!chatAvailable) return null;
 
   async function sendMessage() {
     const text = input.trim();
@@ -56,7 +124,7 @@ export function ShopAssistant({
 
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
-      role: "user",
+      role: "buyer",
       content: text,
     };
     setMessages((prev) => [...prev, userMessage]);
@@ -71,18 +139,21 @@ export function ShopAssistant({
           tenantSlug,
           sessionId,
           message: text,
+          mode: aiEnabled ? mode : "seller",
+          orderNumber,
         }),
       });
       const data = await res.json();
       const reply =
         typeof data.reply === "string"
           ? data.reply
-          : "Sorry, I couldn't reach the shop assistant. Please try again or checkout directly.";
+          : "Message saved. The seller can reply here — try again if nothing appears.";
 
       setMessages((prev) => [
         ...prev,
         { id: crypto.randomUUID(), role: "assistant", content: reply },
       ]);
+      await loadHistory(sessionId);
     } finally {
       setLoading(false);
     }
@@ -90,14 +161,19 @@ export function ShopAssistant({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="fixed bottom-24 left-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-neutral-900 text-white shadow-lg transition hover:scale-105 md:bottom-8"
-        aria-label={`Chat with ${assistant.name}`}
-      >
-        <MessageCircle className="h-7 w-7" />
-      </button>
+      {!hideLauncher ? (
+        <button
+          type="button"
+          onClick={() => {
+            setMode(orderNumber ? "seller" : defaultMode);
+            setOpen(true);
+          }}
+          className="fixed bottom-24 left-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-neutral-900 text-white shadow-lg transition hover:scale-105 md:bottom-8"
+          aria-label={`Message ${shopName}`}
+        >
+          <MessageCircle className="h-7 w-7" />
+        </button>
+      ) : null}
 
       {open && (
         <div className="fixed inset-0 z-[60] flex items-end justify-end p-4 md:items-end md:p-6">
@@ -105,42 +181,97 @@ export function ShopAssistant({
             type="button"
             className="absolute inset-0 bg-black/40"
             aria-label="Close chat"
-            onClick={() => setOpen(false)}
+            onClick={closeChat}
           />
           <div className="relative flex h-[min(560px,85vh)] w-full max-w-md flex-col overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-2xl">
             <header className="flex items-center justify-between border-b border-neutral-100 px-4 py-3">
               <div>
-                <p className="font-semibold text-neutral-900">{assistant.name}</p>
-                <p className="text-xs text-neutral-500">{shopName} · pre-checkout help</p>
+                <p className="font-semibold text-neutral-900">
+                  {mode === "seller" ? "Message seller" : assistant.name}
+                </p>
+                <p className="text-xs text-neutral-500">
+                  {shopName}
+                  {orderNumber ? ` · Order ${orderNumber}` : " · products, payment & revisions"}
+                </p>
               </div>
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={closeChat}
                 className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100"
               >
                 <X className="h-4 w-4" />
               </button>
             </header>
 
-            <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+            <div className="flex flex-wrap items-center gap-2 border-b border-neutral-100 px-4 py-2">
+              <button
+                type="button"
+                onClick={() => setMode("seller")}
+                className={`rounded-full px-3 py-1 text-xs font-medium ${
+                  mode === "seller"
+                    ? "bg-neutral-900 text-white"
+                    : "bg-neutral-100 text-neutral-600"
+                }`}
+              >
+                Message seller
+              </button>
+              {aiEnabled ? (
+                <button
+                  type="button"
+                  onClick={() => setMode("auto")}
+                  className={`rounded-full px-3 py-1 text-xs ${
+                    mode === "auto"
+                      ? "bg-neutral-900 text-white"
+                      : "bg-neutral-100 text-neutral-600"
+                  }`}
                 >
+                  Quick answers
+                </button>
+              ) : null}
+              {whatsappUrl ? (
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="ml-auto rounded-full bg-[#25D366]/15 px-3 py-1 text-xs font-medium text-[#128C7E] hover:bg-[#25D366]/25"
+                >
+                  WhatsApp
+                </a>
+              ) : null}
+            </div>
+
+            <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+              {messages.map((message) => {
+                const fromBuyer = message.role === "buyer" || message.role === "user";
+                const fromSeller = message.role === "seller";
+                return (
                   <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                      message.role === "user"
-                        ? "bg-neutral-900 text-white"
-                        : "bg-neutral-100 text-neutral-800"
-                    }`}
+                    key={message.id}
+                    className={`flex ${fromBuyer ? "justify-end" : "justify-start"}`}
                   >
-                    {message.content}
+                    <div
+                      className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                        fromBuyer
+                          ? "bg-neutral-900 text-white"
+                          : fromSeller
+                            ? "bg-emerald-50 text-emerald-950 ring-1 ring-emerald-100"
+                            : "bg-neutral-100 text-neutral-800"
+                      }`}
+                    >
+                      {fromSeller ? (
+                        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+                          Seller
+                        </p>
+                      ) : null}
+                      {message.content}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {loading && (
-                <p className="text-xs text-neutral-400">Assistant is typing…</p>
+                <p className="text-xs text-neutral-400">
+                  {mode === "seller" ? "Sending to seller…" : "Looking up a quick answer…"}
+                </p>
               )}
             </div>
 
@@ -148,14 +279,18 @@ export function ShopAssistant({
               className="border-t border-neutral-100 p-3"
               onSubmit={(e) => {
                 e.preventDefault();
-                sendMessage();
+                void sendMessage();
               }}
             >
               <div className="flex gap-2">
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask about products, delivery, payment…"
+                  placeholder={
+                    mode === "seller"
+                      ? "Payment ref, change request, question…"
+                      : "Hours, delivery area, how to pay…"
+                  }
                   className="h-11 flex-1 rounded-xl border border-neutral-200 px-3 text-sm outline-none focus:border-neutral-400"
                 />
                 <button

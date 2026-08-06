@@ -122,10 +122,9 @@ export function AdminShell({
 
   return (
     <div className="relative min-h-screen bg-guma-navy text-slate-200 lg:flex">
-      {/* Ambient background */}
-      <div className="pointer-events-none fixed inset-0 grid-bg grid-bg-fade opacity-60" />
-      <div className="pointer-events-none fixed -top-40 -left-20 h-[480px] w-[480px] rounded-full bg-guma-purple/10 blur-[120px]" />
-      <div className="pointer-events-none fixed top-1/3 -right-32 h-[420px] w-[420px] rounded-full bg-guma-emerald/[0.08] blur-[120px]" />
+      {/* Soft ambient — keep noise low so content stays readable */}
+      <div className="pointer-events-none fixed inset-0 grid-bg grid-bg-fade opacity-25" />
+      <div className="pointer-events-none fixed -top-48 left-0 h-[360px] w-[360px] rounded-full bg-guma-purple/[0.06] blur-[100px]" />
 
       <UpgradeGateModal
         open={gateTarget !== null}
@@ -207,28 +206,30 @@ export function AdminShell({
                         key={item.id}
                         href={item.href}
                         onClick={(e) => handleNavClick(e, item)}
-                        className={`group relative flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all ${
+                        className={`group relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
                           active
-                            ? "glass border-guma-purple/30 text-white"
+                            ? "bg-white/[0.07] text-white"
                             : locked
-                              ? "text-slate-500 hover:bg-white/5"
-                              : "text-slate-400 hover:bg-white/5 hover:text-white"
+                              ? "text-slate-500 hover:bg-white/[0.03]"
+                              : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
                         }`}
                       >
                         {active ? (
-                          <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full gradient-accent" />
+                          <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-guma-purple/80" />
                         ) : null}
                         <Icon
-                          className={`h-[18px] w-[18px] shrink-0 ${active ? "text-white" : "text-slate-500 group-hover:text-slate-300"}`}
+                          className={`h-4 w-4 shrink-0 ${active ? "text-slate-200" : "text-slate-500 group-hover:text-slate-400"}`}
                         />
                         <span className="flex-1 truncate">{item.label}</span>
                         {item.badge === "new" ? (
-                          <span className="rounded bg-guma-purple/15 px-1.5 py-0.5 text-[9px] font-bold uppercase text-guma-purple">
-                            New
-                          </span>
+                          <span
+                            className="h-1.5 w-1.5 shrink-0 rounded-full bg-guma-purple/70"
+                            title="New"
+                            aria-label="New"
+                          />
                         ) : null}
                         {locked && item.minPlan ? (
-                          <PlanTierBadge tier={item.minPlan} className="scale-90" />
+                          <PlanTierBadge tier={item.minPlan} />
                         ) : null}
                       </Link>
                     );
@@ -247,14 +248,14 @@ export function AdminShell({
                   router.push("/settings/shop");
                 }
               }}
-              className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all ${
+              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
                 pathname.startsWith("/settings")
-                  ? "glass border-guma-purple/30 text-white"
-                  : "text-slate-400 hover:bg-white/5 hover:text-white"
+                  ? "bg-white/[0.07] text-white"
+                  : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
               }`}
             >
               <span className="flex items-center gap-2.5">
-                <Settings className="h-[18px] w-[18px] text-slate-500" />
+                <Settings className="h-4 w-4 text-slate-500" />
                 Settings
               </span>
               <ChevronDown
@@ -267,10 +268,10 @@ export function AdminShell({
                   <Link
                     key={section.href}
                     href={section.href}
-                    className={`block rounded-lg px-2.5 py-1.5 text-xs transition ${
+                    className={`block rounded-md px-2.5 py-1.5 text-xs transition ${
                       pathname === section.href
-                        ? "font-semibold text-guma-purple"
-                        : "text-slate-500 hover:text-slate-200"
+                        ? "font-medium text-slate-100"
+                        : "text-slate-500 hover:text-slate-300"
                     }`}
                   >
                     {section.label}
@@ -283,31 +284,28 @@ export function AdminShell({
 
         {/* AI credits strip */}
         {!planLoading && credits ? (
-          <div className="relative mx-3 mb-3 overflow-hidden rounded-2xl glass border-guma-purple/20 p-3">
-            <div className="absolute -top-8 -right-8 h-24 w-24 rounded-full bg-guma-purple/30 blur-2xl" />
-            <div className="relative">
-              <p className="text-xs font-medium text-white">
-                {credits.generationsLeft} AI generations left this month
-              </p>
-              <p className="mt-0.5 text-[10px] text-slate-400">
-                {planLabel} plan · {credits.chatLeft} chats today
-              </p>
-              {showUpgrade ? (
-                <Link
-                  href={upgradeHref(plan === "free" ? "growth" : "pro", "sidebar-credits")}
-                  className="mt-2 inline-flex text-[11px] font-semibold text-guma-purple underline"
-                >
-                  View plans
-                </Link>
-              ) : null}
-            </div>
+          <div className="mx-3 mb-3 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3">
+            <p className="text-xs font-medium text-slate-200">
+              {credits.generationsLeft} AI generations left this month
+            </p>
+            <p className="mt-0.5 text-[10px] text-slate-500">
+              {planLabel} plan · {credits.chatLeft} chats today
+            </p>
+            {showUpgrade ? (
+              <Link
+                href={upgradeHref(plan === "free" ? "growth" : "pro", "sidebar-credits")}
+                className="mt-2 inline-flex text-[11px] font-medium text-slate-400 transition hover:text-slate-200"
+              >
+                View plans
+              </Link>
+            ) : null}
           </div>
         ) : null}
 
         <div className="hidden border-t border-white/[0.08] p-3 lg:block">
           {user ? (
             <div className="mb-2 flex items-center gap-2">
-              <span className="grid h-8 w-8 place-items-center rounded-xl gradient-accent text-[10px] font-bold text-white">
+              <span className="grid h-8 w-8 place-items-center rounded-lg border border-white/10 bg-white/[0.06] text-[10px] font-semibold text-slate-200">
                 {user.displayName
                   .split(" ")
                   .map((p) => p[0])
@@ -335,21 +333,21 @@ export function AdminShell({
       {/* Main */}
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">
         {/* Top bar */}
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-white/[0.08] glass-strong px-4 py-2.5 lg:px-6">
-          <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-guma-navy/60 p-0.5 text-xs font-medium">
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-white/[0.08] bg-guma-navy/90 px-4 py-2.5 backdrop-blur-md lg:px-6">
+          <div className="flex items-center gap-1 rounded-lg border border-white/[0.08] bg-white/[0.02] p-0.5 text-xs font-medium">
             {slug ? (
               <a
                 href={`${storefrontBase}/${slug}?preview=1`}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-slate-400 hover:bg-white/5 hover:text-white"
+                className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-slate-500 hover:bg-white/[0.04] hover:text-slate-200"
               >
                 <Monitor className="h-3.5 w-3.5" />
                 Preview
               </a>
             ) : null}
-            <span className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 font-semibold text-white">
-              <Store className="h-3.5 w-3.5 text-guma-emerald" />
+            <span className="flex items-center gap-1.5 rounded-md bg-white/[0.06] px-3 py-1.5 font-medium text-slate-100">
+              <Store className="h-3.5 w-3.5 text-slate-400" />
               Dashboard
             </span>
           </div>
@@ -358,9 +356,9 @@ export function AdminShell({
             {showUpgrade ? (
               <Link
                 href={upgradeHref(plan === "free" ? "growth" : "pro", "topbar")}
-                className="hidden items-center gap-1.5 rounded-xl border border-guma-amber/25 bg-guma-amber/10 px-3 py-1.5 text-xs font-semibold text-guma-amber transition hover:bg-guma-amber/20 sm:inline-flex"
+                className="hidden items-center gap-1.5 rounded-lg border border-white/10 bg-transparent px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/[0.04] hover:text-white sm:inline-flex"
               >
-                <Gem className="h-3.5 w-3.5" />
+                <Gem className="h-3.5 w-3.5 text-slate-400" />
                 Upgrade
               </Link>
             ) : null}
@@ -369,11 +367,11 @@ export function AdminShell({
                 href={`${storefrontBase}/${slug}`}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-xl gradient-accent px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-slate-100 transition hover:bg-white/[0.1]"
               >
-                <Rocket className="h-3.5 w-3.5" />
+                <Rocket className="h-3.5 w-3.5 text-slate-400" />
                 <span className="hidden sm:inline">View shop</span>
-                <ExternalLink className="h-3 w-3 opacity-60" />
+                <ExternalLink className="h-3 w-3 opacity-50" />
               </a>
             ) : null}
             <button
@@ -387,9 +385,9 @@ export function AdminShell({
         </header>
 
         {user && !user.emailVerified && pathname !== "/onboarding" ? (
-          <div className="border-b border-guma-amber/25 bg-guma-amber/10 px-4 py-2.5 text-sm text-guma-amber lg:px-6">
+          <div className="border-b border-white/[0.08] bg-white/[0.03] px-4 py-2 text-sm text-slate-300 lg:px-6">
             Verify your email to unlock all features.{" "}
-            <Link href="/onboarding" className="font-semibold underline">
+            <Link href="/onboarding" className="font-medium text-slate-100 underline underline-offset-2">
               Complete setup
             </Link>
           </div>

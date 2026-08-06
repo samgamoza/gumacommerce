@@ -9,23 +9,29 @@ import {
   markCheckoutSessionConverted,
   OrderError,
   recordDeliveryQuote,
+  recordManualPaymentIntent,
   recordPaymentIntent,
+  resolveTenantPaymentsSettings,
   upsertCheckoutSession,
 } from "@guma-commerce/db";
 import {
+  buildManualEwalletInstructions,
   clientIpFrom,
   createSemaphoreClient,
   formatPhp,
   generateOrderNumber,
+  IntegrationNotConfiguredError,
   isPushConfigured,
+  logIntegrationStatusOnce,
   rateLimit,
   resolvePaymentAdapterId,
+  resolvePaymentsMode,
   sendPushNotifications,
   startOnlinePayment,
   type CheckoutPaymentMethod,
 } from "@guma-commerce/services";
 import { getTenant as getDemoTenant } from "@/lib/demo-data";
-import { getLalamoveCheckoutQuote } from "@/lib/delivery-quote";
+import { getCheckoutDeliveryQuote } from "@/lib/delivery-quote";
 import {
   computeDeliveryFee,
   resolveStorefrontSettings,
@@ -35,7 +41,7 @@ const PH_MOBILE = /^(09\d{9}|\+639\d{9})$/;
 
 const checkoutSchema = z.object({
   tenantSlug: z.string().min(1).max(64),
-  paymentMethod: z.enum(["gcash", "paymaya", "qrph", "cod", "card"]),
+  paymentMethod: z.enum(["gcash", "paymaya", "qrph", "cod", "card", "bank"]),
   fulfillment: z.enum(["delivery", "pickup"]).default("delivery"),
   sessionKey: z.string().min(8).max(64).optional(),
   couponCode: z.string().trim().max(64).optional(),
@@ -133,6 +139,8 @@ async function emitOrderEvents(input: {
 }
 
 export async function POST(request: Request) {
+  logIntegrationStatusOnce();
+
   const limited = await rateLimit(`checkout:${clientIpFrom(request)}`, {
     limit: 10,
     windowSeconds: 60,
@@ -243,7 +251,7 @@ export async function POST(request: Request) {
 
     const liveQuote =
       body.fulfillment === "delivery" && body.address
-        ? await getLalamoveCheckoutQuote(settings, body.address)
+        ? await getCheckoutDeliveryQuote(settings, body.address)
         : null;
     const deliveryFee =
       body.fulfillment === "pickup"
@@ -295,16 +303,23 @@ export async function POST(request: Request) {
       await recordDeliveryQuote({
         tenantId: order.tenantId,
         orderId: order.id,
-        provider: "lalamove",
+        provider: liveQuote.provider,
         quoteId: liveQuote.quotationId,
         fee: liveQuote.fee.toFixed(2),
         etaMinutes: liveQuote.etaMinutes,
-        rawResponseJson: { stopIds: liveQuote.stopIds, dropoffAddress: body.address },
+        rawResponseJson: { meta: liveQuote.meta, dropoffAddress: body.address },
       }).catch((error) => console.error("[checkout] Failed to record quote:", error));
     }
 
     const sms = createSemaphoreClient();
-    const adapter = resolvePaymentAdapterId(body.paymentMethod as CheckoutPaymentMethod);
+    const paymentsSettings = resolveTenantPaymentsSettings(
+      tenant.settingsJson as Record<string, unknown>
+    );
+    const paymentsMode = resolvePaymentsMode({ settingsMode: paymentsSettings.mode });
+    const adapter = resolvePaymentAdapterId(
+      body.paymentMethod as CheckoutPaymentMethod,
+      paymentsMode
+    );
 
     await emitOrderEvents({
       tenantId: order.tenantId,
@@ -344,10 +359,69 @@ export async function POST(request: Request) {
       });
     }
 
+    if (adapter === "manual_ewallet") {
+      const method =
+        body.paymentMethod === "paymaya"
+          ? "paymaya"
+          : body.paymentMethod === "bank"
+            ? "bank"
+            : "gcash";
+
+      await recordManualPaymentIntent({
+        orderId: order.id,
+        tenantId: order.tenantId,
+        amount: order.total,
+        methodType: method,
+        orderNumber: order.orderNumber,
+      });
+
+      const payInstructions = buildManualEwalletInstructions({
+        method,
+        amount: formatPhp(Number(order.total)),
+        orderNumber: order.orderNumber,
+        receiving: paymentsSettings.receiving,
+      });
+
+      await sms
+        .orderConfirmation({
+          to: body.customer.phone,
+          orderNumber: order.orderNumber,
+          total: formatPhp(Number(order.total)),
+          trackingUrl: trackingUrl(body.tenantSlug, order.orderNumber),
+        })
+        .catch((error) => console.error("[checkout] SMS failed:", error));
+
+      await pushSellerNewCodOrder(order.tenantId, order.orderNumber, order.total).catch(
+        (error) => console.error("[checkout] Seller push (manual pay) failed:", error)
+      );
+
+      return NextResponse.json({
+        orderNumber: order.orderNumber,
+        status: order.status,
+        paymentMethod: method,
+        adapter: "manual_ewallet",
+        payInstructions,
+        totals: {
+          subtotal: order.subtotal,
+          discount: order.discount,
+          tax: order.tax,
+          deliveryFee: order.deliveryFee,
+          total: order.total,
+        },
+      });
+    }
+
+    if (body.paymentMethod === "bank") {
+      return NextResponse.json(
+        { error: "Bank transfer requires manual e-wallet mode." },
+        { status: 400 }
+      );
+    }
+
     const started = await startOnlinePayment({
       amountCentavos: order.totalCentavos,
       description: `Order ${order.orderNumber} — ${tenant.name}`,
-      method: body.paymentMethod as Exclude<CheckoutPaymentMethod, "cod">,
+      method: body.paymentMethod as Exclude<CheckoutPaymentMethod, "cod" | "bank">,
       metadata: { order_number: order.orderNumber, tenant: body.tenantSlug },
     });
 
@@ -385,6 +459,17 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof OrderError) {
       return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    if (error instanceof IntegrationNotConfiguredError) {
+      console.error("[checkout] Integration not configured:", error.message);
+      return NextResponse.json(
+        {
+          error: error.message,
+          integration: error.integration,
+          code: "integration_not_configured",
+        },
+        { status: 503 }
+      );
     }
     console.error("Checkout error:", error);
     return NextResponse.json(

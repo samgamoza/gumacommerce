@@ -12,7 +12,7 @@ export function PlanTierBadge({
 
   return (
     <span
-      className={`inline-flex items-center rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-800 ${className}`}
+      className={`inline-flex items-center rounded-md border border-white/10 bg-white/[0.04] px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-slate-500 ${className}`}
     >
       {planBadgeLabel(tier)}
     </span>

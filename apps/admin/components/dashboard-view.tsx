@@ -30,16 +30,20 @@ interface ShopResponse {
 function statusBadge(status: string) {
   if (status === "active") {
     return (
-      <Badge className="gap-1 bg-emerald-100 text-emerald-800">
+      <Badge className="gap-1 border-emerald-400/20 bg-emerald-400/10 text-emerald-200">
         <span className="relative flex h-1.5 w-1.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/60 opacity-75" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
         </span>
         Live
       </Badge>
     );
   }
-  return <Badge className="bg-amber-100 text-amber-800">Pending activation</Badge>;
+  return (
+    <Badge className="border-amber-400/20 bg-amber-400/10 text-amber-100/90">
+      Pending activation
+    </Badge>
+  );
 }
 
 function greeting(): string {
@@ -54,29 +58,29 @@ const STATS = [
     key: "totalSales",
     label: "Total sales",
     icon: Wallet,
-    iconBg: "bg-emerald-500/10",
-    iconColor: "text-emerald-600",
+    iconBg: "bg-white/[0.05]",
+    iconColor: "text-slate-400",
   },
   {
     key: "orderCount",
     label: "Orders",
     icon: ShoppingBag,
-    iconBg: "bg-sky-500/10",
-    iconColor: "text-sky-600",
+    iconBg: "bg-white/[0.05]",
+    iconColor: "text-slate-400",
   },
   {
     key: "activeProductCount",
     label: "Products online",
     icon: PackageCheck,
-    iconBg: "bg-amber-500/10",
-    iconColor: "text-amber-600",
+    iconBg: "bg-white/[0.05]",
+    iconColor: "text-slate-400",
   },
   {
     key: "productCount",
     label: "All products",
     icon: Package,
-    iconBg: "bg-violet-500/10",
-    iconColor: "text-violet-600",
+    iconBg: "bg-white/[0.05]",
+    iconColor: "text-slate-400",
   },
 ] as const;
 
@@ -137,7 +141,7 @@ export function DashboardView({ displayName }: { displayName: string }) {
   }
 
   if (!data?.ok || !data.shop || !data.urls) {
-    return <p className="text-red-600">{data?.error ?? "Could not load dashboard."}</p>;
+    return <p className="text-red-400">{data?.error ?? "Could not load dashboard."}</p>;
   }
 
   const { shop, urls } = data;
@@ -145,23 +149,21 @@ export function DashboardView({ displayName }: { displayName: string }) {
 
   return (
     <div className="space-y-6">
-      <Card className="glass relative overflow-hidden border-guma-purple/20">
-        <div className="absolute inset-0 hero-glow opacity-60" />
-        <div className="absolute inset-0 bg-grid-pattern bg-grid opacity-30 [mask-image:linear-gradient(to_bottom,white,transparent)]" />
-        <div className="relative flex flex-wrap items-start justify-between gap-4">
+      <Card className="border-white/10 bg-white/[0.03]">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-slate-500">
               {greeting()}, {displayName.split(" ")[0]}!
             </p>
             <div className="mt-1 flex flex-wrap items-center gap-2">
-              <h2 className="font-display text-2xl font-bold tracking-tight">
+              <h2 className="font-display text-2xl font-bold tracking-tight text-slate-100">
                 @{shop.tenant.slug}
               </h2>
               {statusBadge(shop.tenant.status)}
             </div>
-            <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+            <p className="mt-1 flex items-center gap-1 text-sm text-slate-400">
               {shop.tenant.name}
-              {isLive && <BadgeCheck className="h-3.5 w-3.5 text-emerald-600" />}
+              {isLive && <BadgeCheck className="h-3.5 w-3.5 text-emerald-400/80" />}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -182,7 +184,7 @@ export function DashboardView({ displayName }: { displayName: string }) {
       </Card>
 
       {message && (
-        <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+        <div className="flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100/90">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           {message}
         </div>
@@ -196,11 +198,11 @@ export function DashboardView({ displayName }: { displayName: string }) {
               ? formatPrice(shop.stats.totalSales)
               : shop.stats[stat.key];
           return (
-            <Card key={stat.key} className="transition hover:shadow-md">
+            <Card key={stat.key} className="border-white/10 bg-white/[0.03] transition hover:bg-white/[0.05]">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
-                  <p className="mt-1 font-display text-2xl font-bold tracking-tight">{value}</p>
+                  <p className="text-sm text-slate-500">{stat.label}</p>
+                  <p className="mt-1 font-display text-2xl font-bold tracking-tight text-slate-100">{value}</p>
                 </div>
                 <span
                   className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${stat.iconBg}`}

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { productAiPromptPack } from "@/lib/product-ai-prompts";
 import { Badge, Button, Card, formatPrice } from "@guma-commerce/ui";
 
 interface ProductRow {
@@ -64,8 +63,26 @@ function productImageSrc(url: string): string {
   return `${STOREFRONT_URL}${url}`;
 }
 
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+/** Plain text for the description editor — preserve spaces/newlines (no trim). */
+function htmlToPlainDescription(html: string): string {
+  return html
+    .replace(/<\/p>\s*<p>/gi, "\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"');
+}
+
+function plainDescriptionToHtml(text: string): string {
+  const escaped = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  if (!escaped) return "";
+  return `<p>${escaped.replace(/\n/g, "</p><p>")}</p>`;
 }
 
 export function ProductsManager() {
@@ -73,17 +90,13 @@ export function ProductsManager() {
   const [shop, setShop] = useState<ShopContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState("");
-  const [priceHint, setPriceHint] = useState("");
-  const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<ProductDraft | null>(null);
-  const [aiModel, setAiModel] = useState<string | null>(null);
-  const [manualMode, setManualMode] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
   const [enhancing, setEnhancing] = useState(false);
+  const [enhancingDescription, setEnhancingDescription] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -91,6 +104,7 @@ export function ProductsManager() {
   const [requiresReview, setRequiresReview] = useState(false);
   const [pricingNote, setPricingNote] = useState<string | null>(null);
   const [suggestingPrice, setSuggestingPrice] = useState(false);
+  const [descriptionNote, setDescriptionNote] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -114,49 +128,42 @@ export function ProductsManager() {
     load();
   }, [load]);
 
-  const promptPack = productAiPromptPack(shop?.category, shop?.name);
-
   function openCreateForm() {
     setShowForm(true);
     setError(null);
-    setDraft(null);
-    setAiModel(null);
-    setManualMode(false);
-    setAiPrompt("");
-    setPriceHint("");
+    setDraft({ ...EMPTY_DRAFT });
     setEditingId(null);
     setNotice(null);
     setChangeRequestId(null);
     setRequiresReview(false);
     setPricingNote(null);
+    setDescriptionNote(null);
+    setOriginalImageUrl(null);
   }
 
   function closeCreateForm() {
     setShowForm(false);
     setDraft(null);
-    setAiModel(null);
     setError(null);
-    setAiPrompt("");
-    setPriceHint("");
-    setManualMode(false);
     setOriginalImageUrl(null);
     setEnhancing(false);
+    setEnhancingDescription(false);
     setEditingId(null);
     setChangeRequestId(null);
     setRequiresReview(false);
     setPricingNote(null);
+    setDescriptionNote(null);
   }
 
   function startEdit(product: ProductRow) {
     setShowForm(true);
-    setManualMode(true);
     setEditingId(product.id);
-    setAiModel(null);
     setError(null);
     setNotice(null);
     setChangeRequestId(null);
     setRequiresReview(false);
     setPricingNote(null);
+    setDescriptionNote(null);
     setOriginalImageUrl(product.imageUrl);
     setDraft({
       title: product.title,
@@ -199,62 +206,6 @@ export function ProductsManager() {
     } finally {
       setDeletingId(null);
     }
-  }
-
-  async function handleGenerate() {
-    if (aiPrompt.trim().length < 3) {
-      setError("Describe your product in at least a few words.");
-      return;
-    }
-
-    setError(null);
-    setGenerating(true);
-
-    const hint = priceHint ? Number(priceHint) : undefined;
-    const res = await fetch("/api/products/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        prompt: aiPrompt.trim(),
-        priceHint: hint && Number.isFinite(hint) && hint > 0 ? hint : undefined,
-      }),
-    });
-
-    const data = await res.json();
-    setGenerating(false);
-
-    if (!data.ok) {
-      setError(data.error ?? "Could not generate listing.");
-      return;
-    }
-
-    const listing = data.listing;
-    setDraft({
-      title: listing.title,
-      slug: listing.slug,
-      descriptionHtml: listing.descriptionHtml,
-      shortDescription: listing.shortDescription,
-      basePrice: String(listing.basePrice),
-      compareAtPrice: listing.compareAtPrice ? String(listing.compareAtPrice) : "",
-      stockQty: "10",
-      status: "active",
-      tags: listing.tags ?? [],
-      photoShotList: listing.photoShotList ?? [],
-      imageUrl: "",
-    });
-    setAiModel(data.model ?? "ai");
-    setManualMode(false);
-    setChangeRequestId(data.changeRequestId ?? null);
-    setRequiresReview(Boolean(data.requiresReview));
-  }
-
-  function startManualEntry() {
-    setManualMode(true);
-    setDraft({ ...EMPTY_DRAFT });
-    setAiModel(null);
-    setError(null);
-    setChangeRequestId(null);
-    setRequiresReview(false);
   }
 
   async function handleImageSelect(event: React.ChangeEvent<HTMLInputElement>) {
@@ -325,13 +276,65 @@ export function ProductsManager() {
     setOriginalImageUrl(null);
   }
 
+  async function handleEnhanceDescription() {
+    if (!draft?.title.trim()) {
+      setError("Enter a product name first, then enhance the description.");
+      return;
+    }
+
+    setError(null);
+    setDescriptionNote(null);
+    setEnhancingDescription(true);
+    try {
+      const res = await fetch("/api/products/enhance-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: draft.title.trim(),
+          description: htmlToPlainDescription(draft.descriptionHtml),
+        }),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        setError(data.error ?? "Could not enhance description.");
+        return;
+      }
+      setDraft((current) =>
+        current
+          ? {
+              ...current,
+              descriptionHtml: data.descriptionHtml,
+              shortDescription: data.shortDescription ?? current.shortDescription,
+            }
+          : current
+      );
+      setChangeRequestId(data.changeRequestId ?? null);
+      setRequiresReview(Boolean(data.requiresReview));
+      setDescriptionNote("AI polished your description — review and edit before saving.");
+    } finally {
+      setEnhancingDescription(false);
+    }
+  }
+
   async function handleSuggestPrice() {
-    if (!editingId) return;
+    if (!draft?.title.trim()) {
+      setError("Enter a product name first, then suggest a nearby price.");
+      return;
+    }
+
     setError(null);
     setSuggestingPrice(true);
     try {
-      const res = await fetch(`/api/products/${editingId}/suggest-price`, {
+      const current = Number(draft.basePrice);
+      const res = await fetch("/api/products/suggest-market-price", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: draft.title.trim(),
+          currentPrice:
+            Number.isFinite(current) && current > 0 ? current : undefined,
+          productId: editingId ?? undefined,
+        }),
       });
       const data = await res.json();
       if (!data.ok) {
@@ -339,20 +342,20 @@ export function ProductsManager() {
         return;
       }
       const suggestion = data.suggestion;
-      setDraft((current) =>
-        current
+      setDraft((currentDraft) =>
+        currentDraft
           ? {
-              ...current,
+              ...currentDraft,
               basePrice: String(suggestion.basePrice),
               compareAtPrice: suggestion.compareAtPrice
                 ? String(suggestion.compareAtPrice)
-                : current.compareAtPrice,
+                : currentDraft.compareAtPrice,
             }
-          : current
+          : currentDraft
       );
       setChangeRequestId(data.changeRequestId ?? null);
       setRequiresReview(Boolean(data.requiresReview));
-      setPricingNote(suggestion.rationale ?? "AI suggested a new price — review and save.");
+      setPricingNote(suggestion.rationale ?? "Nearby market price suggested — review and save.");
     } finally {
       setSuggestingPrice(false);
     }
@@ -407,7 +410,7 @@ export function ProductsManager() {
             compareAtPrice: compareAt && compareAt > price ? compareAt : undefined,
             status: draft.status,
             stockQty: Number(draft.stockQty) || 0,
-            aiGenerated: Boolean(aiModel),
+            aiGenerated: false,
             imageUrl: draft.imageUrl || undefined,
             changeRequestId: changeRequestId ?? undefined,
           }),
@@ -425,413 +428,280 @@ export function ProductsManager() {
     await load();
   }
 
-  const showEmptyComposer = products.length === 0 && !showForm;
-
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm text-muted-foreground">
             {shop
-              ? `AI listings for ${shop.name}${shop.category ? ` · ${shop.category}` : ""}`
-              : "Describe products in plain language — AI writes the listing."}
+              ? `Catalog for ${shop.name}${shop.category ? ` · ${shop.category}` : ""}`
+              : "Add products yourself. AI can polish copy or suggest nearby prices."}
           </p>
         </div>
-        {!showEmptyComposer && (
-          <Button onClick={showForm ? closeCreateForm : openCreateForm}>
-            {showForm ? "Cancel" : "+ Add product with AI"}
+        {showForm ? (
+          <Button type="button" variant="secondary" onClick={closeCreateForm}>
+            Cancel
+          </Button>
+        ) : (
+          <Button type="button" onClick={openCreateForm}>
+            + Add product
           </Button>
         )}
       </div>
 
-      {(showForm || showEmptyComposer) && (
-        <Card className="mb-6 overflow-hidden border-emerald-200 bg-gradient-to-br from-emerald-50/80 to-white">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl">✨</span>
-                <h3 className="font-semibold">AI product creator</h3>
-                <Badge className="bg-emerald-100 text-emerald-800">New</Badge>
-              </div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Describe a {shop?.category ? shop.category.toLowerCase() : "shop"} product —
-                name, size, specs, price. AI writes title, description, and pricing for{" "}
-                <strong>{shop?.name ?? "your shop"}</strong>.
-              </p>
-            </div>
-            {showEmptyComposer && (
-              <button
-                type="button"
-                onClick={startManualEntry}
-                className="shrink-0 text-sm text-muted-foreground underline"
-              >
-                Manual entry
-              </button>
-            )}
+      {showForm && draft && (
+        <Card className="mb-6 border-white/10 bg-white/[0.03]">
+          <div className="mb-5">
+            <h3 className="font-semibold text-slate-100">
+              {editingId ? "Edit product" : "New product"}
+            </h3>
+            <p className="mt-1 text-sm text-slate-400">
+              Fill in the basics yourself. Use AI only to enhance the description or suggest a
+              nearby market price.
+            </p>
           </div>
 
-          {!draft && !manualMode && (
-            <div className="mt-5 space-y-4">
-              <label className="block">
-                <span className="mb-1.5 block text-sm font-medium text-foreground">
-                  Describe your product
-                </span>
-                <textarea
-                  value={aiPrompt}
-                  onChange={(e) => setAiPrompt(e.target.value)}
-                  rows={3}
-                  placeholder={promptPack.placeholder}
-                  className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
-              </label>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {changeRequestId && requiresReview && (
+              <p className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-sm text-amber-100/90">
+                An AI suggestion is tracked as a change request. Saving applies it to your catalog.
+              </p>
+            )}
 
-              <div className="flex flex-wrap gap-2">
-                {promptPack.examples.map((example) => (
-                  <button
-                    key={example}
-                    type="button"
-                    onClick={() => setAiPrompt(example)}
-                    className="rounded-full border border-emerald-200 bg-card px-3 py-1 text-xs text-emerald-800 transition hover:bg-emerald-50"
-                  >
-                    {example.length > 42 ? `${example.slice(0, 42)}…` : example}
-                  </button>
-                ))}
-              </div>
+            {error && <p className="text-sm text-red-400">{error}</p>}
 
-              <div className="flex flex-wrap items-end gap-3">
-                <label className="block w-full sm:w-40">
-                  <span className="mb-1 block text-xs font-medium text-muted-foreground">
-                    Price hint (optional)
-                  </span>
-                  <input
-                    type="number"
-                    min="1"
-                    value={priceHint}
-                    onChange={(e) => setPriceHint(e.target.value)}
-                    placeholder={promptPack.priceHintPlaceholder}
-                    className="h-10 w-full rounded-xl border border-border bg-card px-3 text-sm"
-                  />
-                </label>
-                <Button onClick={handleGenerate} disabled={generating}>
-                  {generating ? "Generating listing…" : "Generate with AI"}
-                </Button>
-                {!showEmptyComposer && (
-                  <button
-                    type="button"
-                    onClick={startManualEntry}
-                    className="text-sm text-muted-foreground underline"
-                  >
-                    Skip AI, enter manually
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {(draft || manualMode) && (
-            <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <h4 className="font-medium">
-                  {editingId ? "Edit product" : "Review & edit listing"}
-                </h4>
-                {aiModel && <Badge>AI · {aiModel === "mock" ? "demo mode" : "generated"}</Badge>}
-                {changeRequestId && (
-                  <Badge>{requiresReview ? "Needs review" : "Change request"}</Badge>
-                )}
-              </div>
-
-              {changeRequestId && requiresReview && (
-                <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                  This AI listing is tracked as a change request. Saving publishes it to your catalog
-                  and closes the request. You can also review pending catalog requests in{" "}
-                  <a href="/workspace/approvals" className="font-medium underline">
-                    Workspace → Approvals
-                  </a>
-                  .
-                </p>
-              )}
-
-              {error && <p className="text-sm text-red-600">{error}</p>}
-
-              <div className="rounded-xl border border-border bg-card p-4">
-                  <span className="mb-2 block text-sm font-medium text-foreground">
-                    Product photo
-                  </span>
-                  {draft?.imageUrl ? (
-                    <div className="space-y-4">
-                      <div className="flex flex-wrap items-start gap-4">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={productImageSrc(draft.imageUrl)}
-                          alt={draft.title || "Product preview"}
-                          className="h-36 w-36 rounded-xl border border-border object-cover bg-muted"
-                        />
-                        <div className="space-y-2">
-                          <p className="text-sm text-muted-foreground">
-                            {originalImageUrl && draft.imageUrl !== originalImageUrl
-                              ? "Background removed — clean photo selected for your shop."
-                              : "Photo ready — remove the background for a cleaner storefront look."}
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            <label className="inline-flex cursor-pointer items-center rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium text-foreground hover:bg-muted">
-                              Replace photo
-                              <input
-                                type="file"
-                                accept="image/jpeg,image/png,image/webp,image/gif"
-                                className="hidden"
-                                onChange={handleImageSelect}
-                                disabled={uploadingImage}
-                              />
-                            </label>
-                            {originalImageUrl && draft.imageUrl !== originalImageUrl && (
-                              <button
-                                type="button"
-                                onClick={useOriginalPhoto}
-                                className="rounded-xl border border-border px-3 py-2 text-sm text-foreground hover:bg-muted"
-                              >
-                                Use original
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              onClick={removeImage}
-                              className="rounded-xl px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-medium text-foreground">
-                              Remove background (free)
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              Cuts out your product and places it on a clean white background.
-                            </p>
-                          </div>
-                          <Button
+            <div className="rounded-xl border border-border bg-card p-4">
+              <span className="mb-2 block text-sm font-medium text-foreground">Product photo</span>
+              {draft.imageUrl ? (
+                <div className="space-y-4">
+                  <div className="flex flex-wrap items-start gap-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={productImageSrc(draft.imageUrl)}
+                      alt={draft.title || "Product preview"}
+                      className="h-36 w-36 rounded-xl border border-border object-cover bg-muted"
+                    />
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">
+                        {originalImageUrl && draft.imageUrl !== originalImageUrl
+                          ? "Background removed — clean photo selected for your shop."
+                          : "Photo ready — remove the background for a cleaner storefront look."}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <label className="inline-flex cursor-pointer items-center rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium text-foreground hover:bg-muted">
+                          Replace photo
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/gif"
+                            className="hidden"
+                            onChange={handleImageSelect}
+                            disabled={uploadingImage}
+                          />
+                        </label>
+                        {originalImageUrl && draft.imageUrl !== originalImageUrl && (
+                          <button
                             type="button"
-                            onClick={handleEnhancePhoto}
-                            disabled={enhancing}
+                            onClick={useOriginalPhoto}
+                            className="rounded-xl border border-border px-3 py-2 text-sm text-foreground hover:bg-muted"
                           >
-                            {enhancing
-                              ? "Removing… (first run may take a minute)"
-                              : "Remove background"}
-                          </Button>
-                        </div>
+                            Use original
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={removeImage}
+                          className="rounded-xl px-3 py-2 text-sm text-red-400 hover:bg-red-500/10"
+                        >
+                          Remove
+                        </button>
                       </div>
                     </div>
-                  ) : (
-                    <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/80 px-6 py-10 text-center transition hover:border-emerald-400 hover:bg-emerald-50/40">
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/gif"
-                        className="hidden"
-                        onChange={handleImageSelect}
-                        disabled={uploadingImage}
-                      />
-                      <span className="text-3xl">📷</span>
-                      <span className="mt-2 text-sm font-medium text-foreground">
-                        {uploadingImage ? "Uploading…" : "Click to upload a product photo"}
-                      </span>
-                      <span className="mt-1 text-xs text-muted-foreground">
-                        JPG, PNG, WebP, or GIF · up to 5 MB
-                      </span>
-                    </label>
-                  )}
-                </div>
+                  </div>
 
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium text-slate-200">
+                          Remove background (free)
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          Cuts out your product and places it on a clean white background.
+                        </p>
+                      </div>
+                      <Button type="button" onClick={handleEnhancePhoto} disabled={enhancing}>
+                        {enhancing
+                          ? "Removing… (first run may take a minute)"
+                          : "Remove background"}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-white/15 bg-white/[0.02] px-6 py-10 text-center transition hover:border-white/25 hover:bg-white/[0.04]">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                    onChange={handleImageSelect}
+                    disabled={uploadingImage}
+                  />
+                  <span className="text-sm font-medium text-slate-300">
+                    {uploadingImage ? "Uploading…" : "Click to upload a product photo"}
+                  </span>
+                  <span className="mt-1 text-xs text-slate-500">
+                    JPG, PNG, WebP, or GIF · up to 5 MB
+                  </span>
+                </label>
+              )}
+            </div>
+
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium text-foreground">Product name</span>
+              <input
+                required
+                value={draft.title}
+                onChange={(e) => setDraft((d) => (d ? { ...d, title: e.target.value } : d))}
+                className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm"
+                placeholder="e.g. Choco Fudge Cake"
+              />
+            </label>
+
+            {draft.shortDescription ? (
+              <p className="text-sm text-muted-foreground">{draft.shortDescription}</p>
+            ) : null}
+
+            <label className="block">
+              <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+                <span className="text-sm font-medium text-foreground">Description</span>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={enhancingDescription || !draft.title.trim()}
+                  onClick={() => void handleEnhanceDescription()}
+                >
+                  {enhancingDescription ? "Enhancing…" : "Enhance with AI"}
+                </Button>
+              </div>
+              <textarea
+                value={htmlToPlainDescription(draft.descriptionHtml)}
+                onChange={(e) =>
+                  setDraft((d) =>
+                    d
+                      ? {
+                          ...d,
+                          descriptionHtml: plainDescriptionToHtml(e.target.value),
+                          shortDescription: e.target.value.split("\n")[0] ?? "",
+                        }
+                      : d
+                  )
+                }
+                rows={4}
+                placeholder="Write your own description. AI can polish it after."
+                className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
+              />
+              {descriptionNote ? (
+                <p className="mt-1.5 text-xs text-slate-400">{descriptionNote}</p>
+              ) : (
+                <p className="mt-1.5 text-xs text-slate-500">
+                  Optional: AI rewrites for clarity and selling tone — you stay in control.
+                </p>
+              )}
+            </label>
+
+            <div className="grid gap-3 sm:grid-cols-3">
               <label className="block">
-                <span className="mb-1 block text-sm font-medium text-foreground">Product name</span>
+                <span className="mb-1 block text-sm font-medium text-foreground">Price (PHP)</span>
                 <input
                   required
-                  value={draft?.title ?? ""}
+                  type="number"
+                  min="1"
+                  value={draft.basePrice}
                   onChange={(e) =>
-                    setDraft((d) => (d ? { ...d, title: e.target.value } : d))
+                    setDraft((d) => (d ? { ...d, basePrice: e.target.value } : d))
                   }
                   className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm"
                 />
               </label>
-
-              {draft?.shortDescription && (
-                <p className="text-sm text-muted-foreground">{draft.shortDescription}</p>
-              )}
-
               <label className="block">
-                <span className="mb-1 block text-sm font-medium text-foreground">Description</span>
-                <textarea
-                  value={draft ? stripHtml(draft.descriptionHtml) : ""}
+                <span className="mb-1 block text-sm font-medium text-foreground">
+                  Compare-at (optional)
+                </span>
+                <input
+                  type="number"
+                  min="1"
+                  value={draft.compareAtPrice}
                   onChange={(e) =>
-                    setDraft((d) =>
-                      d
-                        ? {
-                            ...d,
-                            descriptionHtml: `<p>${e.target.value.replace(/\n/g, "</p><p>")}</p>`,
-                            shortDescription: e.target.value.split("\n")[0] ?? "",
-                          }
-                        : d
-                    )
+                    setDraft((d) => (d ? { ...d, compareAtPrice: e.target.value } : d))
                   }
-                  rows={4}
-                  className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
+                  placeholder="499"
+                  className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm"
                 />
               </label>
-
-              <div className="grid gap-3 sm:grid-cols-3">
-                <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-foreground">Price (PHP)</span>
-                  <input
-                    required
-                    type="number"
-                    min="1"
-                    value={draft?.basePrice ?? ""}
-                    onChange={(e) =>
-                      setDraft((d) => (d ? { ...d, basePrice: e.target.value } : d))
-                    }
-                    className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm"
-                  />
-                </label>
-                <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-foreground">
-                    Compare-at (optional)
-                  </span>
-                  <input
-                    type="number"
-                    min="1"
-                    value={draft?.compareAtPrice ?? ""}
-                    onChange={(e) =>
-                      setDraft((d) => (d ? { ...d, compareAtPrice: e.target.value } : d))
-                    }
-                    placeholder="499"
-                    className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm"
-                  />
-                </label>
-                <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-foreground">Stock</span>
-                  <input
-                    type="number"
-                    min="0"
-                    value={draft?.stockQty ?? "10"}
-                    onChange={(e) =>
-                      setDraft((d) => (d ? { ...d, stockQty: e.target.value } : d))
-                    }
-                    className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm"
-                  />
-                </label>
-              </div>
-
-              {editingId && (
-                <div className="flex flex-wrap items-center gap-3">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={suggestingPrice}
-                    onClick={() => void handleSuggestPrice()}
-                  >
-                    {suggestingPrice ? "Suggesting…" : "Suggest price with AI"}
-                  </Button>
-                  {pricingNote && (
-                    <p className="text-sm text-amber-800">{pricingNote}</p>
-                  )}
-                </div>
-              )}
-
-              <label className="block sm:max-w-xs">
-                <span className="mb-1 block text-sm font-medium text-foreground">Status</span>
-                <select
-                  value={draft?.status ?? "active"}
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-foreground">Stock</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={draft.stockQty}
                   onChange={(e) =>
-                    setDraft((d) =>
-                      d ? { ...d, status: e.target.value as "draft" | "active" } : d
-                    )
+                    setDraft((d) => (d ? { ...d, stockQty: e.target.value } : d))
                   }
                   className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm"
-                >
-                  <option value="active">Active (visible on storefront)</option>
-                  <option value="draft">Draft (hidden)</option>
-                </select>
+                />
               </label>
+            </div>
 
-              {draft && draft.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {draft.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={suggestingPrice || !draft.title.trim()}
+                onClick={() => void handleSuggestPrice()}
+              >
+                {suggestingPrice ? "Checking nearby prices…" : "Suggest nearby price"}
+              </Button>
+              {pricingNote ? (
+                <p className="max-w-xl text-sm text-slate-400">{pricingNote}</p>
+              ) : (
+                <p className="text-sm text-slate-500">
+                  AI estimates a competitive price for similar products nearby.
+                </p>
               )}
+            </div>
 
-              {draft && draft.photoShotList.length > 0 && (
-                <div className="rounded-xl border border-dashed border-border bg-card/70 p-3">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Photo tips from AI
-                  </p>
-                  <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                    {draft.photoShotList.map((tip) => (
-                      <li key={tip}>• {tip}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+            <label className="block sm:max-w-xs">
+              <span className="mb-1 block text-sm font-medium text-foreground">Status</span>
+              <select
+                value={draft.status}
+                onChange={(e) =>
+                  setDraft((d) =>
+                    d ? { ...d, status: e.target.value as "draft" | "active" } : d
+                  )
+                }
+                className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm"
+              >
+                <option value="active">Active (visible on storefront)</option>
+                <option value="draft">Draft (hidden)</option>
+              </select>
+            </label>
 
-              <div className="flex flex-wrap gap-2 pt-1">
-                <Button type="submit" disabled={saving}>
-                  {saving ? "Saving…" : editingId ? "Save changes" : "Save product"}
-                </Button>
-                {aiModel && (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={handleGenerate}
-                    disabled={generating}
-                  >
-                    {generating ? "Regenerating…" : "Regenerate with AI"}
-                  </Button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (editingId) {
-                      closeCreateForm();
-                      return;
-                    }
-                    setDraft(null);
-                    setManualMode(false);
-                    setAiModel(null);
-                    setChangeRequestId(null);
-                    setRequiresReview(false);
-                    setOriginalImageUrl(null);
-                    setError(null);
-                  }}
-                  className="px-3 text-sm text-muted-foreground underline"
-                >
-                  Start over
-                </button>
-              </div>
-            </form>
-          )}
-
-          {error && !draft && !manualMode && (
-            <p className="mt-3 text-sm text-red-600">{error}</p>
-          )}
+            <div className="flex flex-wrap gap-2 pt-1">
+              <Button type="submit" disabled={saving}>
+                {saving ? "Saving…" : editingId ? "Save changes" : "Save product"}
+              </Button>
+            </div>
+          </form>
         </Card>
       )}
 
       {notice && (
-        <p className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">
+        <p className="mb-4 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-2.5 text-sm text-emerald-100/90">
           {notice}
         </p>
       )}
-      {error && !showForm && !showEmptyComposer && (
-        <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
+      {error && !showForm && (
+        <p className="mb-4 rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-2.5 text-sm text-red-200">
           {error}
         </p>
       )}
@@ -839,11 +709,15 @@ export function ProductsManager() {
       {loading ? (
         <p className="text-muted-foreground">Loading products…</p>
       ) : products.length === 0 && !showForm ? (
-        <Card className="border-dashed">
-          <p className="font-medium">No products yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Use the AI creator above, then activate your shop from the dashboard.
+        <Card className="border-dashed border-white/15 bg-white/[0.02]">
+          <p className="font-medium text-slate-100">No products yet</p>
+          <p className="mt-1 text-sm text-slate-400">
+            Add your first product with a name, price, and photo. AI can help polish the
+            description or suggest a nearby price afterward.
           </p>
+          <Button type="button" className="mt-4" onClick={openCreateForm}>
+            + Add product
+          </Button>
         </Card>
       ) : products.length > 0 ? (
         <div className="grid gap-3">
@@ -857,27 +731,24 @@ export function ProductsManager() {
                   className="h-16 w-16 shrink-0 rounded-xl border border-border object-cover"
                 />
               ) : (
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-muted text-xl">
-                  🛍️
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-xs text-slate-500">
+                  No photo
                 </div>
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-semibold">{product.title}</h3>
-                  {product.aiGenerated && (
-                    <Badge className="bg-violet-100 text-violet-800">AI</Badge>
-                  )}
+                  <h3 className="font-semibold text-slate-100">{product.title}</h3>
                   <Badge
                     className={
                       product.status === "active"
-                        ? "bg-emerald-100 text-emerald-800"
-                        : "bg-muted text-muted-foreground"
+                        ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-200"
+                        : "border-white/10 bg-white/[0.04] text-slate-400"
                     }
                   >
                     {product.status}
                   </Badge>
                 </div>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="mt-1 text-sm text-slate-500">
                   {formatPrice(Number(product.basePrice))} · Stock: {product.stockQty} · /
                   {product.slug}
                 </p>
@@ -886,7 +757,7 @@ export function ProductsManager() {
                 <button
                   type="button"
                   onClick={() => startEdit(product)}
-                  className="rounded-xl border border-border px-3 py-1.5 text-sm text-foreground transition hover:bg-muted"
+                  className="rounded-xl border border-white/10 px-3 py-1.5 text-sm text-slate-300 transition hover:bg-white/[0.05]"
                 >
                   Edit
                 </button>
@@ -894,7 +765,7 @@ export function ProductsManager() {
                   type="button"
                   onClick={() => handleDelete(product)}
                   disabled={deletingId === product.id}
-                  className="rounded-xl px-3 py-1.5 text-sm text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                  className="rounded-xl px-3 py-1.5 text-sm text-red-400 transition hover:bg-red-500/10 disabled:opacity-50"
                 >
                   {deletingId === product.id ? "Deleting…" : "Delete"}
                 </button>

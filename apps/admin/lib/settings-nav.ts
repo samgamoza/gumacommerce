@@ -7,6 +7,12 @@ export const SETTINGS_SECTIONS = [
     description: "COD, fees, and fulfillment",
   },
   {
+    href: "/settings/payments",
+    label: "Payments",
+    icon: "💸",
+    description: "GCash / Maya receiving numbers (MVP)",
+  },
+  {
     href: "/settings/notifications",
     label: "Notifications",
     icon: "🔔",

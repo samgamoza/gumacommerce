@@ -79,6 +79,31 @@ const patchSchema = z.object({
           kycVerified: z.boolean().optional(),
         })
         .optional(),
+      payments: z
+        .object({
+          mode: z.enum(["manual_ewallet", "paymongo", "both"]).optional(),
+          receiving: z
+            .object({
+              gcashNumber: z.string().max(32).optional(),
+              gcashName: z.string().max(120).optional(),
+              mayaNumber: z.string().max(32).optional(),
+              mayaName: z.string().max(120).optional(),
+              bankName: z.string().max(120).optional(),
+              bankAccountName: z.string().max(120).optional(),
+              bankAccountNumber: z.string().max(64).optional(),
+            })
+            .optional(),
+        })
+        .optional(),
+      shopAssistant: z
+        .object({
+          enabled: z.boolean().optional(),
+          name: z.string().max(80).optional(),
+          greeting: z.string().max(500).optional(),
+          tone: z.enum(["friendly_taglish", "professional_en", "gen_z_taglish"]).optional(),
+          humanInbox: z.boolean().optional(),
+        })
+        .optional(),
     })
     .optional(),
 });

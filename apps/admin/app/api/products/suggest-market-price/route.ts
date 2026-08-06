@@ -3,7 +3,6 @@ import { z } from "zod";
 import { resolveApprovalLevel } from "@guma-commerce/ai";
 import {
   createChangeRequest,
-  getProductForTenant,
   getTenantDashboard,
   recordAiUsage,
 } from "@guma-commerce/db";
@@ -11,16 +10,16 @@ import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 import { assertAiQuota } from "@/lib/agents/usage-gate";
 import { suggestNearbyMarketPrice } from "@/lib/suggest-market-price";
 
-const idSchema = z.string().uuid();
+const schema = z.object({
+  title: z.string().min(1).max(200),
+  currentPrice: z.number().positive().max(999999).optional(),
+  productId: z.string().uuid().optional(),
+});
 
-export async function POST(
-  _request: Request,
-  { params }: { params: Promise<{ productId: string }> }
-) {
+export async function POST(request: Request) {
   try {
     const session = await requireTenantSession();
-    const { productId } = await params;
-    const id = idSchema.parse(productId);
+    const body = schema.parse(await request.json());
 
     const quota = await assertAiQuota(session.tenantId, "generation");
     if (!quota.allowed) {
@@ -35,32 +34,21 @@ export async function POST(
       return NextResponse.json({ ok: false, error: "Shop not found." }, { status: 404 });
     }
 
-    const product = await getProductForTenant(session.tenantId, id);
-    if (!product) {
-      return NextResponse.json({ ok: false, error: "Product not found." }, { status: 404 });
-    }
-
-    const currentPrice = Number(product.basePrice);
-    if (!Number.isFinite(currentPrice) || currentPrice <= 0) {
-      return NextResponse.json({ ok: false, error: "Product has no valid price." }, { status: 400 });
-    }
-
     const suggestion = suggestNearbyMarketPrice({
-      title: product.title,
+      title: body.title,
       category: dashboard.tenant.category,
-      currentPrice,
+      currentPrice: body.currentPrice,
     });
-    const approvalLevel = resolveApprovalLevel("ai.suggest.pricing", quota.usage.plan);
 
+    const approvalLevel = resolveApprovalLevel("ai.suggest.pricing", quota.usage.plan);
     const beforeJson = {
-      productId: product.id,
-      title: product.title,
-      basePrice: currentPrice,
-      compareAtPrice: product.compareAtPrice ? Number(product.compareAtPrice) : null,
+      productId: body.productId ?? null,
+      title: body.title.trim(),
+      basePrice: body.currentPrice ?? null,
     };
     const afterJson = {
-      productId: product.id,
-      title: product.title,
+      productId: body.productId ?? null,
+      title: body.title.trim(),
       basePrice: suggestion.basePrice,
       compareAtPrice: suggestion.compareAtPrice,
       low: suggestion.low,
@@ -75,7 +63,7 @@ export async function POST(
       approvalLevel,
       proposedByType: "ai",
       proposedByUserId: session.userId,
-      summary: `Nearby market price: ${product.title} → ₱${suggestion.basePrice}`.slice(0, 255),
+      summary: `Nearby market price: ${body.title.trim()} → ₱${suggestion.basePrice}`.slice(0, 255),
       beforeJson,
       afterJson,
     });
@@ -98,9 +86,12 @@ export async function POST(
       return NextResponse.json({ ok: false, error: error.message }, { status: error.status });
     }
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ ok: false, error: "Invalid product id." }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: error.errors[0]?.message ?? "Invalid request." },
+        { status: 400 }
+      );
     }
-    console.error("[products/suggest-price POST]", error);
+    console.error("[products/suggest-market-price POST]", error);
     return NextResponse.json({ ok: false, error: "Could not suggest a price." }, { status: 500 });
   }
 }

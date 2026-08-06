@@ -1,9 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getOrderForTracking, type OrderStatus } from "@guma-commerce/db";
+import {
+  getOrderForTracking,
+  getTenantStorefrontBySlug,
+  resolveTenantPaymentsSettings,
+  type OrderStatus,
+} from "@guma-commerce/db";
+import { buildManualEwalletInstructions } from "@guma-commerce/services";
 import { Badge, Button, Card } from "@guma-commerce/ui";
 import { getTenant as getDemoTenant } from "@/lib/demo-data";
 import { OrderAutoRefresh } from "@/components/order-auto-refresh";
+import { ManualPaymentPanel } from "@/components/manual-payment-panel";
+import { MessageSellerButton } from "@/components/storefront/message-seller-button";
+import { resolveStorefrontSettings } from "@/lib/storefront-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -19,14 +28,17 @@ function formatPrice(amount: string | number): string {
   }).format(Number(amount));
 }
 
-function formatTime(date: Date): string {
+function formatTime(date: Date | string | null | undefined): string {
+  if (!date) return "";
+  const value = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(value.getTime())) return "";
   return new Intl.DateTimeFormat("en-PH", {
     month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
     timeZone: "Asia/Manila",
-  }).format(date);
+  }).format(value);
 }
 
 const PAYMENT_LABELS: Record<string, string> = {
@@ -88,8 +100,36 @@ export default async function OrderTrackingPage({ params }: PageProps) {
   // Demo shops show a simulated order instead of hitting the database.
   const demoTenant = getDemoTenant(tenantSlug);
   const order = demoTenant ? null : await getOrderForTracking(tenantSlug, orderNumber);
+  const tenant = demoTenant ? null : await getTenantStorefrontBySlug(tenantSlug);
 
   if (!order && !demoTenant) notFound();
+
+  const storeSettings = tenant
+    ? resolveStorefrontSettings(
+        tenant.settingsJson as Parameters<typeof resolveStorefrontSettings>[0],
+        tenant.currency ?? "PHP",
+        tenant.checkoutPublishedJson,
+        tenant.shippingPublishedJson
+      )
+    : null;
+
+  const payments = resolveTenantPaymentsSettings(
+    (tenant?.settingsJson ?? null) as Record<string, unknown> | null
+  );
+  const payInstructions =
+    order && order.paymentMethod !== "cod"
+      ? buildManualEwalletInstructions({
+          method:
+            order.paymentMethod === "paymaya"
+              ? "paymaya"
+              : order.paymentMethod === "bank"
+                ? "bank"
+                : "gcash",
+          amount: formatPrice(order.total),
+          orderNumber: order.orderNumber,
+          receiving: payments.receiving,
+        })
+      : null;
 
   const status: OrderStatus = order?.status ?? "accepted";
   const isCancelled = status === "cancelled" || status === "refunded";
@@ -133,6 +173,19 @@ export default async function OrderTrackingPage({ params }: PageProps) {
             </p>
           )}
         </Card>
+
+        {order && payInstructions && storeSettings && awaitingPayment ? (
+          <ManualPaymentPanel
+            tenantSlug={tenantSlug}
+            orderNumber={order.orderNumber}
+            paymentMethod={order.paymentMethod}
+            totalLabel={formatPrice(order.total)}
+            instructions={payInstructions}
+            shopAssistant={storeSettings.shopAssistant}
+            shopName={order.tenantName}
+            alreadyPaid={order.paymentStatus === "paid"}
+          />
+        ) : null}
 
         {!isCancelled && (
           <Card>
@@ -240,14 +293,14 @@ export default async function OrderTrackingPage({ params }: PageProps) {
           </Card>
         )}
 
-        {order && order.history.length > 0 && (
+        {order && Array.isArray(order.history) && order.history.length > 0 && (
           <Card>
             <h2 className="font-semibold">History</h2>
             <ul className="mt-3 space-y-2 text-sm">
               {[...order.history].reverse().map((entry, index) => (
                 <li key={index} className="flex justify-between gap-3">
                   <span className="capitalize text-gray-700">
-                    {entry.status.replace(/_/g, " ")}
+                    {String(entry.status).replace(/_/g, " ")}
                     {entry.note ? (
                       <span className="block text-xs text-gray-400">{entry.note}</span>
                     ) : null}
@@ -268,6 +321,32 @@ export default async function OrderTrackingPage({ params }: PageProps) {
             <p className="mt-2 text-sm text-emerald-700">Demo order — no payment was processed</p>
           </Card>
         )}
+
+        {order && storeSettings && !isCancelled ? (
+          <Card className="space-y-2">
+            <h2 className="font-semibold">Need help with this order?</h2>
+            <p className="text-sm text-gray-500">
+              Message the shop about payment proof, changes, or delivery — they reply in this
+              chat.
+            </p>
+            <MessageSellerButton
+              tenantSlug={tenantSlug}
+              shopName={order.tenantName}
+              assistant={
+                storeSettings.shopAssistant ?? {
+                  enabled: true,
+                  name: "Shop chat",
+                  greeting: "Hi! How can we help with your order?",
+                  tone: "friendly_taglish",
+                  humanInbox: true,
+                }
+              }
+              orderNumber={order.orderNumber}
+              whatsapp={storeSettings.whatsapp}
+              className="w-full justify-center rounded-xl border border-neutral-200 bg-white py-3 text-sm font-semibold"
+            />
+          </Card>
+        ) : null}
 
         <Link href={`/${tenantSlug}`}>
           <Button variant="secondary" className="w-full">

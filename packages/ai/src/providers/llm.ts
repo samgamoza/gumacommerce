@@ -176,18 +176,41 @@ export async function callLlm(input: LlmCallInput): Promise<LlmCallResult> {
 }
 
 export function resolveEffectiveModel(requested: LlmModelId): LlmModelId {
-  if (requested === "mock") return "mock";
+  if (requested === "mock") {
+    if (!allowLlmMocks()) {
+      throw new Error(
+        "LLM mock model is not allowed in production. Configure GEMINI_API_KEY, OPENAI_API_KEY, or GROQ_API_KEY."
+      );
+    }
+    return "mock";
+  }
   if (requested === "gemini-2.0-flash") {
     if (process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY) return requested;
     if (process.env.GROQ_API_KEY) return "llama-3.3-70b-groq";
     if (process.env.OPENAI_API_KEY) return "gpt-4o-mini";
-    return "mock";
+    if (allowLlmMocks()) return "mock";
+    throw new Error(
+      "No LLM API key configured. Set GEMINI_API_KEY (or OPENAI_API_KEY / GROQ_API_KEY)."
+    );
   }
   if (requested.startsWith("gpt-")) {
     if (process.env.OPENAI_API_KEY) return requested;
     if (process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY) return "gemini-2.0-flash";
     if (process.env.GROQ_API_KEY) return "llama-3.3-70b-groq";
-    return "mock";
+    if (allowLlmMocks()) return "mock";
+    throw new Error(
+      "No LLM API key configured. Set OPENAI_API_KEY (or GEMINI_API_KEY / GROQ_API_KEY)."
+    );
   }
   return requested;
+}
+
+/** Mirrors @guma-commerce/services allowIntegrationMocks without a package cycle. */
+function allowLlmMocks(): boolean {
+  if (process.env.NODE_ENV === "test" || process.env.GUMA_TEST_ADAPTERS === "true") {
+    return true;
+  }
+  if (process.env.VERCEL_ENV === "production") return false;
+  if (process.env.NODE_ENV === "production" && !process.env.VERCEL_ENV) return false;
+  return process.env.GUMA_ALLOW_INTEGRATION_MOCKS !== "false";
 }

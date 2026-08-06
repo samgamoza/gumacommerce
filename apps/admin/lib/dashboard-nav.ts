@@ -80,11 +80,17 @@ export const DASHBOARD_NAV: DashboardNavGroup[] = [
         description: "Accept, fulfill, and track customer orders.",
       },
       {
+        id: "messages",
+        label: "Messages",
+        href: "/messages",
+        icon: Bot,
+        description: "Buyer storefront chat for payment and product help.",
+      },
+      {
         id: "launch",
         label: "GUMA Launch",
         href: "/launch",
         icon: Sparkles,
-        badge: "new",
         description: "Store DNA, template pick, personalize, publish.",
       },
     ],
@@ -107,7 +113,6 @@ export const DASHBOARD_NAV: DashboardNavGroup[] = [
         href: "/dashboard/analytics",
         icon: BarChart3,
         minPlan: "growth",
-        badge: "new",
         description: "Traffic, conversion, and revenue trends.",
       },
     ],
@@ -116,7 +121,7 @@ export const DASHBOARD_NAV: DashboardNavGroup[] = [
     id: "marketing",
     label: "Marketing & AI",
     collapsible: true,
-    defaultOpen: true,
+    defaultOpen: false,
     items: [
       {
         id: "workspace",
@@ -124,7 +129,6 @@ export const DASHBOARD_NAV: DashboardNavGroup[] = [
         href: "/workspace",
         icon: Bot,
         minPlan: "growth",
-        badge: "new",
         description: "AI marketing, agents, and approved automations.",
       },
       {
@@ -180,7 +184,6 @@ export const DASHBOARD_NAV: DashboardNavGroup[] = [
         href: "/dashboard/workflows",
         icon: Workflow,
         minPlan: "pro",
-        badge: "new",
         description: "Automate order, payout, and marketing flows.",
       },
       {
