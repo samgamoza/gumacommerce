@@ -12,7 +12,7 @@
   },
   "scripts": {
     "build": "tsc --noEmit",
-    "test": "tsx --test src/delivery/orchestrator.test.ts"
+    "test": "tsx --test src/delivery/orchestrator.test.ts src/config/integrations.test.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

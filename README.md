@@ -64,7 +64,9 @@ pnpm db:seed
 
 Deploy `apps/web` and `apps/admin` to Vercel. See **[docs/DEPLOY-VERCEL.md](docs/DEPLOY-VERCEL.md)** for pre-beta checklist, env vars, and cron setup.
 
+**Chief Engineer review:** **[docs/CHIEF-ENGINEER-REVIEW-SUMMARY.md](docs/CHIEF-ENGINEER-REVIEW-SUMMARY.md)** — launch readiness & architecture sign-off.  
 **Agent handoff:** **[docs/COMPREHENSIVE-HANDOFF-2026-07-12.md](docs/COMPREHENSIVE-HANDOFF-2026-07-12.md)** — full repo summary.  
+**After soft-launch hygiene:** **[docs/PRIORITY-SCOPE-BRAND-GUARD.md](docs/PRIORITY-SCOPE-BRAND-GUARD.md)** — Brand Guard (anti-AI-slop).  
 **Constitution:** **[docs/CONSTITUTION.md](docs/CONSTITUTION.md)** · **Architecture:** **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** · Session notes: **[docs/AGENT-HANDOFF.md](docs/AGENT-HANDOFF.md)**.
 
 **GUMA Launch (new):** after signup → http://localhost:3001/launch

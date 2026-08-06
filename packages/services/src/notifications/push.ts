@@ -31,12 +31,19 @@ function configure(): boolean {
 /**
  * Sends a push notification to every subscription. Returns endpoints that are
  * permanently dead (410/404) so the caller can prune them from the database.
+ * When VAPID is unset, returns sent: 0 (does not claim success).
  */
 export async function sendPushNotifications(
   subscriptions: PushSubscriptionRecord[],
   payload: PushPayload
 ): Promise<{ sent: number; expiredEndpoints: string[] }> {
-  if (subscriptions.length === 0 || !configure()) {
+  if (subscriptions.length === 0) {
+    return { sent: 0, expiredEndpoints: [] };
+  }
+  if (!configure()) {
+    console.warn(
+      "[push] VAPID not configured — push not sent (sent=0). Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY."
+    );
     return { sent: 0, expiredEndpoints: [] };
   }
 

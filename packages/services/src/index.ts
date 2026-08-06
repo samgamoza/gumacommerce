@@ -1,11 +1,15 @@
 export { PayMongoClient, createPayMongoClient, type PayMongoMethod } from "./payments/paymongo";
 export {
   resolvePaymentAdapterId,
+  resolvePaymentsMode,
   startOnlinePayment,
+  buildManualEwalletInstructions,
   type CheckoutPaymentMethod,
   type PaymentAdapterId,
+  type PaymentsMode,
   type StartOnlinePaymentInput,
   type StartOnlinePaymentResult,
+  type ManualEwalletInstructions,
 } from "./payments/adapter";
 export {
   LalamoveClient,
@@ -70,3 +74,22 @@ export {
   type PushSubscriptionRecord,
   type PushPayload,
 } from "./notifications/push";
+export {
+  getRuntimeMode,
+  isProductionRuntime,
+  allowIntegrationMocks,
+  type RuntimeMode,
+} from "./config/runtime-mode";
+export {
+  getIntegrationChecks,
+  getIntegrationReport,
+  assertIntegrationReady,
+  logIntegrationStatusOnce,
+  integrationHealthPayload,
+  IntegrationNotConfiguredError,
+  type IntegrationId,
+  type IntegrationCheck,
+  type IntegrationReport,
+  type IntegrationStatus,
+  type IntegrationSeverity,
+} from "./config/integrations";

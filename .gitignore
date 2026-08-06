@@ -37,6 +37,8 @@ pnpm-debug.log*
 # User uploads (keep folder structure)
 apps/web/public/uploads/products/**
 !apps/web/public/uploads/products/.gitkeep
+apps/web/public/uploads/payment-proofs/**
+!apps/web/public/uploads/payment-proofs/.gitkeep
 
 # Private KYC uploads (local dev)
 apps/admin/.data/

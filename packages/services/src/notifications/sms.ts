@@ -1,4 +1,11 @@
+import {
+  assertIntegrationReady,
+  allowIntegrationMocks,
+} from "../config/integrations";
+import { createLogger } from "../logging";
+
 const SEMAPHORE_API = "https://api.semaphore.co/api/v4/messages";
+const log = createLogger("sms");
 
 export interface SendSmsInput {
   to: string;
@@ -9,16 +16,30 @@ export interface SendSmsInput {
 export interface SendSmsResult {
   success: boolean;
   messageId?: string;
+  /** True when this was a labeled local/test mock — never set when claiming a real send. */
   mock?: boolean;
+  error?: string;
 }
 
 export class SemaphoreClient {
   constructor(private apiKey: string) {}
 
   async send(input: SendSmsInput): Promise<SendSmsResult> {
-    if (!this.apiKey) {
-      console.info("[SMS Mock]", input.to, input.message);
-      return { success: true, messageId: `sms_mock_${Date.now()}`, mock: true };
+    if (!this.apiKey.trim()) {
+      if (allowIntegrationMocks()) {
+        assertIntegrationReady("semaphore", { operation: "send" });
+        log.warn("SMS mock — credentials missing; labeled mock success only", {
+          to: input.to,
+        });
+        console.info("[SMS Mock]", input.to, input.message);
+        return { success: true, messageId: `sms_mock_${Date.now()}`, mock: true };
+      }
+
+      log.warn("Semaphore not configured — SMS not sent", { to: input.to });
+      return {
+        success: false,
+        error: "SEMAPHORE_API_KEY is not configured. SMS was not sent.",
+      };
     }
 
     const body = new URLSearchParams({
@@ -35,7 +56,8 @@ export class SemaphoreClient {
     });
 
     if (!res.ok) {
-      throw new Error(`Semaphore SMS failed: ${await res.text()}`);
+      const detail = await res.text();
+      throw new Error(`Semaphore SMS failed: ${detail}`);
     }
 
     const json = (await res.json()) as Array<{ message_id: string }>;

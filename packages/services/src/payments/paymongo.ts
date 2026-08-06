@@ -1,6 +1,12 @@
 import { createHmac, timingSafeEqual } from "crypto";
+import {
+  assertIntegrationReady,
+  allowIntegrationMocks,
+} from "../config/integrations";
+import { createLogger } from "../logging";
 
 const PAYMONGO_API = "https://api.paymongo.com/v1";
+const log = createLogger("paymongo");
 
 export type PayMongoMethod = "gcash" | "paymaya" | "qrph" | "card";
 
@@ -16,11 +22,21 @@ export interface PaymentIntentResult {
   clientKey: string;
   status: string;
   amount: number;
+  /** True when this response is a labeled local/test mock — never set in production. */
+  mock?: boolean;
 }
 
 export interface AttachPaymentMethodResult {
   redirectUrl?: string;
   status: string;
+  mock?: boolean;
+}
+
+function isUsableSecret(secretKey: string): boolean {
+  if (!secretKey.trim()) return false;
+  if (secretKey.startsWith("sk_test_xxx")) return false;
+  if (secretKey === "sk_test_placeholder") return false;
+  return true;
 }
 
 export class PayMongoClient {
@@ -31,13 +47,25 @@ export class PayMongoClient {
     return `Basic ${encoded}`;
   }
 
+  private ensureLiveOrMock(operation: string): "live" | "mock" {
+    if (isUsableSecret(this.secretKey)) return "live";
+    assertIntegrationReady("paymongo", { operation });
+    if (!allowIntegrationMocks()) {
+      // assert should have thrown; belt-and-suspenders
+      assertIntegrationReady("paymongo", { operation });
+    }
+    log.warn(`Using explicit PayMongo mock for ${operation} (credentials missing)`);
+    return "mock";
+  }
+
   async createPaymentIntent(input: CreatePaymentIntentInput): Promise<PaymentIntentResult> {
-    if (!this.secretKey || this.secretKey.startsWith("sk_test_xxx")) {
+    if (this.ensureLiveOrMock("createPaymentIntent") === "mock") {
       return {
         id: `pi_mock_${Date.now()}`,
         clientKey: `pi_mock_${Date.now()}_client`,
         status: "awaiting_payment_method",
         amount: input.amountCentavos,
+        mock: true,
       };
     }
 
@@ -83,11 +111,19 @@ export class PayMongoClient {
     clientKey: string
   ): Promise<AttachPaymentMethodResult> {
     if (intentId.startsWith("pi_mock_")) {
+      if (!allowIntegrationMocks()) {
+        throw new Error(
+          "Refusing to attach a mock PayMongo intent outside mock-allowed runtimes."
+        );
+      }
       return {
         redirectUrl: `https://checkout.paymongo.com/mock?intent=${intentId}`,
         status: "awaiting_next_action",
+        mock: true,
       };
     }
+
+    this.ensureLiveOrMock("attachPaymentMethod");
 
     const res = await fetch(`${PAYMONGO_API}/payment_intents/${intentId}/attach`, {
       method: "POST",
@@ -129,9 +165,11 @@ export class PayMongoClient {
     amountCentavos: number;
     reason?: "duplicate" | "fraudulent" | "requested_by_customer" | "others";
     notes?: string;
-  }): Promise<{ id: string; status: string }> {
-    if (!this.secretKey || input.paymentId.startsWith("pay_mock_")) {
-      return { id: `ref_mock_${Date.now()}`, status: "succeeded" };
+  }): Promise<{ id: string; status: string; mock?: boolean }> {
+    if (input.paymentId.startsWith("pay_mock_") || !isUsableSecret(this.secretKey)) {
+      if (this.ensureLiveOrMock("createRefund") === "mock") {
+        return { id: `ref_mock_${Date.now()}`, status: "succeeded", mock: true };
+      }
     }
 
     const res = await fetch(`${PAYMONGO_API}/refunds`, {
