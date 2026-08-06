@@ -1,8 +1,9 @@
 # Guma Commerce — Comprehensive Summary & Handoff
 
-**Last updated:** 2026-07-13  
+**Last updated:** 2026-08-06 (delivery orchestrator live in apps + helpdesk tickets; Frontend1 CTA polish; Chat MVP Beta; manual e-wallet)  
 **Audience:** Next developer, architect, or AI agent continuing this repo  
-**Supersedes partially:** `docs/AGENT-HANDOFF.md` (2026-07-05 session) — read both; this doc is the current whole-repo picture including template library work, Handbook v1.2 assessment, and **Sprints 1–5** (SEO → Checkout → Shipping → Plan catalog → Priority template ports).
+**Chief Engineer review:** Prefer [`CHIEF-ENGINEER-REVIEW-SUMMARY.md`](./CHIEF-ENGINEER-REVIEW-SUMMARY.md) for launch/architecture sign-off.  
+**Supersedes partially:** `docs/AGENT-HANDOFF.md` — read both; this doc is the current whole-repo picture including template library work, Handbook v1.2 assessment, **Sprints 1–5**, and **2026-08 ops deltas** (delivery, helpdesk, chat, payments). **Product next:** `docs/PRIORITY-SCOPE-BRAND-GUARD.md` after soft-launch hygiene.
 
 ---
 
@@ -12,10 +13,12 @@
 
 | Dimension | Status |
 |-----------|--------|
-| **Maturity** | Working MVP+ — real checkout, orders, agents, **18** live storefront themes, platform super-admin, crown-jewel CR rails for theme/catalog/pricing/SEO/checkout/shipping |
+| **Maturity** | Soft-launchable MVP+ — checkout (incl. manual e-wallet), orders, owner-led chat, multi-courier delivery wiring, ticketed helpdesk, **18** themes, platform super-admin, crown-jewel CR rails |
 | **Stack** | pnpm + Turbo monorepo, Next.js 15, React 19, Drizzle + Neon Postgres |
 | **Templates** | **18** HTML-ported themes live + built-in token themes; Free Bundle 2023 catalogued; Sprint 5 priority ports **aircon / carserv / motto / studio** integrated |
 | **Plans (ADR D4)** | Single catalog `@guma-commerce/plans` — IDs `free`/`growth`/`pro`; labels **Free / Pro / Advance**; ₱0 / ₱499 / ₱999 |
+| **Delivery** | Orchestrator in checkout/book path — Lalamove + GrabExpress (+ failover) + manual Assign rider; webhooks for Lalamove/Grab |
+| **Helpdesk** | Ticket domain (`support_tickets`) — web contact, seller admin, platform `/helpdesk` with SLA clocks |
 | **Handbook** | v1.2 hybrid adoption — crown jewel + plan catalog landed; Workstation unification and infra still incremental |
 | **Deployment** | Vercel-ready docs; production deploy not assumed complete |
 
@@ -45,7 +48,7 @@
 | Prisma + RLS | **Drizzle**, app-level `tenantId` scoping |
 | Plans FREE/PRO/ADVANCE | **Canonical:** IDs `free`/`growth`/`pro`; labels Free/Pro/Advance via `@guma-commerce/plans` (ADR D4 done) |
 | Live selling, POS, smart pricing | **Not built** (pricing *suggest* CR domain exists) |
-| Commerce + logistics | **Largely built** (checkout CR + tax/coupons, shipping CR, PayMongo, Lalamove, wallet) |
+| Commerce + logistics | **Largely built** (checkout CR + tax/coupons, shipping CR, PayMongo/manual e-wallet, Lalamove+Grab orchestrator, manual riders, wallet, helpdesk) |
 
 ### 2.3 Agreed hybrid direction (do not rewrite from handbook verbatim)
 
@@ -72,20 +75,25 @@ guma-commerce/
 │   ├── plans/               # Canonical plan catalog + AI limits (ADR D4)
 │   ├── auth/                # JWT sessions, signup, Google OAuth
 │   ├── events/              # Inngest client + Domain.Event.Vn emitters
-│   ├── services/            # PayMongo, Lalamove, SMS, rate-limit, push
+│   ├── services/            # PayMongo, delivery orchestrator (Lalamove/Grab/manual), SMS, rate-limit, push
 │   ├── storefront-themes/   # Templates, patterns, registry, bundle catalog
 │   ├── ui/                  # Shared Button/Card/Badge
 │   └── media/               # Image-enhance prompt templates (minimal)
 ├── reference/               # Extracted HTML template sources (incl. aircon/carserv/motto/studio)
 ├── packages/storefront-templates/   # Human docs (README, BUNDLE catalog)
 └── docs/
+    ├── CHIEF-ENGINEER-REVIEW-SUMMARY.md   # ← final review / launch sign-off
     ├── AGENT-HANDOFF.md
     ├── COMPREHENSIVE-HANDOFF-2026-07-12.md   # ← this file
+    ├── DELIVERY-AND-HELPDESK.md
+    ├── MVP-MANUAL-EWALLET-CHAT.md
+    ├── MVP-HARDENING-P1-INTEGRATION-MOCKS.md
     ├── HANDBOOK-V1.2-ASSESSMENT.md
     ├── ADR-0001-handbook-adoption.md
     ├── CROWN-JEWEL-AI-APPROVAL.md
     ├── ARCHITECTURE.md
     ├── SPRINT-1-SEO-PROGRESS.md … SPRINT-5-TEMPLATE-PORTS-PROGRESS.md
+    ├── PRIORITY-SCOPE-BRAND-GUARD.md
     ├── DATABASE.md
     └── DEPLOY-VERCEL.md
 ```
@@ -100,7 +108,7 @@ guma-commerce/
 |-----|---------|----------|------|
 | **Storefront + marketing** | `@guma-commerce/web` | **3010** (`package.json`; README still says 3000) | `/{tenantSlug}`, checkout, buyer chat, webhooks |
 | **Seller admin** | `@guma-commerce/admin` | **3001** | Dashboard, products, orders, Shop Builder, Agents, AI Studio, settings |
-| **Platform console** | `@guma-commerce/platform` | **3002** | Super-admin: tenants, users, plans, moderation, audit |
+| **Platform console** | `@guma-commerce/platform` | **3002** | Super-admin: tenants, users, plans, helpdesk, moderation, frontends, audit |
 
 ### Dev commands
 
@@ -135,7 +143,7 @@ Buyer / Seller / Super-admin
         ↓
    packages/*  (db, ai, auth, services, storefront-themes)
         ↓
-   Neon Postgres  |  optional Upstash Redis  |  PayMongo / Lalamove / Semaphore
+   Neon Postgres  |  optional Upstash Redis  |  PayMongo / Lalamove / Grab / Semaphore
 ```
 
 ### Request flow — storefront
@@ -170,9 +178,12 @@ Buyer / Seller / Super-admin
 | `orders`, `order_items`, `payments` | Commerce lifecycle |
 | `content_queue` | Agent-generated posts (`draft` → `approved` → `posted`) |
 | `agent_runs`, `ai_usage_monthly` | AI quotas & logging |
-| `shop_chat_messages` | Buyer shop assistant history |
+| `shop_chat_messages` | Buyer↔seller shop chat history |
+| `support_tickets`, `support_ticket_messages` | Platform helpdesk (SLA clocks) |
+| `delivery_quotes`, `deliveries` | Courier quotes/bookings (lalamove/grab/manual) |
 | `tenant_wallets`, `wallet_ledger_entries`, `tenant_payouts` | Seller wallet |
 | `platform_audit_log` | Super-admin audit trail |
+| `platform_settings` | e.g. `active_landing` → frontend1 \| frontend2 |
 
 ### Pitfalls
 
@@ -282,18 +293,22 @@ Examples in `templates.ts`: `clean-guma`, `neon-bazaar`, `simply-sweet`, `glass-
 |---------|--------|-----------|
 | Product CRUD | ✅ | `apps/admin/app/products/`, `api/products/*` |
 | Categories | ✅ | `apps/admin/app/categories/` |
-| Cart (buyer) | ✅ | `apps/web/lib/cart.ts` (localStorage) |
+| Cart (buyer) | ✅ | `apps/web/lib/cart.ts` (optimistic localStorage) |
 | Checkout | ✅ | `apps/web/app/api/checkout/route.ts` |
-| PayMongo | ✅ (+ mock) | `packages/services/src/payments/paymongo.ts` |
+| Manual e-wallet | ✅ MVP | Proof upload + seller confirm-payment; `PAYMENTS_MODE=manual_ewallet` |
+| PayMongo | ✅ (+ mock gate) | `packages/services/src/payments/paymongo.ts` |
 | COD | ✅ | Checkout path |
-| Orders admin | ✅ | `apps/admin/app/orders/` |
-| Lalamove quotes/booking | ✅ (+ mock) | `services/delivery/lalamove.ts`, webhooks |
+| Orders admin | ✅ | Book courier + Assign rider |
+| Multi-courier delivery | ✅ (+ mock gate) | Orchestrator; Lalamove/Grab/manual; webhooks `/api/webhooks/{lalamove,grab}` |
+| Buyer↔seller chat | ✅ MVP Beta | Storefront widget + admin `/messages`; WhatsApp overflow |
+| Platform helpdesk | ✅ | `support_tickets`; web `/contact`, admin support, platform `/helpdesk` |
 | Wallet & payouts | ✅ schema + APIs | `api/wallet/*`, KYC flow |
 | SMS (Semaphore) | ✅ | Pro+ (`growth`+) agent reminders |
 | Push notifications | ✅ | VAPID web push on order events |
 | SEO (Workspace) | ✅ | `seo_*_json` CR → Approvals → storefront metadata/robots/sitemap |
 | Checkout config | ✅ | `checkout_*_json` CR; tax/coupons; Order.Created/Succeeded |
 | Shipping profiles | ✅ | `shipping_*_json` CR; zones/rates; mirrors `settings_json.delivery` |
+| Marketing landings | ✅ | `frontend1` / `frontend2` via `active_landing`; preview `/frontend1`, `/guma-one-ai` |
 
 ---
 
@@ -329,14 +344,18 @@ Aliases: `starter`→`growth`, `advance`→`pro`, `sulit`→`free`. Soft token b
 
 ## 11. Platform super-admin (`apps/platform`)
 
-Built 2026-07-05. Surfaces:
+Built 2026-07-05; extended 2026-08. Surfaces:
 
 - Dashboard (MRR, GMV, charts)
 - Tenants (suspend/activate/plan change)
 - Users, Subscriptions, Moderation (`content_queue`)
+- **Helpdesk** (ticket queue, SLA, assign/reply/internal notes)
+- **Frontends** (`active_landing` → frontend1 GumaCommerce / frontend2 Guma One.ai)
 - Orders (platform-wide), Audit log
 
 **Plan catalog:** Uses `@guma-commerce/plans` via `CLIENT_PLANS` / `PLATFORM_PLANS` re-exports (ADR D4). Legacy DB rows with `starter` normalize to `growth` at read time. Filters show Free / Pro / Advance (+ legacy starter).
+
+**Login (seeded):** `admin@guma.ph` / `GumaAdmin2026!` — change before shared/prod use.
 
 ---
 
@@ -406,9 +425,11 @@ Features **degrade gracefully** without keys (mocks for PayMongo/Lalamove/LLM).
 | Issue | Severity | Notes |
 |-------|----------|-------|
 | ~~Plan price sources disagree~~ | ~~High~~ | **Resolved Sprint 4** — `@guma-commerce/plans` |
-| Drizzle migrations lag live Neon schema | High | Run `db:generate` / reconcile |
-| `reference/` extracted templates may bloat git | Medium | Prefer `.gitignore` for large trees; keep catalog metadata |
-| Suspended tenant/user not enforced on seller login/storefront | Medium | Platform can suspend; apps don't block yet |
+| Large uncommitted working tree (2026-08) | High | Commit/PR in slices before production |
+| Marketing overclaims vs shipped logistics/payments | High | Prefer frontend1 live; honest FAQ copy |
+| Drizzle migrations lag / journal quirks | Medium | Prefer migrate/reconcile; never `db:push` |
+| Suspended tenant/user not enforced on seller login/storefront | Medium | Platform can suspend; apps don't hard-block yet |
+| Helpdesk has no email/push notify yet | Medium | Agents poll `/helpdesk` |
 | Email verification placeholder | Medium | Token exists; Resend not wired |
 | Unified AI Workstation UX | Medium | Approvals exist; Shop Builder / Marketing / Agents still separate entry points |
 | Live selling, POS | — | Handbook future / Advance |
@@ -427,6 +448,31 @@ cd apps/web && pnpm run dev:clean
 
 ## 16. Recommended roadmap (post-sprint)
 
+### Landed 2026-08-05 → 2026-08-06 (ops / MVP)
+
+- [x] Manual e-wallet + seller confirm payment
+- [x] Chat MVP Beta (owner-led messages + AI FAQ + WhatsApp overflow)
+- [x] Delivery orchestrator wired into quote/checkout/book + Grab webhook + Assign rider
+- [x] Helpdesk tickets (migration `0013`) + platform/admin/web surfaces
+- [x] Frontend1 CTA reliability pass (mobile nav, contact→ticket, `:3010` defaults)
+
+Detail: `DELIVERY-AND-HELPDESK.md`, `MVP-MANUAL-EWALLET-CHAT.md`, `CHIEF-ENGINEER-REVIEW-SUMMARY.md`.
+
+### Immediate soft-launch hygiene
+
+- [ ] Commit/PR slices; Vercel + secrets cutover
+- [ ] `NEXT_PUBLIC_ENABLE_DEMO_SHOP=true` (or real demo tenant) in prod
+- [ ] Staff platform Helpdesk; set Lalamove/Grab keys when partner-ready
+- [ ] Enforce suspended tenant/user on login + storefront
+- [ ] Update README ports if still stale (web = **3010**)
+
+### Next product priority (after launch hygiene)
+
+**Brand Guard (anti-AI-slop)** — binding scope: [`PRIORITY-SCOPE-BRAND-GUARD.md`](./PRIORITY-SCOPE-BRAND-GUARD.md).
+
+- Harvest [killaislop.com](https://killaislop.com) / yetone taxonomy; do **not** run the coding agent per merchant.
+- Slice A: template CI scan · Slice B: Free Launch prevention · Slice C: Growth+ Polish via `change_requests`.
+
 ### Done (do not re-open unless regressing)
 
 - [x] Unify plan catalog (`@guma-commerce/plans`, ADR D4)
@@ -442,6 +488,12 @@ cd apps/web && pnpm run dev:clean
 - [ ] Generate/reconcile Drizzle migrations vs Neon
 - [ ] Enforce suspended tenant/user on login + storefront
 - [ ] Update README ports if still stale (web = **3010**)
+
+#### Phase A2 — Brand Guard (next product priority)
+
+- [ ] Slice A: CI / `pnpm` scan on `apps/web/components/storefront/**`
+- [ ] Slice B: Launch + brand-kit deterministic anti-slop validators (zero LLM)
+- [ ] Slice C: Growth+ Brand Guard Polish → change_requests + Approvals
 
 #### Phase B — AI Workstation convergence
 
@@ -481,7 +533,16 @@ apps/admin/lib/agents/run-agents.ts
 
 # Platform
 apps/platform/app/actions.ts
+apps/platform/app/helpdesk/
 packages/db/src/queries/platform.ts
+packages/db/src/queries/support-tickets.ts
+
+# Delivery
+packages/services/src/delivery/orchestrator.ts
+apps/web/lib/delivery-quote.ts
+apps/admin/app/api/orders/[orderId]/book-delivery/route.ts
+apps/admin/app/api/orders/[orderId]/assign-rider/route.ts
+apps/web/app/api/webhooks/{lalamove,grab}/route.ts
 
 # Themes
 packages/storefront-themes/src/templates.ts
@@ -493,6 +554,7 @@ packages/plans/src/ai-limits.ts
 
 # Data
 packages/db/src/schema/index.ts
+packages/db/drizzle/0013_support_helpdesk.sql
 packages/auth/src/service.ts
 packages/ai/src/plan-limits.ts         — re-export of @guma-commerce/plans
 packages/ai/src/permissions.ts
@@ -500,12 +562,17 @@ packages/services/src/payments/paymongo.ts
 packages/events/
 
 # Docs
+docs/CHIEF-ENGINEER-REVIEW-SUMMARY.md  — final review / launch sign-off
 docs/AGENT-HANDOFF.md
+docs/DELIVERY-AND-HELPDESK.md
+docs/MVP-MANUAL-EWALLET-CHAT.md
+docs/MVP-HARDENING-P1-INTEGRATION-MOCKS.md
 docs/HANDBOOK-V1.2-ASSESSMENT.md
 docs/ADR-0001-handbook-adoption.md
 docs/CROWN-JEWEL-AI-APPROVAL.md
 docs/ARCHITECTURE.md
 docs/SPRINT-*-PROGRESS.md
+docs/PRIORITY-SCOPE-BRAND-GUARD.md   — next product priority after launch hygiene
 docs/DATABASE.md
 docs/DEPLOY-VERCEL.md
 packages/storefront-templates/README.md
@@ -516,7 +583,8 @@ packages/storefront-templates/BUNDLE-2023-CATALOG.md
 
 ## 18. Git state
 
-- Prefer current branch status over this snapshot; template + sprint work may be uncommitted
+- Prefer current branch status over this snapshot
+- As of 2026-08-06: large uncommitted delta on `wip/uncommitted-work-2026-08-01` (delivery, helpdesk, chat, payments, landing polish) — **commit in slices before production**
 - Do **not** commit unless explicitly requested
 
 ---
@@ -527,25 +595,24 @@ After clone or major pull:
 
 ```powershell
 pnpm install
+pnpm db:migrate
 pnpm --filter @guma-commerce/plans test
 pnpm --filter @guma-commerce/storefront-themes exec tsc --noEmit
-pnpm --filter web exec tsc --noEmit
-pnpm --filter admin exec tsc --noEmit
-pnpm --filter platform exec tsc --noEmit
+pnpm --filter @guma-commerce/web exec tsc --noEmit
+pnpm --filter @guma-commerce/admin exec tsc --noEmit
+pnpm --filter @guma-commerce/platform exec tsc --noEmit
 
-cd apps/web && pnpm run dev:clean
-# http://localhost:3010/aircon-demo
-# http://localhost:3010/carserv-demo
-# http://localhost:3010/motto-demo
-# http://localhost:3010/studio-demo
-# http://localhost:3010/waggy-demo
+pnpm --filter @guma-commerce/web run dev        # :3010
+# http://localhost:3010/frontend1
+# http://localhost:3010/demo
+# http://localhost:3010/model
+# http://localhost:3010/contact
 
-cd apps/admin && pnpm run dev
-# http://localhost:3001/workspace/approvals
-# http://localhost:3001/shop-builder
+pnpm --filter @guma-commerce/admin run dev      # :3001
+# /messages · /orders · /settings/support · /settings/delivery-shipping
 
-cd apps/platform && pnpm exec next dev
-# http://localhost:3002 — login super_admin
+pnpm --filter @guma-commerce/platform run dev   # :3002
+# login admin@guma.ph · /helpdesk · /frontends
 ```
 
 ---
@@ -557,7 +624,8 @@ cd apps/platform && pnpm exec next dev
 - **Template ports:** One zip at a time; always add demo + build verify
 - **Plans:** Never hardcode prices/limits outside `@guma-commerce/plans`
 - **Handbook:** v1.2 is target architecture — implement incrementally via ADR-0001
+- **Launch review:** `docs/CHIEF-ENGINEER-REVIEW-SUMMARY.md`
 
 ---
 
-*End of comprehensive handoff. Sprint progress: `docs/SPRINT-*-PROGRESS.md`. Platform session details: `docs/AGENT-HANDOFF.md`. Handbook verdicts: `docs/HANDBOOK-V1.2-ASSESSMENT.md`.*
+*End of comprehensive handoff. Chief review: `docs/CHIEF-ENGINEER-REVIEW-SUMMARY.md`. Sprint progress: `docs/SPRINT-*-PROGRESS.md`. Session details: `docs/AGENT-HANDOFF.md`. Handbook: `docs/HANDBOOK-V1.2-ASSESSMENT.md`.*

@@ -48,6 +48,10 @@ Replace filter with `@guma-commerce/admin` for the admin project.
 
 Set on **both** projects unless noted.
 
+**MVP hardening (P1):** production never silently mocks PayMongo / Lalamove / SMS / AI.
+See [`MVP-HARDENING-P1-INTEGRATION-MOCKS.md`](./MVP-HARDENING-P1-INTEGRATION-MOCKS.md).
+Health: `GET /api/health/integrations` on web and admin.
+
 | Variable | Required | Notes |
 |----------|----------|-------|
 | `DATABASE_URL` | Yes | Pooled (Neon auto) |

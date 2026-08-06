@@ -1,12 +1,51 @@
 # Guma Commerce — Agent Handoff Document
 
-**Last updated:** 2026-07-13  
+**Last updated:** 2026-08-06  
 **Purpose:** Hands-off context for the next agent or developer. Read this before making changes.
 
-> **Whole-repo truth:** Prefer [`COMPREHENSIVE-HANDOFF-2026-07-12.md`](./COMPREHENSIVE-HANDOFF-2026-07-12.md) (amended 2026-07-13) for current architecture, Sprints 1–5, plans, and roadmap.  
-> **This file** keeps the 2026-07-05 platform-console session narrative plus durable core-platform notes. Where they conflict, the comprehensive handoff + ADR-0001 win.
+> **Chief Engineer review:** [`CHIEF-ENGINEER-REVIEW-SUMMARY.md`](./CHIEF-ENGINEER-REVIEW-SUMMARY.md)  
+> **Whole-repo truth:** Prefer [`COMPREHENSIVE-HANDOFF-2026-07-12.md`](./COMPREHENSIVE-HANDOFF-2026-07-12.md) for architecture, sprints, and roadmap.  
+> **This file** keeps session narratives + durable pitfalls. Where they conflict, comprehensive handoff + ADR-0001 + chief summary win.
 
-> Newest durable deltas since 2026-07-05: **Workspace CR domains** (SEO/Checkout/Shipping), **`@guma-commerce/plans`**, **18 live storefront ports** (incl. aircon/carserv/motto/studio). See sprint progress docs.
+> Newest durable deltas (2026-08): **delivery orchestrator live in apps**, **helpdesk tickets**, **Chat MVP Beta**, **manual e-wallet**, **Frontend1 CTA polish**. Detail: `DELIVERY-AND-HELPDESK.md`, `MVP-MANUAL-EWALLET-CHAT.md`.
+
+> **After soft-launch hygiene:** [`PRIORITY-SCOPE-BRAND-GUARD.md`](./PRIORITY-SCOPE-BRAND-GUARD.md) — Brand Guard anti-slop. Do not wire yetone’s coding agent into merchant Launch.
+
+---
+
+## Session 2026-08-05 → 2026-08-06 — MVP ops: chat, delivery, helpdesk, Frontend1
+
+### What landed
+1. **Chat MVP Beta (owner-led)** — storefront Message seller + AI FAQ; seller `/messages`; WhatsApp overflow; no Messenger/websockets.
+2. **Manual e-wallet** — buyer proof/reference; seller confirm-payment; `PAYMENTS_MODE`.
+3. **Delivery** — quote/checkout/book via orchestrator (Lalamove ↔ Grab failover → manual); Grab webhook; **Assign rider** for Angkas/Move It/own rider.
+4. **Helpdesk** — `support_tickets` + migration `0013`; web `/contact` creates tickets; admin Help & support; platform `/helpdesk` with SLA (4h / 48h).
+5. **Frontend1 polish** — working mobile nav; same-origin `/model`; contact→ticket; storefront default port **3010**; hero CTAs → demo + signup.
+6. **Seller UI calm-down** + products manual-first (AI enhance / suggest price only).
+
+### Ports (local)
+| App | Port |
+|-----|------|
+| web | **3010** (not 3000) |
+| admin | 3001 |
+| platform | 3002 |
+
+### Quick verify
+```powershell
+pnpm db:migrate
+pnpm --filter @guma-commerce/web run dev
+pnpm --filter @guma-commerce/admin run dev
+pnpm --filter @guma-commerce/platform run dev
+# :3010/frontend1 · :3010/contact · :3001/messages · :3002/helpdesk
+```
+
+### Constraints (unchanged)
+- Never `db:push`; never `@guma-commerce/db` from `"use client"`
+- Never hardcode plan prices outside `@guma-commerce/plans`
+- Production mocks refused — see `MVP-HARDENING-P1-INTEGRATION-MOCKS.md`
+
+### Recommended next prompt
+> Read `docs/CHIEF-ENGINEER-REVIEW-SUMMARY.md` then `docs/COMPREHENSIVE-HANDOFF-2026-07-12.md`. Soft-launch hygiene first (commit slices, demo flag, suspend enforcement, staff helpdesk). Brand Guard only after that.
 
 ---
 
@@ -92,7 +131,7 @@ pnpm --dir apps/platform exec tsc --noEmit
 Inspect first: `apps/platform/app/actions.ts`, `packages/db/src/queries/platform.ts`, `apps/platform/components/platform-shell.tsx`, `apps/platform/lib/plans.ts`. **Warning:** never import `@guma-commerce/db` from a `"use client"` file; never run `db:push`.
 
 ### 10. Recommended next prompt (paste to continue)
-> You're working in the `guma-commerce` pnpm+Turbo monorepo at `D:\All Apps\gumacommerce`. Read `docs/COMPREHENSIVE-HANDOFF-2026-07-12.md` first (amended 2026-07-13), then `docs/HANDBOOK-V1.2-ASSESSMENT.md` and `docs/ADR-0001-handbook-adoption.md`. Apps: `web` (:3010), `admin` (:3001), `platform` (:3002). **Already done:** plan catalog `@guma-commerce/plans` (ADR D4); crown-jewel CR domains through SEO/checkout/shipping; priority template ports aircon/carserv/motto/studio. **Open priorities:** (1) reconcile Drizzle migrations vs live Neon (`db:generate` / journal — never `db:push`); (2) enforce `users.status='suspended'` and `tenants.status='suspended'` on seller login + storefront; (3) Workstation UX convergence (Shop Builder + Approvals). Constraints: never import `@guma-commerce/db` from `"use client"`; never hardcode plan prices outside `@guma-commerce/plans`. Don't commit unless asked.
+> You're working in the `guma-commerce` pnpm+Turbo monorepo at `D:\All Apps\gumacommerce`. Read `docs/CHIEF-ENGINEER-REVIEW-SUMMARY.md` first, then `docs/COMPREHENSIVE-HANDOFF-2026-07-12.md`. Apps: `web` (:3010), `admin` (:3001), `platform` (:3002). **Already done (2026-08):** delivery orchestrator + Grab webhook + Assign rider; helpdesk tickets; Chat MVP Beta; manual e-wallet; Frontend1 CTA polish; plans ADR D4; crown-jewel CR domains; 18 template ports. **Open:** commit/PR hygiene; prod demo flag + secrets; suspend enforcement; Brand Guard (`PRIORITY-SCOPE-BRAND-GUARD.md`). Constraints: never import `@guma-commerce/db` from `"use client"`; never `db:push`; never hardcode plan prices outside `@guma-commerce/plans`. Don't commit unless asked.
 
 ---
 
@@ -102,9 +141,9 @@ Inspect first: `apps/platform/app/actions.ts`, `packages/db/src/queries/platform
 
 | Surface | Path | Port | Role |
 |---------|------|------|------|
-| Storefront | `apps/web` | 3000 | Marketing site + `/{tenantSlug}` shops, checkout, shop assistant chat |
-| Admin | `apps/admin` | 3001 | Seller dashboard, settings, AI Studio, Agents, products/orders |
-| Platform | `apps/platform` | 3002 | Super-admin over all tenants (added 2026-07-05 — see top session) |
+| Storefront | `apps/web` | **3010** | Marketing + `/{tenantSlug}` shops, checkout, buyer chat, webhooks |
+| Admin | `apps/admin` | 3001 | Seller dashboard, messages, orders, Launch/Workspace, settings |
+| Platform | `apps/platform` | 3002 | Super-admin: tenants, helpdesk, frontends, moderation, audit |
 
 **Core value:** Turn social traffic into a branded mobile storefront with GCash/Maya/COD, delivery stubs, AI content, and agentic daily posting workflows.
 
@@ -384,7 +423,7 @@ Copy from `.env.example`. Minimum for local dev:
 DATABASE_URL=...                    # direct (Neon) or local Docker
 DATABASE_URL_POOLED=...             # optional local; Neon uses DATABASE_URL as pooled
 AUTH_SECRET=...
-NEXT_PUBLIC_STOREFRONT_URL=http://localhost:3000
+NEXT_PUBLIC_STOREFRONT_URL=http://localhost:3010
 NEXT_PUBLIC_ADMIN_URL=http://localhost:3001
 NEXT_PUBLIC_ROOT_DOMAIN=gumacommerce.ph
 GEMINI_API_KEY=...                  # recommended for free-tier agents
@@ -558,7 +597,7 @@ Manual smoke:
 
 - http://localhost:3001/login → dashboard
 - http://localhost:3001/agents → briefing + usage meters
-- http://localhost:3000/demo → storefront + shop assistant bubble
+- http://localhost:3010/demo → storefront + shop assistant bubble
 - Run daily posts (needs `GEMINI_API_KEY` or mock fallback)
 
 ---

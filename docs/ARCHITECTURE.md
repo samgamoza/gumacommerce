@@ -118,6 +118,19 @@ Legacy `/ai-studio` and `/agents` redirect into Workspace modules.
 | Shipping | Live (Workspace Shipping + AI suggest → CR → Approvals publish; profiles/zones/rates/courier/pickup/ETA; mirrors `settings_json.delivery`) |
 | Plan catalog (ADR D4) | Live — `@guma-commerce/plans` (ids `free`/`growth`/`pro`; labels Free/Pro/Advance; aliases `starter`/`advance`/`sulit`) |
 | Priority template ports | Live — `aircon` → `carserv` → `motto` → `studio` (demos `/{id}-demo`; catalog status `integrated`) |
+| Brand Guard (anti-slop) | **Next priority** — see `docs/PRIORITY-SCOPE-BRAND-GUARD.md` (CI + Launch prevention free; Polish CR on Growth+) |
+
+---
+
+## Next priority scope
+
+**Brand Guard** — adopt [kill-ai-slop](https://killaislop.com) taxonomy into template CI + Launch validators + paid Workspace polish. Do **not** run a coding agent per merchant. Full scope: [`PRIORITY-SCOPE-BRAND-GUARD.md`](./PRIORITY-SCOPE-BRAND-GUARD.md).
+
+## MVP release hardening
+
+**P1 done:** Silent mock elimination — [`MVP-HARDENING-P1-INTEGRATION-MOCKS.md`](./MVP-HARDENING-P1-INTEGRATION-MOCKS.md). Production never fakes PayMongo / Lalamove / SMS / AI success. Health: `GET /api/health/integrations`.
+
+**P1b done (beta payments):** Manual e-wallet + store chat — [`MVP-MANUAL-EWALLET-CHAT.md`](./MVP-MANUAL-EWALLET-CHAT.md). Default `PAYMENTS_MODE=manual_ewallet` until PayMongo is secured.
 
 ---
 
