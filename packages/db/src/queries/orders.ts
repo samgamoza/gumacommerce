@@ -22,6 +22,10 @@ import {
   normalizeCheckoutJson,
   type TenantCheckoutJson,
 } from "../types/tenant-checkout";
+import {
+  isTenantAcceptingOrders,
+  TENANT_SUSPENDED_BUYER_MESSAGE,
+} from "../tenant-access";
 
 export type OrderStatus =
   | "pending_payment"
@@ -64,6 +68,7 @@ export class OrderError extends Error {
     message: string,
     public code:
       | "TENANT_NOT_FOUND"
+      | "TENANT_SUSPENDED"
       | "EMPTY_CART"
       | "PRODUCT_UNAVAILABLE"
       | "OUT_OF_STOCK"
@@ -134,8 +139,16 @@ export async function createOrderForTenant(input: CreateOrderInput): Promise<Cre
     .from(tenants)
     .where(eq(tenants.slug, input.tenantSlug))
     .limit(1);
-  if (!tenant || tenant.status !== "active") {
+  if (!tenant) {
     throw new OrderError("This shop is not accepting orders right now.", "TENANT_NOT_FOUND");
+  }
+  if (!isTenantAcceptingOrders(tenant.status)) {
+    throw new OrderError(
+      tenant.status === "suspended"
+        ? TENANT_SUSPENDED_BUYER_MESSAGE
+        : "This shop is not accepting orders right now.",
+      tenant.status === "suspended" ? "TENANT_SUSPENDED" : "TENANT_NOT_FOUND"
+    );
   }
 
   if (input.items.length === 0) {

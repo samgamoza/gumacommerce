@@ -31,7 +31,9 @@ const updateSchema = z.object({
 
 export async function GET() {
   try {
-    const session = await requireTenantSession();
+    // Allow suspended shops so the shell can render the suspended state.
+    // Writes (PATCH below) still hard-block via default requireTenantSession().
+    const session = await requireTenantSession({ allowSuspended: true });
     await tryAutoActivateTenant(session.tenantId);
     const [dashboard, settings] = await Promise.all([
       getTenantDashboard(session.tenantId, session.userId),

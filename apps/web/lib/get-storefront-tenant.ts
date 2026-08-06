@@ -1,6 +1,8 @@
 import { resolveShopThemeForPlan, resolveStorePattern, emojiForShopCategory } from "@guma-commerce/storefront-themes";
 import {
+  classifyTenantPublicAccess,
   getPendingTenantBySlug,
+  getTenantAvailabilityBySlug,
   getTenantStorefrontBySlug,
   getTenantStorefrontPreviewBySlug,
 } from "@guma-commerce/db";
@@ -115,6 +117,28 @@ export async function getPendingStorefrontTenant(
   if (!pending) return null;
 
   return { slug: pending.slug, name: pending.name };
+}
+
+export async function getUnavailableStorefrontTenant(
+  slug: string
+): Promise<{ slug: string; name: string; kind: "pending" | "suspended" | "unavailable"; message: string } | null> {
+  if (getDemoTenant(slug)) return null;
+
+  const availability = await getTenantAvailabilityBySlug(slug);
+  if (!availability || availability.status === "active") return null;
+
+  const access = classifyTenantPublicAccess(availability.status);
+  if (access.kind === "live") return null;
+
+  return {
+    slug: availability.slug,
+    name: availability.name,
+    kind: access.kind === "pending" ? "pending" : access.kind === "suspended" ? "suspended" : "unavailable",
+    message:
+      access.kind === "pending" || access.kind === "suspended" || access.kind === "unavailable"
+        ? access.buyerMessage
+        : "Shop not found.",
+  };
 }
 
 /** @deprecated Use getStorefrontTenant in server components */

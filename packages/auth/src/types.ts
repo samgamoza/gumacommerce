@@ -68,6 +68,7 @@ export class AuthError extends Error {
       | "VALIDATION"
       | "USE_GOOGLE"
       | "SHOP_ALREADY_SETUP"
+      | "ACCOUNT_SUSPENDED"
   ) {
     super(message);
     this.name = "AuthError";

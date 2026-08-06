@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  getPendingStorefrontTenant,
   getStorefrontTenant,
   getStorefrontTenantPreview,
+  getUnavailableStorefrontTenant,
 } from "@/lib/get-storefront-tenant";
 import { adminUrl } from "@/lib/utils";
 import { TenantStorefrontHome } from "@/components/storefront/tenant-storefront-home";
@@ -31,8 +31,8 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
     : await getStorefrontTenant(tenantSlug);
 
   if (!tenant) {
-    const pending = await getPendingStorefrontTenant(tenantSlug);
-    if (pending) {
+    const unavailable = await getUnavailableStorefrontTenant(tenantSlug);
+    if (unavailable?.kind === "pending") {
       return (
         <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background p-6 text-center hero-glow">
           <div className="absolute inset-0 bg-grid-pattern bg-grid opacity-40 [mask-image:linear-gradient(to_bottom,white,transparent)]" />
@@ -47,16 +47,28 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
               </span>
               Coming soon
             </span>
-            <h1 className="mt-4 font-display text-3xl font-bold tracking-tight">{pending.name}</h1>
-            <p className="mt-2 max-w-sm text-muted-foreground">
-              This shop is being set up and isn&apos;t live yet. Check back soon!
-            </p>
+            <h1 className="mt-4 font-display text-3xl font-bold tracking-tight">{unavailable.name}</h1>
+            <p className="mt-2 max-w-sm text-muted-foreground">{unavailable.message}</p>
             <Link
               href={`${adminUrl}/launch`}
               className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition hover:bg-emerald-700"
             >
               Continue GUMA Launch
             </Link>
+          </div>
+        </div>
+      );
+    }
+
+    if (unavailable?.kind === "suspended") {
+      return (
+        <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background p-6 text-center">
+          <div className="relative flex max-w-md flex-col items-center">
+            <span className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
+              Shop unavailable
+            </span>
+            <h1 className="mt-4 font-display text-3xl font-bold tracking-tight">{unavailable.name}</h1>
+            <p className="mt-2 text-muted-foreground">{unavailable.message}</p>
           </div>
         </div>
       );
@@ -107,11 +119,17 @@ export async function generateMetadata({ params }: PageProps) {
     };
   }
 
-  const pending = await getPendingStorefrontTenant(tenantSlug);
-  if (pending) {
+  const unavailable = await getUnavailableStorefrontTenant(tenantSlug);
+  if (unavailable?.kind === "pending") {
     return {
-      title: `${pending.name} — Coming soon`,
-      description: `${pending.name} is setting up their Guma One shop.`,
+      title: `${unavailable.name} — Coming soon`,
+      description: `${unavailable.name} is setting up their Guma One shop.`,
+    };
+  }
+  if (unavailable?.kind === "suspended") {
+    return {
+      title: `${unavailable.name} — Unavailable`,
+      description: unavailable.message,
     };
   }
 

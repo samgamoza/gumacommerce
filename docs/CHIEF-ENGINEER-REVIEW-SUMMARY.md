@@ -112,7 +112,7 @@ Neon Postgres | PayMongo* | Lalamove* | Grab* | Semaphore* | optional Upstash/Bl
 | PayMongo card/e-wallet API | ⚠️ Ops | Real keys; `PAYMENTS_MODE` |
 | Platform helpdesk staffing | ⚠️ Ops | Monitor `/helpdesk` + email |
 | Legal entity footer | ⚠️ Content | SEC/TIN still placeholder in marketing |
-| Suspended user/tenant enforcement | ❌ Gap | Platform can suspend; seller/storefront not fully hard-blocked |
+| Suspended user/tenant enforcement | ✅ Ready | Seller writes + dashboard blocked; storefront “unavailable”; checkout 403; user-level suspend blocks login. Existing order settle (payment proof / tracking) intentionally allowed. |
 | Brand Guard CI / Launch polish | ❌ Not started | Specced in `PRIORITY-SCOPE-BRAND-GUARD.md` |
 | Production Vercel + secrets | ⚠️ Assumed incomplete | Follow `DEPLOY-VERCEL.md` |
 

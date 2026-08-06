@@ -245,6 +245,15 @@ export async function loginUser(input: LoginInput): Promise<{
     throw new AuthError("This account cannot access the seller dashboard.", "INVALID_CREDENTIALS");
   }
 
+  // User-level suspend blocks login entirely. Tenant-level suspend allows login
+  // so the seller console can show "Your shop is suspended — contact support".
+  if (row.user.status === "suspended") {
+    throw new AuthError(
+      "This account is suspended. Contact support for help.",
+      "ACCOUNT_SUSPENDED"
+    );
+  }
+
   const sessionUser = toSessionUser(row.user, row.tenant);
   const sessionToken = await createSessionToken(sessionUser);
 

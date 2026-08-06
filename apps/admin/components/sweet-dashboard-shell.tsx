@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { resolveStorePattern } from "@guma-commerce/storefront-themes";
 import type { StorePatternId } from "@guma-commerce/storefront-themes";
+import { SuspendedShopNotice } from "@/components/suspended-shop-notice";
 
 const SWEET_TABS = [
   { id: "overview", label: "Overview", href: "/", icon: LayoutDashboard },
@@ -43,6 +44,7 @@ export function SweetDashboardShell({
     tenantName: string;
     tenantSlug: string;
     displayName: string;
+    tenantStatus?: string;
   } | null>(null);
   const [accent, setAccent] = useState("#FF007F");
 
@@ -52,7 +54,10 @@ export function SweetDashboardShell({
       fetch("/api/shop").then((res) => res.json()),
     ]).then(([sessionData, shopData]) => {
       if (sessionData.ok) {
-        setUser(sessionData.user);
+        setUser({
+          ...sessionData.user,
+          tenantStatus: shopData?.ok ? shopData.shop.tenant.status : undefined,
+        });
       }
       if (shopData?.ok && shopData.theme?.primaryColor) {
         setAccent(shopData.theme.primaryColor);
@@ -73,6 +78,16 @@ export function SweetDashboardShell({
 
   const storefrontBase = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3010";
   const slug = user?.tenantSlug;
+
+  if (user?.tenantStatus === "suspended") {
+    return (
+      <SuspendedShopNotice
+        tenantName={user.tenantName}
+        tenantSlug={slug}
+        onLogout={handleLogout}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#1a1012] text-white">

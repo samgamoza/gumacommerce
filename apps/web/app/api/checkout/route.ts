@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
+  checkoutHttpRejectionForStatus,
   createOrderForTenant,
   deletePushSubscriptions,
+  getTenantAvailabilityBySlug,
   getTenantStorefrontBySlug,
   isPaymentMethodEnabled,
   listPushSubscriptionsForTenant,
@@ -184,6 +186,14 @@ export async function POST(request: Request) {
 
     const tenant = await getTenantStorefrontBySlug(body.tenantSlug);
     if (!tenant) {
+      const availability = await getTenantAvailabilityBySlug(body.tenantSlug);
+      const suspended = checkoutHttpRejectionForStatus(availability?.status);
+      if (suspended) {
+        return NextResponse.json(
+          { error: suspended.error, code: suspended.code },
+          { status: suspended.httpStatus }
+        );
+      }
       return NextResponse.json({ error: "Shop not found." }, { status: 404 });
     }
 
@@ -458,7 +468,8 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (error instanceof OrderError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      const status = error.code === "TENANT_SUSPENDED" ? 403 : 400;
+      return NextResponse.json({ error: error.message, code: error.code }, { status });
     }
     if (error instanceof IntegrationNotConfiguredError) {
       console.error("[checkout] Integration not configured:", error.message);

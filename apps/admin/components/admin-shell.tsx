@@ -21,6 +21,7 @@ import { useTenantPlan } from "@/components/plan/use-tenant-plan";
 import { DASHBOARD_NAV, type DashboardNavItem } from "@/lib/dashboard-nav";
 import { SETTINGS_SECTIONS } from "@/lib/settings-nav";
 import { planAtLeast, upgradeHref, type SubscriptionPlan } from "@/lib/plan-access";
+import { SuspendedShopNotice } from "@/components/suspended-shop-notice";
 import { storefrontBaseUrl } from "@/lib/utils";
 
 interface SessionUser {
@@ -119,6 +120,18 @@ export function AdminShell({
   const storefrontBase = storefrontBaseUrl;
   const slug = user?.tenantSlug ?? tenant?.slug;
   const showUpgrade = plan !== "pro";
+  const tenantStatus = user?.tenantStatus ?? tenant?.status;
+  const isSuspended = tenantStatus === "suspended";
+
+  if (isSuspended) {
+    return (
+      <SuspendedShopNotice
+        tenantName={user?.tenantName ?? tenant?.name}
+        tenantSlug={slug}
+        onLogout={handleLogout}
+      />
+    );
+  }
 
   return (
     <div className="relative min-h-screen bg-guma-navy text-slate-200 lg:flex">

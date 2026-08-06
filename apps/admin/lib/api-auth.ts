@@ -1,9 +1,21 @@
 import { getUserSessionById, isSessionCurrent } from "@guma-commerce/auth";
+import {
+  getTenantStatusById,
+  sellerWriteHttpRejectionForStatus,
+} from "@guma-commerce/db";
 import { getSession, type Session } from "@/lib/session";
 
-export async function requireTenantSession(): Promise<
-  Session & { tenantId: string; tenantSlug: string; tenantName: string }
-> {
+export type RequireTenantSessionOptions = {
+  /**
+   * When true, suspended shops may still load session-backed reads (e.g. /api/shop)
+   * so the seller console can show the suspended state. Write APIs leave this false.
+   */
+  allowSuspended?: boolean;
+};
+
+export async function requireTenantSession(
+  options: RequireTenantSessionOptions = {}
+): Promise<Session & { tenantId: string; tenantSlug: string; tenantName: string }> {
   const session = await getSession();
   if (!session) {
     throw new ApiAuthError("Not signed in.", 401);
@@ -43,6 +55,14 @@ export async function requireTenantSession(): Promise<
     fresh.role !== "super_admin"
   ) {
     throw new ApiAuthError("This account cannot access the seller dashboard.", 403);
+  }
+
+  if (!options.allowSuspended) {
+    const tenantStatus = await getTenantStatusById(fresh.tenantId);
+    const rejection = sellerWriteHttpRejectionForStatus(tenantStatus);
+    if (rejection) {
+      throw new ApiAuthError(rejection.error, rejection.httpStatus, rejection.code);
+    }
   }
 
   return {

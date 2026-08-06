@@ -4,9 +4,23 @@ export {
   getTenantStorefrontBySlug,
   getTenantStorefrontPreviewBySlug,
   getPendingTenantBySlug,
+  getTenantAvailabilityBySlug,
+  getTenantStatusById,
   type StorefrontTenantRecord,
   type PendingTenantRecord,
 } from "./queries/storefront";
+export {
+  classifyTenantPublicAccess,
+  isTenantAcceptingOrders,
+  isTenantSellerWritable,
+  checkoutHttpRejectionForStatus,
+  sellerWriteHttpRejectionForStatus,
+  TENANT_SUSPENDED_BUYER_MESSAGE,
+  TENANT_SUSPENDED_SELLER_MESSAGE,
+  TENANT_PENDING_BUYER_MESSAGE,
+  type TenantLifecycleStatus,
+  type TenantPublicAccess,
+} from "./tenant-access";
 export {
   getTenantDashboard,
   activateTenantShop,

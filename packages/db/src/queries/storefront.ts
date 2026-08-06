@@ -49,7 +49,17 @@ export interface PendingTenantRecord {
   status: string;
 }
 
+/** Pending Launch shops only — suspended tenants use getTenantAvailabilityBySlug. */
 export async function getPendingTenantBySlug(
+  slug: string
+): Promise<PendingTenantRecord | null> {
+  const availability = await getTenantAvailabilityBySlug(slug);
+  if (!availability || availability.status !== "pending") return null;
+  return availability;
+}
+
+/** Lightweight public status lookup for storefront / checkout gates. */
+export async function getTenantAvailabilityBySlug(
   slug: string
 ): Promise<PendingTenantRecord | null> {
   const db = getDb();
@@ -63,8 +73,17 @@ export async function getPendingTenantBySlug(
     .where(eq(tenants.slug, slug))
     .limit(1);
 
-  if (!tenant || tenant.status === "active") return null;
-  return tenant;
+  return tenant ?? null;
+}
+
+export async function getTenantStatusById(tenantId: string): Promise<string | null> {
+  const db = getDb();
+  const [tenant] = await db
+    .select({ status: tenants.status })
+    .from(tenants)
+    .where(eq(tenants.id, tenantId))
+    .limit(1);
+  return tenant?.status ?? null;
 }
 
 export async function getTenantStorefrontBySlug(
