@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Flame, Mail, MapPin, Phone, ShoppingBag, Star, UtensilsCrossed } from "lucide-react";
 import type { DemoTenant } from "@/lib/demo-data";
 import { useCart } from "@/lib/cart";
+import { SarabHeroImage } from "./sarab-hero-image";
 import { splitSarabBrand } from "./sarab-utils";
 
 export function SarabTopbar({ tenant }: { tenant: DemoTenant }) {
@@ -78,10 +79,15 @@ export function SarabNavbar({ tenant }: { tenant: DemoTenant }) {
 }
 
 export function SarabHero({ tenant }: { tenant: DemoTenant }) {
-  const heroImage =
-    tenant.coverUrl ||
-    tenant.products[0]?.image ||
+  const fallback =
     "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&q=80";
+  // Prefer cover, then each product photo (newest first) so a broken upload
+  // falls through to the next product instead of an empty hero circle.
+  const heroSources = [
+    tenant.coverUrl,
+    ...tenant.products.map((p) => p.image),
+    fallback,
+  ].filter((src, i, arr): src is string => Boolean(src) && arr.indexOf(src) === i);
   const tagline = tenant.tagline || tenant.shopTheme.tagline;
 
   return (
@@ -108,7 +114,7 @@ export function SarabHero({ tenant }: { tenant: DemoTenant }) {
         </div>
         <div className="sarab-hcircle-wrap">
           <div className="sarab-hcircle">
-            <img src={heroImage} alt={tenant.name} />
+            <SarabHeroImage sources={heroSources} alt={tenant.name} />
           </div>
           <div className="sarab-fcard fc1">
             <Flame size={16} color="#e8281a" />

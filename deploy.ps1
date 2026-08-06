@@ -19,7 +19,8 @@ $sw   = [System.Diagnostics.Stopwatch]::StartNew()
 
 Write-Host "==> packaging working tree..." -ForegroundColor Cyan
 if (Test-Path $tmp) { Remove-Item $tmp }
-tar -czf $tmp --exclude=node_modules --exclude=.next --exclude=.turbo --exclude=.git --exclude=simply-sweet-source --exclude=reference -C $repo .
+# Exclude runtime uploads so local empty dirs never clobber CT product photos.
+tar -czf $tmp --exclude=node_modules --exclude=.next --exclude=.turbo --exclude=.git --exclude=simply-sweet-source --exclude=reference --exclude=apps/web/public/uploads/products --exclude=apps/web/public/uploads/payment-proofs -C $repo .
 $mb = "{0:N1}" -f ((Get-Item $tmp).Length / 1MB)
 Write-Host "    packaged ($mb MB)"
 

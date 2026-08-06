@@ -8,6 +8,9 @@ import {
 import { adminUrl } from "@/lib/utils";
 import { TenantStorefrontHome } from "@/components/storefront/tenant-storefront-home";
 
+/** Seller catalog changes must show up immediately after publish/add. */
+export const dynamic = "force-dynamic";
+
 const UTM_LABELS: Record<string, string> = {
   instagram: "Instagram",
   tiktok: "TikTok",
