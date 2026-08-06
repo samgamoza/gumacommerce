@@ -3,7 +3,6 @@ import { canUseTemplate } from "./resolve-theme";
 import { getTemplatePackage, type TemplatePackageMetadata } from "./template-packages";
 import type { StoreDNA, ProductCountHint } from "./store-dna";
 import type { ShopTemplateId } from "./types";
-import { SHOP_TEMPLATE_IDS } from "./types";
 import { isShopVibeId } from "./brand-kit";
 import { STOREFRONT_TEMPLATE_REGISTRY } from "./template-registry";
 import {
@@ -81,15 +80,52 @@ const CATEGORY_AFFINITY: Record<string, Partial<Record<ShopTemplateId, number>>>
     ministore: 26,
     "clean-guma": 18,
   },
+  "Auto Body & Painting": {
+    carserv: 48,
+    motto: 36,
+    electro: 28,
+    ministore: 22,
+  },
   "HVAC & Air Conditioning": {
     aircon: 50,
     mellow: 18,
     "clean-guma": 14,
   },
+  "Appliance & Device Repair": {
+    aircon: 46,
+    electro: 40,
+    carserv: 28,
+    "clean-guma": 20,
+  },
   "Home Services & Trades": {
     aircon: 40,
     carserv: 28,
     "clean-guma": 22,
+  },
+  "House Painting & Decorating": {
+    aircon: 42,
+    "clean-guma": 28,
+    carserv: 22,
+  },
+  "Pest Control": {
+    aircon: 44,
+    "clean-guma": 30,
+    mellow: 18,
+  },
+  "Wedding Planning & Events": {
+    mellow: 46,
+    studio: 40,
+    "clean-guma": 24,
+  },
+  "Landscaping & Gardening": {
+    aircon: 36,
+    organic: 32,
+    "clean-guma": 28,
+  },
+  "Cleaning & Janitorial": {
+    aircon: 38,
+    "clean-guma": 32,
+    mellow: 18,
   },
   "Photography & Creative": {
     studio: 50,
@@ -317,21 +353,8 @@ function libraryBoostForLiveId(id: ShopTemplateId, category: string): {
   entry?: BundleTemplateCatalogEntry;
 } {
   const cat = normalizeCategory(category);
-  const matches = BUNDLE_2023_CATALOG.filter((e) => {
-    if (e.shopCategory === cat) return true;
-    // Soft: Printing shops often map near retail / professional catalog entries
-    if (cat === "Printing & Signage") {
-      return (
-        e.shopCategory === "Retail & General Merchandise" ||
-        e.shopCategory === "Professional & Consulting" ||
-        /print|sign|graphic|design|studio/i.test(e.label + e.notes)
-      );
-    }
-    if (cat.startsWith("Auto") || cat.includes("Car Wash")) {
-      return e.shopCategory === "Auto Shop & Services" || /car|auto|moto|driv/i.test(e.label);
-    }
-    return false;
-  });
+  // Exact category only — neighbor aliases live in catalog-install shortlist.
+  const matches = BUNDLE_2023_CATALOG.filter((e) => e.shopCategory === cat);
 
   let best: BundleTemplateCatalogEntry | undefined;
   let score = 0;
@@ -371,8 +394,7 @@ function resolveInstallId(entry: BundleTemplateCatalogEntry): ShopTemplateId | n
 
 /**
  * Deterministic template recommendation — zero LLM.
- * Scores the live installable library against Store DNA, boosted by
- * Free Bundle catalog matches, diversified by seed + soft anti-collision.
+ * Category from onboarding picks the shortlist; vibe only tie-breaks inside it.
  */
 export function recommendTemplates(
   dna: StoreDNA,
@@ -387,14 +409,18 @@ export function recommendTemplates(
   const limit = options?.limit ?? 3;
   const category = dna.category || "General";
   const seed = hashString(`${dna.businessName.trim().toLowerCase()}::${category}`);
-  const competitive = competitivePoolForCategory(category);
+  const competitive = competitivePoolForCategory(category).filter((id) =>
+    templateFitsCategory(id, category)
+  );
   const occupied = new Set(
     (options?.avoidTemplateIds ?? []).map((id) => id.trim()).filter(Boolean)
   );
 
+  // Score only the category shortlist — never reopen the full live library.
+  const pool = preferredTemplatesForCategory(category);
   const ranked: RankedTemplate[] = [];
 
-  for (const id of SHOP_TEMPLATE_IDS) {
+  for (const id of pool) {
     if (!templateFitsCategory(id, category)) continue;
 
     const pkg = getTemplatePackage(id);
@@ -403,7 +429,8 @@ export function recommendTemplates(
 
     const breakdown: TemplateScoreBreakdown = {
       category: categoryScore(pkg, category, id),
-      vibe: vibeScore(pkg, String(dna.vibe)),
+      // Vibe is a light tie-break only (category already locked the pool).
+      vibe: Math.min(8, vibeScore(pkg, String(dna.vibe))),
       productCount: productCountScore(pkg, dna.productCountHint),
       goals: goalsScore(pkg, dna.goals),
       plan: canUseTemplate(id, plan) ? 10 : 4,
@@ -424,12 +451,11 @@ export function recommendTemplates(
       occupiedPenalty(id, occupied);
 
     const reasons: string[] = [];
-    if (breakdown.category >= 28) reasons.push(`Strong fit for ${category}`);
-    else if (breakdown.category >= 18) reasons.push(`Good match for ${category}`);
+    if (breakdown.category >= 28) reasons.push(`Made for ${category}`);
+    else if (breakdown.category >= 18) reasons.push(`Fits ${category}`);
     if (library.entry) {
       reasons.push(`Library: ${library.entry.label} (#${library.entry.num})`);
     }
-    if (breakdown.vibe >= 16) reasons.push(`Matches your ${dna.vibe} vibe`);
     if (pkg.liveSellingReady && dna.goals?.includes("live_selling")) {
       reasons.push("Live-selling ready");
     }
@@ -462,17 +488,11 @@ export function recommendTemplates(
     });
   }
 
-  // Ensure category-matched Free Bundle entries surface via their install target
-  // Cap: at most one library bump per live template (avoid Sarab monopoly).
-  const bundleHits = BUNDLE_2023_CATALOG.filter((e) => {
-    if (e.shopCategory === category) return true;
-    if (category === "Printing & Signage") {
-      return /print|sign|graphic|design|studio|agency/i.test(
-        `${e.label} ${e.notes} ${e.shopCategory}`
-      );
-    }
-    return false;
-  }).slice(0, 12);
+  // Exact-category Free Bundle bumps only (no regex bleed).
+  const bundleHits = BUNDLE_2023_CATALOG.filter((e) => e.shopCategory === category).slice(
+    0,
+    12
+  );
 
   const boostedInstallIds = new Set<ShopTemplateId>();
   for (const entry of bundleHits) {
@@ -496,7 +516,7 @@ export function recommendTemplates(
       ].slice(0, 4);
     }
     // Prefer category mood image when recommendation is driven by library vertical
-    if (entry.shopCategory === category || category === "Printing & Signage") {
+    if (entry.shopCategory === category) {
       existing.previewImageUrl = previewImageForCategory(category);
     }
   }
@@ -519,16 +539,7 @@ export function listLibraryMatchesForDna(dna: StoreDNA, limit = 6): Array<{
   const category = dna.category || "General";
   const matches = BUNDLE_2023_CATALOG.filter((e) => {
     if (["admin-dashboard", "content-media", "non-storefront"].includes(e.status)) return false;
-    if (e.shopCategory === category) return true;
-    if (category === "Printing & Signage") {
-      return /print|sign|graphic|design|studio|agency|retail/i.test(
-        `${e.label} ${e.notes} ${e.shopCategory}`
-      );
-    }
-    if (category.startsWith("Auto") || category.includes("Car Wash")) {
-      return e.shopCategory === "Auto Shop & Services" || /car|auto|moto|driv/i.test(e.label);
-    }
-    return false;
+    return e.shopCategory === category;
   }).slice(0, limit);
 
   return matches.map((e) => ({

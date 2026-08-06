@@ -137,7 +137,7 @@ export function ShopSettingsPage() {
 
           <SettingsField
             label="Business category"
-            hint="Search in plain words — we map it to the right shop type."
+            hint="Pick the category you already use on Facebook, Shopee, or Lazada."
           >
             <BusinessCategoryPicker
               value={category}

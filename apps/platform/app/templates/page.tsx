@@ -110,6 +110,7 @@ export default async function TemplatesCatalogPage() {
       <Panel className="mb-6">
         <SectionHeader title="How this compounds" />
         <p className="text-sm text-muted-foreground">
+          On-demand services (repairs, painting, pest, lawn, wedding) are first-class categories.
           Address a vertical gap once in Priority verticals (seed stock, later AI-curate or port a
           dedicated skin). Sellers get honest commerce chrome today (inquiry vs cart by category) while
           the library deepens. Free Bundle stays the seed ({BUNDLE_2023_STATS.total} skins).{" "}

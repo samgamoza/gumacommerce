@@ -20,6 +20,7 @@ import {
   recommendTemplates,
   resolveCatalogInstall,
   resolveShopTheme,
+  selectionFitsSellerCategory,
   SHOP_BUSINESS_CATEGORIES,
   validateBrandGuardPersonalize,
 } from "@guma-commerce/storefront-themes";
@@ -187,23 +188,6 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "select_template") {
-      let install = resolveCatalogInstall(body.templateId, {
-        plan: state.subscriptionPlan,
-      });
-      if (!install) {
-        const stock = await getTemplateStockByKey(body.templateId.trim().toLowerCase());
-        install = stock ? resolveStockInstall(stock, state.subscriptionPlan) : null;
-      }
-      if (!install) {
-        return NextResponse.json({ ok: false, error: "Unknown template." }, { status: 400 });
-      }
-      if (!install.installableOnPlan) {
-        return NextResponse.json(
-          { ok: false, error: "This template needs a higher plan." },
-          { status: 403 }
-        );
-      }
-
       const dnaBase =
         state.storeDnaJson ??
         buildStoreDNA({
@@ -211,6 +195,41 @@ export async function POST(request: Request) {
           category: state.category,
           vibe: "fresh",
         });
+
+      let install = resolveCatalogInstall(body.templateId, {
+        plan: state.subscriptionPlan,
+      });
+      let stockCategoryLabel: string | null = null;
+      if (!install) {
+        const stock = await getTemplateStockByKey(body.templateId.trim().toLowerCase());
+        if (stock) {
+          stockCategoryLabel = stock.categoryLabel;
+          install = resolveStockInstall(stock, state.subscriptionPlan);
+        }
+      }
+      if (!install) {
+        return NextResponse.json({ ok: false, error: "Unknown template." }, { status: 400 });
+      }
+      if (
+        !selectionFitsSellerCategory(install.selectionId, dnaBase.category, {
+          plan: state.subscriptionPlan,
+          stockCategoryLabel,
+        })
+      ) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: `That look doesn’t fit ${dnaBase.category}. Pick one from your category.`,
+          },
+          { status: 400 }
+        );
+      }
+      if (!install.installableOnPlan) {
+        return NextResponse.json(
+          { ok: false, error: "This template needs a higher plan." },
+          { status: 403 }
+        );
+      }
 
       const brandKit = deriveBrandKit({
         shopName: state.name,

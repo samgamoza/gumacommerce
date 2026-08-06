@@ -302,9 +302,16 @@ export const TEMPLATE_PACKAGES: Partial<Record<ShopTemplateId, TemplatePackageMe
   },
   aircon: {
     id: "aircon",
-    industryFit: ["HVAC & Air Conditioning", "Home Services & Trades"],
+    industryFit: [
+      "HVAC & Air Conditioning",
+      "Appliance & Device Repair",
+      "Home Services & Trades",
+      "House Painting & Decorating",
+      "Pest Control",
+      "Cleaning & Janitorial",
+    ],
     idealProductCount: { min: 4, max: 40 },
-    targetAudience: ["AC repair shops", "HVAC contractors"],
+    targetAudience: ["AC repair shops", "HVAC contractors", "on-demand repair services"],
     visualStyle: ["bold", "fresh"],
     conversionFocus: "booking",
     mobileScore: 86,
@@ -316,7 +323,12 @@ export const TEMPLATE_PACKAGES: Partial<Record<ShopTemplateId, TemplatePackageMe
   },
   carserv: {
     id: "carserv",
-    industryFit: ["Auto Shop & Services", "Automotive Parts & Accessories"],
+    industryFit: [
+      "Auto Shop & Services",
+      "Automotive Parts & Accessories",
+      "Car Wash & Detailing",
+      "Auto Body & Painting",
+    ],
     idealProductCount: { min: 6, max: 60 },
     targetAudience: ["auto repair shops", "garages"],
     visualStyle: ["bold", "electric"],

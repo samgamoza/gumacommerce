@@ -63,9 +63,17 @@ export function isServiceBusinessCategory(category: string): boolean {
     c.includes("renovation") ||
     c.includes("home services") ||
     c.includes("trades") ||
+    c.includes("appliance") ||
+    c.includes("device repair") ||
+    c.includes("house painting") ||
+    c.includes("decorating") ||
+    c.includes("pest control") ||
+    c.includes("pest") ||
     c.includes("cleaning") ||
     c.includes("janitorial") ||
     c.includes("landscaping") ||
+    c.includes("gardening") ||
+    c.includes("lawn") ||
     c.includes("solar") ||
     c.includes("security") ||
     c.includes("surveillance") ||
@@ -75,6 +83,7 @@ export function isServiceBusinessCategory(category: string): boolean {
     c.includes("tour") ||
     c.includes("hotel") ||
     c.includes("resort") ||
+    c.includes("wedding") ||
     c.includes("events") ||
     c.includes("entertainment") ||
     c.includes("attractions") ||
@@ -87,6 +96,7 @@ export function isServiceBusinessCategory(category: string): boolean {
     c.includes("hair salon") ||
     c.includes("car wash") ||
     c.includes("detailing") ||
+    c.includes("auto body") ||
     c.includes("auto shop")
   );
 }
@@ -130,6 +140,30 @@ export const DEDICATED_PORT_PRIORITY: Array<{
     reason: "Courses and enrollments",
     interimTemplate: "mono-market",
     suggestedPorts: ["training-studio"],
+  },
+  {
+    category: "Appliance & Device Repair",
+    reason: "On-demand repair bookings — not retail cart chrome",
+    interimTemplate: "aircon",
+    suggestedPorts: ["apex", "aircon"],
+  },
+  {
+    category: "House Painting & Decorating",
+    reason: "Quote-based painting jobs need service language",
+    interimTemplate: "aircon",
+    suggestedPorts: ["painter", "apex"],
+  },
+  {
+    category: "Pest Control",
+    reason: "Service visits and treatment packages",
+    interimTemplate: "aircon",
+    suggestedPorts: ["apex"],
+  },
+  {
+    category: "Wedding Planning & Events",
+    reason: "Packages and inquiries, not add-to-cart groceries",
+    interimTemplate: "mellow",
+    suggestedPorts: ["studio", "mellow"],
   },
 ];
 

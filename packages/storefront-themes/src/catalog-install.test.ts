@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  catalogCategoryFitsSeller,
   listCatalogByCategory,
   listCuratedTemplatesForDna,
   resolveCatalogInstall,
   resolveLiveTemplateForCatalogEntry,
+  selectionFitsSellerCategory,
 } from "./catalog-install";
 import { getBundleCatalogEntry } from "./bundle-catalog";
 import { buildStoreDNA } from "./store-dna";
@@ -80,5 +82,24 @@ describe("resolveLiveTemplateForCatalogEntry", () => {
     const woody = getBundleCatalogEntry("woody");
     assert.ok(woody);
     assert.equal(resolveLiveTemplateForCatalogEntry(woody), "aircon");
+  });
+});
+
+describe("selectionFitsSellerCategory", () => {
+  it("allows category shortlist live ids and rejects cross-vertical", () => {
+    assert.equal(selectionFitsSellerCategory("mono-market", "Insurance & Financial Services"), true);
+    assert.equal(selectionFitsSellerCategory("sarab", "Insurance & Financial Services"), false);
+    assert.equal(selectionFitsSellerCategory("aircon", "HVAC & Air Conditioning"), true);
+  });
+
+  it("allows explicit neighbor catalog categories for on-demand verticals", () => {
+    assert.equal(
+      catalogCategoryFitsSeller("HVAC & Air Conditioning", "Appliance & Device Repair"),
+      true
+    );
+    assert.equal(
+      catalogCategoryFitsSeller("Food & Beverage", "Appliance & Device Repair"),
+      false
+    );
   });
 });

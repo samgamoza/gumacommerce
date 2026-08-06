@@ -55,13 +55,25 @@ export function preferredTemplatesForCategory(category: string): ShopTemplateId[
   if (c === "Beauty & Skincare" || c === "Beauty Salons & Spas" || c === "Barber & Hair Salons") {
     return ["bloom", "kaira", "magazine-rack", "mellow"];
   }
-  if (c === "Auto Shop & Services" || c === "Automotive Parts & Accessories" || c === "Car Wash & Detailing") {
+  if (
+    c === "Auto Shop & Services" ||
+    c === "Automotive Parts & Accessories" ||
+    c === "Car Wash & Detailing" ||
+    c === "Auto Body & Painting"
+  ) {
     return ["carserv", "motto", "electro", "ministore"];
   }
   if (c === "Printing & Signage" || c === "Photography & Creative") {
     return ["studio", "ministore", "mono-market", "zay"];
   }
-  if (c === "HVAC & Air Conditioning" || c === "Home Services & Trades" || c === "Construction & Renovation") {
+  if (
+    c === "HVAC & Air Conditioning" ||
+    c === "Appliance & Device Repair" ||
+    c === "Home Services & Trades" ||
+    c === "House Painting & Decorating" ||
+    c === "Pest Control" ||
+    c === "Construction & Renovation"
+  ) {
     return ["aircon", "clean-guma", "carserv"];
   }
   if (c === "Electronics") return ["electro", "ministore", "zay"];
@@ -85,7 +97,11 @@ export function preferredTemplatesForCategory(category: string): ShopTemplateId[
   if (c === "Cleaning & Janitorial" || c === "Landscaping & Gardening") {
     return ["aircon", "clean-guma", "organic"];
   }
-  if (c === "Events & Entertainment" || c === "Attractions & Leisure") {
+  if (
+    c === "Events & Entertainment" ||
+    c === "Wedding Planning & Events" ||
+    c === "Attractions & Leisure"
+  ) {
     return ["mellow", "studio", "clean-guma"];
   }
   if (c === "Industrial & Manufacturing") return ["ministore", "electro", "mono-market"];
@@ -95,16 +111,15 @@ export function preferredTemplatesForCategory(category: string): ShopTemplateId[
   return ["clean-guma", "mono-market", "zay", "ministore"];
 }
 
-/** True when this live template is acceptable for the seller category. */
+/**
+ * True when this live template is acceptable for the seller category.
+ * Strict: only the category shortlist — vibe never reopens the whole catalog.
+ */
 export function templateFitsCategory(templateId: string, category: string): boolean {
   if (isFoodVerticalTemplate(templateId) && !isFoodBusinessCategory(category)) {
     return false;
   }
-  const preferred = preferredTemplatesForCategory(category);
-  if (preferred.includes(templateId as ShopTemplateId)) return true;
-  // Non-food vertical templates are OK as soft fallbacks if not food-locked
-  if (!isFoodVerticalTemplate(templateId)) return true;
-  return false;
+  return preferredTemplatesForCategory(category).includes(templateId as ShopTemplateId);
 }
 
 /**
@@ -120,19 +135,22 @@ export function filterTemplatesForCategory(
   return preferredTemplatesForCategory(category);
 }
 
-/** Merge category prefs ahead of vibe prefs for signup. */
+/**
+ * Signup / seed pool: category shortlist only.
+ * Vibe may reorder within that shortlist (palette/tie-break), never expand it.
+ */
 export function templatePoolForSignup(
   category: string,
   vibeTemplates: readonly ShopTemplateId[]
 ): ShopTemplateId[] {
   const preferred = preferredTemplatesForCategory(category);
-  const vibeSafe = filterTemplatesForCategory(vibeTemplates, category);
-  const seen = new Set<ShopTemplateId>();
-  const pool: ShopTemplateId[] = [];
-  for (const id of [...preferred, ...vibeSafe]) {
-    if (seen.has(id)) continue;
-    seen.add(id);
-    pool.push(id);
-  }
-  return pool;
+  const preferredSet = new Set(preferred);
+  const vibeFirst = vibeTemplates.filter((id) => preferredSet.has(id));
+  const rest = preferred.filter((id) => !vibeFirst.includes(id));
+  return [...vibeFirst, ...rest];
+}
+
+/** Default live renderer from onboarding category (ops gap-fill + catalog fallback). */
+export function liveTemplateForCategory(category: string): ShopTemplateId {
+  return preferredTemplatesForCategory(category)[0] ?? "clean-guma";
 }

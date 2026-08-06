@@ -14,16 +14,20 @@ export {
   groupCategoriesForOnboarding,
   matchBusinessCategories,
   popularCategoryLabels,
+  predictBusinessCategories,
+  predictCategoriesForGroup,
   type CategoryGuideEntry,
   type CategoryGroup,
   type CategoryGroupId,
   type CategoryMatch,
+  type CategoryPredictCues,
 } from "./shop-category-guide";
 export {
   FOOD_VERTICAL_TEMPLATE_IDS,
   filterTemplatesForCategory,
   isFoodBusinessCategory,
   isFoodVerticalTemplate,
+  liveTemplateForCategory,
   preferredTemplatesForCategory,
   templateFitsCategory,
   templatePoolForSignup,
@@ -150,12 +154,14 @@ export {
   type TemplateScoreBreakdown,
 } from "./recommend-templates";
 export {
+  catalogCategoryFitsSeller,
   countBundleSellerReadyByCategory,
   defaultLiveTemplateForCategory,
   listCatalogByCategory,
   listCuratedTemplatesForDna,
   resolveCatalogInstall,
   resolveLiveTemplateForCatalogEntry,
+  selectionFitsSellerCategory,
   type CatalogInstallResolution,
   type CuratedTemplateCard,
 } from "./catalog-install";

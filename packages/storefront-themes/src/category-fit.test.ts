@@ -55,4 +55,24 @@ describe("category-fit guards", () => {
     assert.ok(!isFoodVerticalTemplate(ranked[0]!.id));
     assert.ok(ranked.every((r) => !isFoodVerticalTemplate(r.id)));
   });
+
+  it("rejects cross-vertical skins outside the category shortlist", () => {
+    assert.equal(templateFitsCategory("electro", "Insurance & Financial Services"), false);
+    assert.equal(templateFitsCategory("carserv", "Insurance & Financial Services"), false);
+    assert.equal(templateFitsCategory("mono-market", "Insurance & Financial Services"), true);
+    assert.equal(templateFitsCategory("aircon", "HVAC & Air Conditioning"), true);
+    assert.equal(templateFitsCategory("sarab", "HVAC & Air Conditioning"), false);
+  });
+
+  it("recommendTemplates only returns category shortlist", () => {
+    const dna = buildStoreDNA({
+      businessName: "CoolFix Aircon",
+      category: "HVAC & Air Conditioning",
+      vibe: "bold",
+    });
+    const preferred = preferredTemplatesForCategory("HVAC & Air Conditioning");
+    const ranked = recommendTemplates(dna, { plan: "free", limit: 5 });
+    assert.ok(ranked.length > 0);
+    assert.ok(ranked.every((r) => preferred.includes(r.id)));
+  });
 });

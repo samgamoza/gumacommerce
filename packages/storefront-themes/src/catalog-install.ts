@@ -8,7 +8,11 @@ import {
   getBundleCatalogEntry,
   type BundleTemplateCatalogEntry,
 } from "./bundle-catalog";
-import { preferredTemplatesForCategory } from "./category-fit";
+import {
+  liveTemplateForCategory,
+  preferredTemplatesForCategory,
+  templateFitsCategory,
+} from "./category-fit";
 import { canUseTemplate } from "./resolve-theme";
 import { deriveStoreLook } from "./store-look";
 import { isShopTemplateId } from "./templates";
@@ -16,6 +20,29 @@ import { previewImageForCategory, previewImageForTemplate } from "./template-pre
 import type { ShopTemplateId } from "./types";
 import type { StoreLook } from "./store-look";
 import type { StoreDNA } from "./store-dna";
+
+/**
+ * Explicit adjacent catalog labels when Free Bundle uses a parent vertical.
+ * No regex bleed — only what we declare here.
+ */
+const CATEGORY_CATALOG_NEIGHBORS: Record<string, readonly string[]> = {
+  Catering: ["Food & Beverage"],
+  "Shoes & Footwear": ["Fashion & Apparel"],
+  "Beauty Salons & Spas": ["Beauty & Skincare"],
+  "Barber & Hair Salons": ["Beauty & Skincare"],
+  "Automotive Parts & Accessories": ["Auto Shop & Services"],
+  "Car Wash & Detailing": ["Auto Shop & Services"],
+  "Auto Body & Painting": ["Auto Shop & Services"],
+  "Appliance & Device Repair": ["HVAC & Air Conditioning", "Home Services & Trades"],
+  "House Painting & Decorating": ["Home Services & Trades"],
+  "Pest Control": ["Home Services & Trades", "Cleaning & Janitorial"],
+  "Cleaning & Janitorial": ["Home Services & Trades"],
+  "Landscaping & Gardening": ["Home Services & Trades"],
+  "Construction & Renovation": ["Home Services & Trades"],
+  "Wedding Planning & Events": ["Events & Entertainment", "Photography & Creative"],
+  "Childcare & Education": ["Education & Training"],
+  "Fitness & Wellness": ["Healthcare & Clinics"],
+};
 
 const NON_SELLER_STATUSES = new Set([
   "admin-dashboard",
@@ -45,7 +72,7 @@ export function resolveLiveTemplateForCatalogEntry(
 
 /** Nearest live renderer for a seller business category (ops seed + catalog fallback). */
 export function defaultLiveTemplateForCategory(category: string): ShopTemplateId {
-  return preferredTemplatesForCategory(category)[0] ?? "clean-guma";
+  return liveTemplateForCategory(category);
 }
 
 /** Seller-ready Free Bundle counts keyed by shopCategory (excludes admin/content/non-storefront). */
@@ -136,26 +163,36 @@ export interface CuratedTemplateCard {
   num: number;
 }
 
-function categoryMatches(entryCategory: string, sellerCategory: string): boolean {
-  if (entryCategory === sellerCategory) return true;
-  if (sellerCategory === "Printing & Signage") {
-    return /print|sign|graphic|design|studio|agency|retail/i.test(entryCategory);
+/** Exact category match, or an explicit neighbor declared for Free Bundle coverage. */
+export function catalogCategoryFitsSeller(
+  entryCategory: string,
+  sellerCategory: string
+): boolean {
+  const seller = sellerCategory.trim();
+  const entry = entryCategory.trim();
+  if (!seller || !entry) return false;
+  if (entry === seller) return true;
+  return (CATEGORY_CATALOG_NEIGHBORS[seller] ?? []).includes(entry);
+}
+
+/**
+ * Guard Launch installs: catalog/stock must fit DNA category;
+ * bare live ids must sit on the category shortlist.
+ */
+export function selectionFitsSellerCategory(
+  selectionId: string,
+  sellerCategory: string,
+  options?: { plan?: string | null; stockCategoryLabel?: string | null }
+): boolean {
+  if (options?.stockCategoryLabel) {
+    return catalogCategoryFitsSeller(options.stockCategoryLabel, sellerCategory);
   }
-  if (sellerCategory.startsWith("Auto") || sellerCategory.includes("Car Wash")) {
-    return (
-      entryCategory === "Auto Shop & Services" ||
-      entryCategory === "Automotive Parts & Accessories" ||
-      entryCategory === "Car Wash & Detailing"
-    );
+  const install = resolveCatalogInstall(selectionId, { plan: options?.plan });
+  if (!install) return false;
+  if (install.fromCatalog && install.catalogEntry) {
+    return catalogCategoryFitsSeller(install.catalogEntry.shopCategory, sellerCategory);
   }
-  if (sellerCategory === "Catering") return entryCategory === "Food & Beverage";
-  if (sellerCategory === "Shoes & Footwear") {
-    return entryCategory === "Fashion & Apparel" || entryCategory === "Retail & General Merchandise";
-  }
-  if (sellerCategory === "Beauty Salons & Spas" || sellerCategory === "Barber & Hair Salons") {
-    return entryCategory === "Beauty & Skincare" || entryCategory === "Fitness & Wellness";
-  }
-  return false;
+  return templateFitsCategory(install.liveTemplateId, sellerCategory);
 }
 
 /**
@@ -173,7 +210,7 @@ export function listCuratedTemplatesForDna(
   const cards: CuratedTemplateCard[] = [];
   for (const entry of BUNDLE_2023_CATALOG) {
     if (NON_SELLER_STATUSES.has(entry.status)) continue;
-    if (!categoryMatches(entry.shopCategory, category)) continue;
+    if (!catalogCategoryFitsSeller(entry.shopCategory, category)) continue;
     const live = resolveLiveTemplateForCatalogEntry(entry);
     if (!live) continue;
     cards.push({

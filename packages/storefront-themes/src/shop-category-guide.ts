@@ -6,6 +6,7 @@ import {
   DEFAULT_SHOP_BUSINESS_CATEGORY,
   SHOP_BUSINESS_CATEGORIES,
   SHOP_CATEGORY_EMOJI,
+  emojiForShopCategory,
   type ShopBusinessCategory,
 } from "./shop-categories";
 
@@ -15,6 +16,7 @@ export type CategoryGroupId =
   | "fashion"
   | "beauty"
   | "auto"
+  | "ondemand"
   | "home"
   | "health"
   | "services"
@@ -45,11 +47,12 @@ export const CATEGORY_GROUPS: CategoryGroup[] = [
   { id: "retail", label: "Retail & shops", blurb: "General stores, wholesale, electronics, pets" },
   { id: "fashion", label: "Fashion", blurb: "Clothes, shoes, handmade, crafts" },
   { id: "beauty", label: "Beauty & care", blurb: "Skincare, salons, barbers, spas" },
-  { id: "auto", label: "Auto & wheels", blurb: "Repair, parts, wash, moto gear" },
-  { id: "home", label: "Home & build", blurb: "Furniture, trades, HVAC, solar, cleaning" },
+  { id: "ondemand", label: "On-demand services", blurb: "Repairs, home care, lawn, pest, weddings — bookable services" },
+  { id: "auto", label: "Auto & wheels", blurb: "Mechanic, parts, wash, body paint, moto" },
+  { id: "home", label: "Home goods & build", blurb: "Furniture, construction, solar, security products" },
   { id: "health", label: "Health & learn", blurb: "Clinics, fitness, schools, childcare" },
   { id: "services", label: "Pro services", blurb: "Insurance, consulting, print, photo, logistics" },
-  { id: "travel", label: "Travel & fun", blurb: "Hotels, tours, events, attractions" },
+  { id: "travel", label: "Travel & leisure", blurb: "Hotels, tours, attractions, entertainment" },
   { id: "other", label: "Something else", blurb: "When nothing else fits — we’ll still help" },
 ];
 
@@ -177,6 +180,149 @@ export const SHOP_CATEGORY_GUIDE: CategoryGuideEntry[] = [
     aliases: ["barber", "hair", "haircut", "barbershop", "gupit"],
   },
   {
+    label: "Appliance & Device Repair",
+    group: "ondemand",
+    plain:
+      "On-demand repairs for appliances and gadgets — washing machine, fridge, cellphone, laptop, and more.",
+    examples: ["cellphone repair", "washing machine", "fridge tech", "laptop fix"],
+    aliases: [
+      "appliance repair",
+      "device repair",
+      "cellphone repair",
+      "cellphone",
+      "cell phone",
+      "phone repair",
+      "mobile repair",
+      "washing machine",
+      "washer",
+      "dryer",
+      "refrigerator",
+      "fridge",
+      "appliance",
+      "gadget repair",
+      "laptop repair",
+      "on demand repair",
+      "on-demand repair",
+      "home appliance",
+      "repair service",
+    ],
+    popular: true,
+  },
+  {
+    label: "HVAC & Air Conditioning",
+    group: "ondemand",
+    plain: "Aircon cleaning, repair, or installation — split type, window, or central.",
+    examples: ["aircon clean", "split type install", "aircon repair"],
+    aliases: [
+      "hvac",
+      "aircon",
+      "air con",
+      "air conditioning",
+      "aircon repair",
+      "aircon clean",
+      "cooling",
+      "ac repair",
+    ],
+    popular: true,
+  },
+  {
+    label: "Home Services & Trades",
+    group: "ondemand",
+    plain: "Tradespeople on call — plumber, electrician, carpenter, handyman.",
+    examples: ["plumber", "electrician", "handyman"],
+    aliases: [
+      "plumber",
+      "electrician",
+      "carpenter",
+      "handyman",
+      "home service",
+      "home services",
+      "trades",
+      "on demand service",
+      "ondemand",
+    ],
+    popular: true,
+  },
+  {
+    label: "House Painting & Decorating",
+    group: "ondemand",
+    plain: "Interior or exterior house painting, touch-ups, and decorative finishes.",
+    examples: ["house paint", "repaint rooms", "exterior paint"],
+    aliases: [
+      "house painting",
+      "house paint",
+      "painting",
+      "painter",
+      "repaint",
+      "interior paint",
+      "exterior paint",
+      "wall paint",
+      "decorating",
+    ],
+    popular: true,
+  },
+  {
+    label: "Pest Control",
+    group: "ondemand",
+    plain: "Termite, cockroach, mosquito, or general pest treatment for homes and offices.",
+    examples: ["termite treatment", "fogging", "cockroach"],
+    aliases: [
+      "pest control",
+      "pest",
+      "termite",
+      "cockroach",
+      "mosquito",
+      "fogging",
+      "exterminator",
+      "ipis",
+      "bukbok",
+    ],
+    popular: true,
+  },
+  {
+    label: "Cleaning & Janitorial",
+    group: "ondemand",
+    plain: "Home or office cleaning — deep clean, move-out, or recurring janitorial.",
+    examples: ["home cleaning", "office janitorial", "deep clean"],
+    aliases: ["cleaning", "janitorial", "housekeeping", "deep clean", "home clean", "clean"],
+  },
+  {
+    label: "Landscaping & Gardening",
+    group: "ondemand",
+    plain: "Lawn care, garden improvements, plants, or outdoor landscaping.",
+    examples: ["lawn mowing", "garden makeover", "plant nursery"],
+    aliases: [
+      "garden",
+      "gardening",
+      "landscaping",
+      "landscape",
+      "lawn",
+      "lawn care",
+      "lawn mowing",
+      "garden improvements",
+      "plants",
+      "nursery",
+      "grass cutting",
+    ],
+  },
+  {
+    label: "Wedding Planning & Events",
+    group: "ondemand",
+    plain: "Wedding coordination, debut/party planning, or full event packages.",
+    examples: ["wedding planner", "debut package", "church + reception"],
+    aliases: [
+      "wedding",
+      "wedding planner",
+      "wedding planning",
+      "kasal",
+      "debut",
+      "event planner",
+      "bridal",
+      "reception",
+    ],
+    popular: true,
+  },
+  {
     label: "Auto Shop & Services",
     group: "auto",
     plain: "Vehicle repair or auto services — garage, mechanic, moto shop.",
@@ -195,7 +341,24 @@ export const SHOP_CATEGORY_GUIDE: CategoryGuideEntry[] = [
     group: "auto",
     plain: "Car wash, detailing, or ceramic coating services.",
     examples: ["car wash", "detailing", "ceramic coat"],
-    aliases: ["car wash", "detailing", "wash", "ceramic"],
+    aliases: ["car wash", "detailing", "auto detail", "wash", "ceramic", "carwash"],
+    popular: true,
+  },
+  {
+    label: "Auto Body & Painting",
+    group: "auto",
+    plain: "Body repair, dent removal, or full car painting / repaint jobs.",
+    examples: ["car paint", "body repair", "dent removal"],
+    aliases: [
+      "car painting",
+      "car paint",
+      "auto body",
+      "body shop",
+      "repaint car",
+      "dent",
+      "collision",
+      "bumper repair",
+    ],
   },
   {
     label: "Furniture & Home",
@@ -205,13 +368,6 @@ export const SHOP_CATEGORY_GUIDE: CategoryGuideEntry[] = [
     aliases: ["furniture", "home decor", "sofa", "cabinet", "interior"],
   },
   {
-    label: "HVAC & Air Conditioning",
-    group: "home",
-    plain: "Aircon sales, cleaning, or installation.",
-    examples: ["aircon clean", "split type install"],
-    aliases: ["hvac", "aircon", "air con", "air conditioning", "cooling"],
-  },
-  {
     label: "Construction & Renovation",
     group: "home",
     plain: "Building, remodeling, or contractor services.",
@@ -219,32 +375,11 @@ export const SHOP_CATEGORY_GUIDE: CategoryGuideEntry[] = [
     aliases: ["construction", "renovation", "contractor", "builder", "fit out"],
   },
   {
-    label: "Home Services & Trades",
-    group: "home",
-    plain: "Tradespeople — plumber, electrician, carpenter, handyman.",
-    examples: ["plumber", "electrician", "handyman"],
-    aliases: ["plumber", "electrician", "carpenter", "handyman", "home service", "trades"],
-  },
-  {
-    label: "Landscaping & Gardening",
-    group: "home",
-    plain: "Gardens, plants, landscaping, or outdoor greenery.",
-    examples: ["garden", "plants", "lawn"],
-    aliases: ["garden", "landscaping", "plants", "nursery"],
-  },
-  {
     label: "Solar & Renewable Energy",
     group: "home",
     plain: "Solar panels, inverters, or renewable energy installs.",
     examples: ["solar install", "panels"],
     aliases: ["solar", "renewable", "panels", "inverter"],
-  },
-  {
-    label: "Cleaning & Janitorial",
-    group: "home",
-    plain: "Cleaning services for homes or offices.",
-    examples: ["home cleaning", "office janitorial"],
-    aliases: ["cleaning", "janitorial", "housekeeping", "clean"],
   },
   {
     label: "Security & Surveillance",
@@ -322,7 +457,8 @@ export const SHOP_CATEGORY_GUIDE: CategoryGuideEntry[] = [
       "accountant",
       "lawyer",
       "legal",
-      "services",
+      "professional services",
+      "business consulting",
     ],
     popular: true,
   },
@@ -378,9 +514,9 @@ export const SHOP_CATEGORY_GUIDE: CategoryGuideEntry[] = [
   {
     label: "Events & Entertainment",
     group: "travel",
-    plain: "Events, parties, entertainment, or talent bookings.",
+    plain: "Parties, entertainment, DJ, host, or talent bookings (not full wedding planning).",
     examples: ["event host", "party planner", "DJ"],
-    aliases: ["events", "entertainment", "party", "host", "dj", "emcee"],
+    aliases: ["events", "entertainment", "party", "host", "dj", "emcee", "talent booking"],
   },
   {
     label: "Attractions & Leisure",
@@ -412,7 +548,10 @@ export function getCategoryGuideEntry(label: string): CategoryGuideEntry | undef
 }
 
 export function emojiForGuideCategory(label: string): string {
-  return SHOP_CATEGORY_EMOJI[label as ShopBusinessCategory] ?? "🛍️";
+  return (
+    SHOP_CATEGORY_EMOJI[label as ShopBusinessCategory] ??
+    emojiForShopCategory(label)
+  );
 }
 
 export interface CategoryMatch {
@@ -426,14 +565,169 @@ function normalizeQuery(q: string): string {
   return q.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+/** Noise words that rarely identify a vertical on their own. */
+const CUE_STOPWORDS = new Set([
+  "a",
+  "an",
+  "the",
+  "and",
+  "or",
+  "for",
+  "of",
+  "to",
+  "in",
+  "on",
+  "at",
+  "my",
+  "our",
+  "we",
+  "i",
+  "im",
+  "i'm",
+  "is",
+  "are",
+  "be",
+  "do",
+  "does",
+  "doing",
+  "with",
+  "from",
+  "your",
+  "you",
+  "shop",
+  "store",
+  "business",
+  "online",
+  "selling",
+  "sell",
+  "sells",
+  "sale",
+  "sales",
+  "ph",
+  "philippines",
+  "manila",
+  "qc",
+  "city",
+  "metro",
+  "inc",
+  "co",
+  "company",
+  "ltd",
+  "the",
+  "best",
+  "new",
+  "near",
+  "me",
+]);
+
+function tokenizeCue(text: string): string[] {
+  return normalizeQuery(text)
+    .replace(/[^a-z0-9\s&]+/g, " ")
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 2 && !CUE_STOPWORDS.has(t));
+}
+
+function scoreEntryAgainstCue(
+  entry: CategoryGuideEntry,
+  cue: string
+): { score: number; reason: string } {
+  const q = normalizeQuery(cue);
+  if (!q) return { score: 0, reason: "" };
+
+  let score = 0;
+  let reason = "";
+
+  const labelL = entry.label.toLowerCase();
+  if (labelL === q) {
+    score = 100;
+    reason = "Exact category match";
+  } else if (labelL.includes(q) || (q.length >= 4 && q.includes(labelL))) {
+    score = 72;
+    reason = `Matches “${entry.label}”`;
+  }
+
+  for (const alias of entry.aliases) {
+    const a = alias.toLowerCase();
+    if (a === q) {
+      score = Math.max(score, 96);
+      reason = `People often call this “${alias}”`;
+    } else if (q.includes(a) && a.length >= 3) {
+      const phraseBoost = a.includes(" ") ? 8 : 0;
+      score = Math.max(score, 82 + Math.min(a.length, 12) + phraseBoost);
+      reason = `Matched “${alias}”`;
+    } else if (a.includes(q) && q.length >= 3) {
+      score = Math.max(score, 56);
+      reason = `Related to “${alias}”`;
+    }
+  }
+
+  for (const ex of entry.examples) {
+    const exN = normalizeQuery(ex);
+    if (exN.includes(q) || q.includes(exN)) {
+      score = Math.max(score, 52);
+      if (!reason) reason = `Example: ${ex}`;
+    }
+  }
+
+  if (entry.plain.toLowerCase().includes(q) && q.length >= 4) {
+    score = Math.max(score, 42);
+    if (!reason) reason = "Matched description";
+  }
+
+  // Token predictive pass — shop names / sentences like "QC Aircon Repair Pros"
+  const tokens = tokenizeCue(q);
+  if (tokens.length > 0) {
+    let tokenHits = 0;
+    let bestTokenReason = "";
+    for (const token of tokens) {
+      let hit = false;
+      if (labelL.split(/[^a-z0-9]+/).includes(token)) {
+        hit = true;
+        score = Math.max(score, 48 + token.length);
+        bestTokenReason = `Heard “${token}” in ${entry.label}`;
+      }
+      for (const alias of entry.aliases) {
+        const a = alias.toLowerCase();
+        const aliasTokens = tokenizeCue(a);
+        if (a === token || aliasTokens.includes(token)) {
+          hit = true;
+          const boost = a === token || aliasTokens.length === 1 ? 64 : 58;
+          score = Math.max(score, boost + Math.min(token.length, 8));
+          bestTokenReason = `Cue matched “${alias}”`;
+        }
+      }
+      for (const ex of entry.examples) {
+        if (tokenizeCue(ex).includes(token)) {
+          hit = true;
+          score = Math.max(score, 46);
+          if (!bestTokenReason) bestTokenReason = `Close to “${ex}”`;
+        }
+      }
+      if (hit) tokenHits += 1;
+    }
+    if (tokenHits >= 2) {
+      score = Math.min(100, score + 12 * (tokenHits - 1));
+      reason = reason || bestTokenReason || "Multiple cues matched";
+    } else if (tokenHits === 1 && !reason) {
+      reason = bestTokenReason;
+    } else if (bestTokenReason && score >= 46) {
+      reason = reason || bestTokenReason;
+    }
+  }
+
+  return { score, reason: reason || "Related" };
+}
+
 /** Deterministic search — maps how sellers talk → canonical category. */
 export function matchBusinessCategories(
   query: string,
-  options?: { limit?: number; allowedLabels?: readonly string[] }
+  options?: { limit?: number; allowedLabels?: readonly string[]; minScore?: number }
 ): CategoryMatch[] {
   const q = normalizeQuery(query);
   if (!q) return [];
   const limit = options?.limit ?? 8;
+  const minScore = options?.minScore ?? 1;
   const allowed = options?.allowedLabels
     ? new Set(options.allowedLabels.map((l) => l.trim()))
     : null;
@@ -441,51 +735,113 @@ export function matchBusinessCategories(
   const scored: CategoryMatch[] = [];
   for (const entry of SHOP_CATEGORY_GUIDE) {
     if (allowed && !allowed.has(entry.label)) continue;
-    let score = 0;
-    let reason = "";
-
-    const labelL = entry.label.toLowerCase();
-    if (labelL === q) {
-      score = 100;
-      reason = "Exact category match";
-    } else if (labelL.includes(q) || q.includes(labelL)) {
-      score = 70;
-      reason = `Matches “${entry.label}”`;
-    }
-
-    for (const alias of entry.aliases) {
-      const a = alias.toLowerCase();
-      if (a === q) {
-        score = Math.max(score, 95);
-        reason = `People often call this “${alias}”`;
-      } else if (q.includes(a) && a.length >= 3) {
-        score = Math.max(score, 80 + Math.min(a.length, 10));
-        reason = `Matched “${alias}”`;
-      } else if (a.includes(q) && q.length >= 3) {
-        score = Math.max(score, 55);
-        reason = `Related to “${alias}”`;
-      }
-    }
-
-    for (const ex of entry.examples) {
-      if (normalizeQuery(ex).includes(q) || q.includes(normalizeQuery(ex))) {
-        score = Math.max(score, 50);
-        if (!reason) reason = `Example: ${ex}`;
-      }
-    }
-
-    if (entry.plain.toLowerCase().includes(q) && q.length >= 4) {
-      score = Math.max(score, 40);
-      if (!reason) reason = "Matched description";
-    }
-
-    if (score > 0) {
-      scored.push({ label: entry.label, score, reason: reason || "Related", entry });
+    const { score, reason } = scoreEntryAgainstCue(entry, q);
+    if (score >= minScore) {
+      scored.push({ label: entry.label, score, reason, entry });
     }
   }
 
   scored.sort((a, b) => b.score - a.score || a.label.localeCompare(b.label));
   return scored.slice(0, limit);
+}
+
+export interface CategoryPredictCues {
+  /** Free-text description: “aircon repair in QC”, “life insurance advisor” */
+  text?: string | null;
+  shopName?: string | null;
+  shopSlug?: string | null;
+}
+
+/**
+ * Predictive vertical ranking from onboarding cues.
+ * Returns only high-confidence matches — never the full catalog.
+ * Deterministic (Launch-safe, zero LLM).
+ */
+export function predictBusinessCategories(
+  cues: CategoryPredictCues,
+  options?: {
+    allowedLabels?: readonly string[];
+    limit?: number;
+    minScore?: number;
+    group?: CategoryGroupId;
+  }
+): CategoryMatch[] {
+  const parts = [
+    cues.text?.trim(),
+    cues.shopName?.trim(),
+    cues.shopSlug?.trim().replace(/[-_]+/g, " "),
+  ].filter((p): p is string => Boolean(p && p.length > 0));
+
+  if (parts.length === 0) return [];
+
+  // Weight explicit seller text highest, then shop name, then slug.
+  const blended = new Map<string, CategoryMatch>();
+  const weighted: Array<{ cue: string; weight: number }> = [];
+  if (cues.text?.trim()) weighted.push({ cue: cues.text, weight: 1 });
+  if (cues.shopName?.trim()) weighted.push({ cue: cues.shopName, weight: 0.85 });
+  if (cues.shopSlug?.trim()) {
+    weighted.push({ cue: cues.shopSlug.replace(/[-_]+/g, " "), weight: 0.55 });
+  }
+
+  for (const { cue, weight } of weighted) {
+    const hits = matchBusinessCategories(cue, {
+      allowedLabels: options?.allowedLabels,
+      limit: 12,
+      minScore: 40,
+    });
+    for (const hit of hits) {
+      if (options?.group && hit.entry.group !== options.group) continue;
+      const adjusted = Math.round(hit.score * weight);
+      const prev = blended.get(hit.label);
+      if (!prev || adjusted > prev.score) {
+        blended.set(hit.label, { ...hit, score: adjusted });
+      }
+    }
+  }
+
+  const minScore = options?.minScore ?? 48;
+  const limit = options?.limit ?? 5;
+  let ranked = [...blended.values()]
+    .filter((m) => m.score >= minScore)
+    .sort((a, b) => b.score - a.score || a.label.localeCompare(b.label));
+
+  if (ranked.length === 0) return [];
+
+  // Relative cutoff: only keep verticals close to the top cue match.
+  const top = ranked[0]!.score;
+  const floor = Math.max(minScore, Math.floor(top * 0.62));
+  ranked = ranked.filter((m) => m.score >= floor).slice(0, limit);
+  return ranked;
+}
+
+/** Sparse fallback: pick a group, then predict within it (still not a full dump). */
+export function predictCategoriesForGroup(
+  groupId: CategoryGroupId,
+  cues: CategoryPredictCues,
+  options?: { allowedLabels?: readonly string[]; limit?: number }
+): CategoryMatch[] {
+  const fromCues = predictBusinessCategories(cues, {
+    ...options,
+    group: groupId,
+    limit: options?.limit ?? 5,
+    minScore: 40,
+  });
+  if (fromCues.length > 0) return fromCues;
+
+  // No cue signal inside the group — show a short curated shortlist (popular first).
+  const allowed = options?.allowedLabels
+    ? new Set(options.allowedLabels.map((l) => l.trim()))
+    : null;
+  const entries = SHOP_CATEGORY_GUIDE.filter(
+    (e) => e.group === groupId && (!allowed || allowed.has(e.label))
+  ).sort((a, b) => Number(Boolean(b.popular)) - Number(Boolean(a.popular)));
+
+  return entries.slice(0, options?.limit ?? 5).map((entry, index) => ({
+    label: entry.label,
+    score: 40 - index,
+    reason: "Top picks in this area",
+    entry,
+  }));
 }
 
 export function popularCategoryLabels(allowedLabels?: readonly string[]): string[] {

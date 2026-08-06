@@ -307,7 +307,7 @@ export function LaunchWizard() {
           <Card className="space-y-4 p-5">
             <h2 className="font-semibold text-foreground">Store DNA</h2>
             <p className="text-sm text-muted-foreground">
-              We inferred this from signup. Confirm or adjust — used only for template scoring.
+              Confirm your category from signup — we use it to load the right shop looks next.
             </p>
 
             <BusinessCategoryPicker
@@ -419,20 +419,18 @@ export function LaunchWizard() {
           <Card className="space-y-5 p-5">
             <div>
               <h2 className="font-semibold text-foreground">
-                Curated looks for {category}
+                Pick a look for {category}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Browse the Free Bundle library curated for your category. Each skin installs onto the
-                closest live storefront renderer and keeps its own identity — so your shop doesn&apos;t
-                clone the neighbor&apos;s.
+                Based on the category you chose — only looks that fit that shop type.
               </p>
             </div>
 
             {recommendations.length > 0 && (
               <div>
-                <h3 className="text-sm font-semibold text-foreground">Quick picks</h3>
+                <h3 className="text-sm font-semibold text-foreground">Best fits</h3>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Top scored live packages for your Store DNA.
+                  Top matches for {category}. Tap one to continue.
                 </p>
                 <div className="mt-3 grid gap-3 sm:grid-cols-3">
                   {recommendations.map((t, index) => (
@@ -478,11 +476,10 @@ export function LaunchWizard() {
             {curatedTemplates.length > 0 && (
               <div className="border-t border-border pt-4">
                 <h3 className="text-sm font-semibold text-foreground">
-                  Full curated library ({curatedTemplates.length})
+                  More in {category} ({curatedTemplates.length})
                 </h3>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Pick a catalog skin by name — we mount the nearest live package and keep a unique
-                  look for your shop.
+                  Extra looks in your category if you want another option.
                 </p>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {curatedTemplates.map((m) => (

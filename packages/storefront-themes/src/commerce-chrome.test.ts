@@ -23,6 +23,9 @@ describe("resolveCommerceChrome", () => {
 
   it("flags service categories correctly", () => {
     assert.equal(isServiceBusinessCategory("Professional & Consulting"), true);
+    assert.equal(isServiceBusinessCategory("Appliance & Device Repair"), true);
+    assert.equal(isServiceBusinessCategory("Pest Control"), true);
+    assert.equal(isServiceBusinessCategory("Wedding Planning & Events"), true);
     assert.equal(isServiceBusinessCategory("Fashion & Apparel"), false);
   });
 });

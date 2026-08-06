@@ -91,7 +91,7 @@ export function SignupWizard() {
 
     if (!form.category.trim()) {
       setError(
-        "Pick the category that best fits your business — search in plain words if you are unsure."
+        "Choose your business category to continue."
       );
       return;
     }
