@@ -11,6 +11,12 @@ import {
   type BundleTemplateCatalogEntry,
 } from "./bundle-catalog";
 import { previewImageForCategory, previewImageForTemplate } from "./template-previews";
+import {
+  isFoodBusinessCategory,
+  isFoodVerticalTemplate,
+  preferredTemplatesForCategory,
+  templateFitsCategory,
+} from "./category-fit";
 
 export interface TemplateScoreBreakdown {
   category: number;
@@ -91,14 +97,29 @@ const CATEGORY_AFFINITY: Record<string, Partial<Record<ShopTemplateId, number>>>
     bloom: 18,
   },
   "Professional & Consulting": {
-    "mono-market": 36,
-    ministore: 30,
-    bloom: 22,
-    "clean-guma": 18,
+    "mono-market": 48,
+    "clean-guma": 36,
+    "magazine-rack": 32,
+    studio: 28,
+    ministore: 24,
+  },
+  "Insurance & Financial Services": {
+    "mono-market": 50,
+    "clean-guma": 40,
+    "magazine-rack": 34,
+    mellow: 28,
+    studio: 24,
   },
   Electronics: { electro: 48, ministore: 30, zay: 22 },
   "Fashion & Apparel": { bloom: 44, kaira: 42, stylish: 38, zay: 24 },
-  "Food & Beverage": { sarab: 44, foodmart: 36, fruitables: 34, "blush-bakery": 28 },
+  "Food & Beverage": {
+    sarab: 36,
+    foodmart: 36,
+    fruitables: 34,
+    "blush-bakery": 36,
+    "simply-sweet": 34,
+    organic: 22,
+  },
   "Furniture & Home": { furnish: 48, "mono-market": 20 },
   "Pet Supplies & Lovers": { waggy: 48 },
   "Organic & Farm Produce": { organic: 46, fruitables: 42 },
@@ -106,6 +127,9 @@ const CATEGORY_AFFINITY: Record<string, Partial<Record<ShopTemplateId, number>>>
   "Travel & Tours": { mellow: 40, "clean-guma": 16 },
   "Retail & General Merchandise": { zay: 40, ministore: 34, electro: 22, motto: 18 },
   "Beauty & Skincare": { bloom: 34, kaira: 28, "magazine-rack": 24 },
+  "Healthcare & Clinics": { mellow: 40, "mono-market": 34, "clean-guma": 28 },
+  "Real Estate & Property": { mellow: 42, furnish: 30, "mono-market": 28 },
+  "Education & Training": { "mono-market": 40, "clean-guma": 32, studio: 26 },
 };
 
 const PRODUCT_COUNT_MID: Record<ProductCountHint, number> = {
@@ -120,8 +144,18 @@ function normalizeCategory(category: string): string {
 }
 
 function categoryScore(pkg: TemplatePackageMetadata, category: string, id: ShopTemplateId): number {
+  // Hard veto — food chrome must never rank for insurance / professional / etc.
+  if (!templateFitsCategory(id, category)) return 0;
+
   const cat = category.toLowerCase();
   let score = 0;
+
+  const preferred = preferredTemplatesForCategory(category);
+  const prefIdx = preferred.indexOf(id);
+  if (prefIdx === 0) score = Math.max(score, 48);
+  else if (prefIdx === 1) score = Math.max(score, 42);
+  else if (prefIdx === 2) score = Math.max(score, 36);
+  else if (prefIdx >= 0) score = Math.max(score, 28);
 
   if (pkg.industryFit.some((fit) => fit.toLowerCase() === cat)) score = Math.max(score, 40);
   else if (pkg.industryFit.some((fit) => cat.includes(fit.toLowerCase()) || fit.toLowerCase().includes(cat))) {
@@ -155,6 +189,16 @@ function categoryScore(pkg: TemplatePackageMetadata, category: string, id: ShopT
   }
   if (/photo|studio|creative|print/i.test(category) && id === "studio") {
     score = Math.max(score, 36);
+  }
+  if (
+    /insurance|financial|fintech|banking/i.test(category) &&
+    ["mono-market", "clean-guma", "magazine-rack", "mellow"].includes(id)
+  ) {
+    score = Math.max(score, 44);
+  }
+  // Extra penalty if somehow a food skin still scores via soft token noise
+  if (isFoodVerticalTemplate(id) && !isFoodBusinessCategory(category)) {
+    return 0;
   }
 
   return Math.min(score, 48);
@@ -196,10 +240,76 @@ function businessNameBoost(id: ShopTemplateId, businessName: string): number {
   if (/auto|car|benz|motor|detail|garage|spa/.test(name) && ["electro", "ministore", "zay"].includes(id)) {
     return 12;
   }
-  if (/bakery|cake|sweet|pastry/.test(name) && ["blush-bakery", "simply-sweet", "sarab"].includes(id)) {
-    return 12;
+  // Cake / bakery names: prefer sweet patterns over generic food Sarab.
+  if (/bakery|cake|sweet|pastry|donut|dessert|bakeshop/.test(name)) {
+    if (["blush-bakery", "simply-sweet"].includes(id)) return 16;
+    if (id === "sarab") return 4;
   }
   return 0;
+}
+
+/** FNV-1a — match brand-kit seed so Launch diversifies like signup. */
+function hashString(value: string): number {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < value.length; i += 1) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return hash >>> 0;
+}
+
+/**
+ * Soft rotation among competitive templates so two similar shops don't always
+ * see the same #1. Zero LLM — seed from business name + category.
+ */
+function seedDiversityBoost(id: ShopTemplateId, seed: number, competitiveIds: ShopTemplateId[]): number {
+  if (!competitiveIds.includes(id)) return 0;
+  const preferred = competitiveIds[seed % competitiveIds.length];
+  if (id === preferred) return 18;
+  const second = competitiveIds[(seed + 1) % competitiveIds.length];
+  if (id === second) return 10;
+  return 0;
+}
+
+function competitivePoolForCategory(category: string): ShopTemplateId[] {
+  const affinity = CATEGORY_AFFINITY[category];
+  if (!affinity) return [];
+  return (Object.entries(affinity) as [ShopTemplateId, number][])
+    .filter(([, score]) => score >= 30)
+    .sort((a, b) => b[1] - a[1])
+    .map(([id]) => id)
+    .filter((id) => isShopTemplateId(id));
+}
+
+function occupiedPenalty(id: ShopTemplateId, occupied: Set<string>): number {
+  if (!occupied.has(id)) return 0;
+  // Soft — still recommendable, but nudged down so Top-3 spreads.
+  return -24;
+}
+
+/**
+ * Rotate near-tied category leaders by seed so similar shops don't always get
+ * the same #1 — only rotate among strong category fits (not random skins).
+ */
+function spreadTopBySeed(
+  ranked: RankedTemplate[],
+  seed: number,
+  limit: number,
+  margin = 28
+): RankedTemplate[] {
+  if (ranked.length === 0) return ranked;
+  const ceiling = ranked[0]!.score;
+  const band = ranked.filter(
+    (r) =>
+      r.score >= ceiling - margin &&
+      (r.breakdown.category >= 28 || r.breakdown.library >= 8)
+  );
+  const rest = ranked.filter((r) => !band.includes(r));
+  if (band.length <= 1) return ranked.slice(0, limit);
+
+  const offset = seed % band.length;
+  const rotated = [...band.slice(offset), ...band.slice(0, offset)];
+  return [...rotated, ...rest].slice(0, limit);
 }
 
 function libraryBoostForLiveId(id: ShopTemplateId, category: string): {
@@ -236,6 +346,10 @@ function libraryBoostForLiveId(id: ShopTemplateId, category: string): {
       }
     }
   }
+  // Food catalog has many aliases of the same Sarab port — cap so peers can compete.
+  if (cat === "Food & Beverage") {
+    score = Math.min(score, 8);
+  }
   return { score, entry: best };
 }
 
@@ -257,20 +371,32 @@ function resolveInstallId(entry: BundleTemplateCatalogEntry): ShopTemplateId | n
 
 /**
  * Deterministic template recommendation — zero LLM.
- * Scores the live installable library (23+) against Store DNA, boosted by
- * Free Bundle 2023 catalog matches for the merchant category.
+ * Scores the live installable library against Store DNA, boosted by
+ * Free Bundle catalog matches, diversified by seed + soft anti-collision.
  */
 export function recommendTemplates(
   dna: StoreDNA,
-  options?: { plan?: string | null; limit?: number }
+  options?: {
+    plan?: string | null;
+    limit?: number;
+    /** Recent same-category templateIds — soft-penalize so shops don't clone. */
+    avoidTemplateIds?: string[] | null;
+  }
 ): RankedTemplate[] {
   const plan = options?.plan ?? "free";
   const limit = options?.limit ?? 3;
   const category = dna.category || "General";
+  const seed = hashString(`${dna.businessName.trim().toLowerCase()}::${category}`);
+  const competitive = competitivePoolForCategory(category);
+  const occupied = new Set(
+    (options?.avoidTemplateIds ?? []).map((id) => id.trim()).filter(Boolean)
+  );
 
   const ranked: RankedTemplate[] = [];
 
   for (const id of SHOP_TEMPLATE_IDS) {
+    if (!templateFitsCategory(id, category)) continue;
+
     const pkg = getTemplatePackage(id);
     const template = getShopTemplate(id);
     const library = libraryBoostForLiveId(id, category);
@@ -293,7 +419,9 @@ export function recommendTemplates(
       breakdown.plan +
       breakdown.quality +
       breakdown.library +
-      businessNameBoost(id, dna.businessName);
+      businessNameBoost(id, dna.businessName) +
+      seedDiversityBoost(id, seed, competitive) +
+      occupiedPenalty(id, occupied);
 
     const reasons: string[] = [];
     if (breakdown.category >= 28) reasons.push(`Strong fit for ${category}`);
@@ -306,6 +434,7 @@ export function recommendTemplates(
       reasons.push("Live-selling ready");
     }
     if (pkg.mobileScore >= 88) reasons.push("Excellent on mobile");
+    if (occupied.has(id)) reasons.push("Less common in your category right now");
     if (reasons.length === 0) reasons.push(template.mood);
 
     ranked.push({
@@ -334,6 +463,7 @@ export function recommendTemplates(
   }
 
   // Ensure category-matched Free Bundle entries surface via their install target
+  // Cap: at most one library bump per live template (avoid Sarab monopoly).
   const bundleHits = BUNDLE_2023_CATALOG.filter((e) => {
     if (e.shopCategory === category) return true;
     if (category === "Printing & Signage") {
@@ -344,11 +474,13 @@ export function recommendTemplates(
     return false;
   }).slice(0, 12);
 
+  const boostedInstallIds = new Set<ShopTemplateId>();
   for (const entry of bundleHits) {
     const installId = resolveInstallId(entry);
-    if (!installId) continue;
+    if (!installId || boostedInstallIds.has(installId)) continue;
     const existing = ranked.find((r) => r.id === installId);
     if (!existing) continue;
+    boostedInstallIds.add(installId);
     existing.score += 10;
     existing.breakdown.library = Math.max(existing.breakdown.library, 18);
     if (!existing.librarySource) {
@@ -371,15 +503,7 @@ export function recommendTemplates(
 
   ranked.sort((a, b) => b.score - a.score || a.label.localeCompare(b.label));
 
-  // Prefer installable picks in the Top N, but never collapse to unrelated Basic skins
-  // when a stronger locked industry template exists — show it with upgrade cue.
-  const top = ranked.slice(0, Math.max(limit * 3, 9));
-  const preferred: RankedTemplate[] = [];
-  for (const item of top) {
-    if (preferred.length >= limit) break;
-    preferred.push(item);
-  }
-  return preferred;
+  return spreadTopBySeed(ranked, seed, limit);
 }
 
 /** Category-matched Free Bundle entries for Launch “library” panel. */

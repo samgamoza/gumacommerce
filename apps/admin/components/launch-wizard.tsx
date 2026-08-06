@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { BusinessCategoryPicker } from "@/components/business-category-picker";
 import { PatternAdminShell } from "@/components/pattern-admin-shell";
 import { Button, Card } from "@guma-commerce/ui";
 import {
@@ -48,6 +49,19 @@ export function LaunchWizard() {
   const [slug, setSlug] = useState("");
   const [urls, setUrls] = useState<{ storefront: string; preview: string } | null>(null);
   const [recommendations, setRecommendations] = useState<RankedTemplate[]>([]);
+  const [curatedTemplates, setCuratedTemplates] = useState<
+    Array<{
+      proposedId: string;
+      label: string;
+      shopCategory: string;
+      status: string;
+      notes: string;
+      previewImageUrl: string;
+      installTemplateId: string;
+      installable: boolean;
+      usesLiveLabel: string;
+    }>
+  >([]);
   const [libraryMatches, setLibraryMatches] = useState<
     Array<{
       proposedId: string;
@@ -60,7 +74,9 @@ export function LaunchWizard() {
     }>
   >([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [selectedCatalogLabel, setSelectedCatalogLabel] = useState<string | null>(null);
 
+  const [categories, setCategories] = useState<string[]>([...SHOP_BUSINESS_CATEGORIES]);
   const [category, setCategory] = useState<string>(SHOP_BUSINESS_CATEGORIES[0] ?? "General");
   const [vibe, setVibe] = useState("fresh");
   const [productCountHint, setProductCountHint] = useState<ProductCountHint>("1-10");
@@ -90,7 +106,11 @@ export function LaunchWizard() {
       setSlug(data.state.slug);
       setUrls(data.urls);
       setRecommendations(data.recommendations ?? []);
+      setCuratedTemplates(data.curatedTemplates ?? []);
       setLibraryMatches(data.libraryMatches ?? []);
+      if (Array.isArray(data.onboardingCategories) && data.onboardingCategories.length > 0) {
+        setCategories(data.onboardingCategories);
+      }
 
       const dna = data.dna;
       if (dna) {
@@ -100,7 +120,6 @@ export function LaunchWizard() {
         if (dna.goals?.length) setGoals(dna.goals);
         if (dna.sellingChannels?.length) setSellingChannels(dna.sellingChannels);
         if (dna.audience) setAudience(dna.audience);
-        if (dna.selectedTemplateId) setSelectedTemplateId(dna.selectedTemplateId);
       }
 
       const draft = data.draft;
@@ -111,7 +130,13 @@ export function LaunchWizard() {
         if (draft.primaryColor) setPrimaryColor(draft.primaryColor);
         if (draft.accentColor) setAccentColor(draft.accentColor);
         if (draft.paletteId) setPaletteId(draft.paletteId);
-        if (draft.templateId) setSelectedTemplateId(draft.templateId);
+        if (draft.catalogLabel) setSelectedCatalogLabel(draft.catalogLabel);
+        // Prefer curated catalog identity for selection highlight
+        if (draft.catalogId) setSelectedTemplateId(draft.catalogId);
+        else if (dna?.selectedTemplateId) setSelectedTemplateId(dna.selectedTemplateId);
+        else if (draft.templateId) setSelectedTemplateId(draft.templateId);
+      } else if (dna?.selectedTemplateId) {
+        setSelectedTemplateId(dna.selectedTemplateId);
       }
 
       if (data.launchDone) {
@@ -182,6 +207,7 @@ export function LaunchWizard() {
     });
     if (!data) return;
     setRecommendations(data.recommendations ?? []);
+    setCuratedTemplates(data.curatedTemplates ?? []);
     setLibraryMatches(data.libraryMatches ?? []);
     setStep("templates");
   }
@@ -189,7 +215,8 @@ export function LaunchWizard() {
   async function selectTemplate(id: string) {
     const data = await post({ action: "select_template", templateId: id });
     if (!data) return;
-    setSelectedTemplateId(id);
+    setSelectedTemplateId(data.install?.selectionId ?? id);
+    setSelectedCatalogLabel(data.install?.catalogLabel ?? data.draft?.catalogLabel ?? null);
     if (data.draft) {
       setTagline(data.draft.tagline ?? "");
       setPromoTitle(data.draft.promoTitle ?? "");
@@ -283,20 +310,11 @@ export function LaunchWizard() {
               We inferred this from signup. Confirm or adjust — used only for template scoring.
             </p>
 
-            <label className="block text-sm">
-              <span className="font-medium text-foreground">Category</span>
-              <select
-                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              >
-                {SHOP_BUSINESS_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <BusinessCategoryPicker
+              value={category}
+              onChange={setCategory}
+              allowedCategories={categories}
+            />
 
             <div>
               <p className="text-sm font-medium text-foreground">Vibe</p>
@@ -400,85 +418,116 @@ export function LaunchWizard() {
         {step === "templates" && (
           <Card className="space-y-5 p-5">
             <div>
-              <h2 className="font-semibold text-foreground">Top templates for {category}</h2>
+              <h2 className="font-semibold text-foreground">
+                Curated looks for {category}
+              </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Scored from the <strong>live storefront library</strong> (ported HTML themes + Guma
-                skins), boosted by matches in the Free Bundle catalog (~100). Pick one to install —
-                layout is fixed; you only personalize colors and copy next.
+                Browse the Free Bundle library curated for your category. Each skin installs onto the
+                closest live storefront renderer and keeps its own identity — so your shop doesn&apos;t
+                clone the neighbor&apos;s.
               </p>
             </div>
 
-            <div className="grid gap-4">
-              {recommendations.map((t, index) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  disabled={saving || !t.installable}
-                  onClick={() => void selectTemplate(t.id)}
-                  className={`overflow-hidden rounded-2xl border text-left transition hover:border-emerald-400 ${
-                    selectedTemplateId === t.id
-                      ? "border-emerald-500 ring-2 ring-emerald-500"
-                      : "border-border"
-                  } ${!t.installable ? "opacity-70" : ""}`}
-                >
-                  <div className="relative aspect-[16/9] w-full bg-muted">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={t.previewImageUrl}
-                      alt={`${t.label} preview`}
-                      className="h-full w-full object-cover"
-                    />
-                    <div
-                      className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 opacity-90"
-                      style={{ background: t.previewGradient }}
-                    />
-                    <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
-                      <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] font-bold text-white">
-                        #{index + 1}
-                      </span>
-                      <span className="rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-medium text-white">
-                        {t.tier}
-                      </span>
-                      {!t.installable && (
-                        <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[11px] font-bold text-white">
-                          Needs {t.minPlan === "growth" ? "Pro" : "Advance"}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="space-y-1 p-4">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold text-foreground">{t.label}</p>
-                      <span className="text-xs text-muted-foreground">Score {t.score}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{t.description}</p>
-                    <p className="text-xs text-emerald-700">{t.reasons.join(" · ")}</p>
-                    {t.librarySource && (
-                      <p className="text-[11px] text-muted-foreground">
-                        Free Bundle match: {t.librarySource.label} ({t.librarySource.status})
-                      </p>
-                    )}
-                  </div>
-                </button>
-              ))}
-            </div>
+            {recommendations.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Quick picks</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Top scored live packages for your Store DNA.
+                </p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                  {recommendations.map((t, index) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      disabled={saving || !t.installable}
+                      onClick={() => void selectTemplate(t.id)}
+                      className={`overflow-hidden rounded-2xl border text-left transition hover:border-emerald-400 ${
+                        selectedTemplateId === t.id
+                          ? "border-emerald-500 ring-2 ring-emerald-500"
+                          : "border-border"
+                      } ${!t.installable ? "opacity-70" : ""}`}
+                    >
+                      <div className="relative aspect-[16/10] w-full bg-muted">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={t.previewImageUrl}
+                          alt={`${t.label} preview`}
+                          className="h-full w-full object-cover"
+                        />
+                        <div className="absolute left-2 top-2 flex flex-wrap gap-1">
+                          <span className="rounded-md bg-emerald-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                            #{index + 1}
+                          </span>
+                          {!t.installable && (
+                            <span className="rounded-md bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                              Upgrade
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-0.5 p-3">
+                        <p className="text-sm font-semibold text-foreground">{t.label}</p>
+                        <p className="line-clamp-2 text-xs text-muted-foreground">{t.description}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
-            {libraryMatches.length > 0 && (
+            {curatedTemplates.length > 0 && (
               <div className="border-t border-border pt-4">
                 <h3 className="text-sm font-semibold text-foreground">
-                  Also in the Free Bundle library for {category}
+                  Full curated library ({curatedTemplates.length})
                 </h3>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Not every catalog entry is ported yet. Choosing one installs the closest live
-                  storefront package.
+                  Pick a catalog skin by name — we mount the nearest live package and keep a unique
+                  look for your shop.
                 </p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {curatedTemplates.map((m) => (
+                    <button
+                      key={m.proposedId}
+                      type="button"
+                      disabled={saving || !m.installable}
+                      onClick={() => void selectTemplate(m.proposedId)}
+                      className={`overflow-hidden rounded-xl border text-left transition hover:border-emerald-400 disabled:opacity-50 ${
+                        selectedTemplateId === m.proposedId
+                          ? "border-emerald-500 ring-2 ring-emerald-500"
+                          : "border-border"
+                      }`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={m.previewImageUrl}
+                        alt={m.label}
+                        className="aspect-[16/10] w-full object-cover"
+                      />
+                      <div className="p-3">
+                        <p className="text-sm font-semibold text-foreground">{m.label}</p>
+                        <p className="mt-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                          {m.status.replace(/-/g, " ")} · uses {m.usesLiveLabel}
+                        </p>
+                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{m.notes}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {curatedTemplates.length === 0 && libraryMatches.length > 0 && (
+              <div className="border-t border-border pt-4">
+                <h3 className="text-sm font-semibold text-foreground">
+                  Free Bundle library for {category}
+                </h3>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {libraryMatches.map((m) => (
                     <button
                       key={m.proposedId}
                       type="button"
                       disabled={saving || !m.installTemplateId}
-                      onClick={() => m.installTemplateId && void selectTemplate(m.installTemplateId)}
+                      onClick={() => m.installTemplateId && void selectTemplate(m.proposedId)}
                       className="overflow-hidden rounded-xl border border-border text-left hover:border-emerald-400 disabled:opacity-50"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -515,6 +564,12 @@ export function LaunchWizard() {
             <h2 className="font-semibold text-foreground">Personalize</h2>
             <p className="text-sm text-muted-foreground">
               Colors and copy only — the template layout stays intact.
+              {selectedCatalogLabel ? (
+                <>
+                  {" "}
+                  Using curated look <span className="font-medium text-foreground">{selectedCatalogLabel}</span>.
+                </>
+              ) : null}
             </p>
 
             <div>

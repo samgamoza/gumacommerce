@@ -6,6 +6,8 @@ import { Check, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { DemoProduct, DemoTenant } from "@/lib/demo-data";
 import { useCart } from "@/lib/cart";
+import { adminUrl } from "@/lib/utils";
+import { isFoodBusinessCategory } from "@guma-commerce/storefront-themes";
 import { formatSarabPrice, splitSarabBrand } from "./sarab-utils";
 
 function SarabMenuCard({
@@ -86,9 +88,19 @@ export function SarabMenu({ tenant }: { tenant: DemoTenant }) {
     <section className="sarab-menu" id="menu">
       <div className="sarab-container">
         <div className="text-center">
-          <span className="sarab-slbl">What&apos;s Cooking</span>
+          <span className="sarab-slbl">
+            {isFoodBusinessCategory(tenant.category || "") ? "What's Cooking" : "Featured"}
+          </span>
           <h2 className="sarab-stitle">
-            Our Delicious <span>Menu</span>
+            {isFoodBusinessCategory(tenant.category || "") ? (
+              <>
+                Our Delicious <span>Menu</span>
+              </>
+            ) : (
+              <>
+                Our <span>Offers</span>
+              </>
+            )}
           </h2>
           <div className="sarab-sline" />
         </div>
@@ -156,6 +168,16 @@ export function SarabFooter({ tenant }: { tenant: DemoTenant }) {
                 <Link href={checkoutHref} className="hover:text-white">
                   Cart & checkout
                 </Link>
+              </li>
+              <li>
+                <a
+                  href={adminUrl}
+                  className="hover:text-white"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Seller dashboard
+                </a>
               </li>
             </ul>
           </div>

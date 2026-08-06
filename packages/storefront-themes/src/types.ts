@@ -42,6 +42,16 @@ export type ShopHeroStyle = "gradient" | "mesh" | "chrome" | "noise" | "photo";
 
 export type ShopDisplayFont = "bricolage" | "system" | "mono-accent";
 
+export type {
+  StoreFloatCardMode,
+  StoreHeroLayout,
+  StoreLook,
+  StoreMarqueeMode,
+  StoreMenuColumns,
+  StoreRadiusTone,
+  StoreTypeScale,
+} from "./store-look";
+
 export interface TenantThemeJson {
   templateId?: string;
   /** Paired storefront + dashboard experience (e.g. Simply Sweet kitchen + vlog shops). */
@@ -54,6 +64,15 @@ export interface TenantThemeJson {
   tagline?: string;
   promoTitle?: string;
   promoSubtitle?: string;
+  /**
+   * Within-template layout knobs (hero / marquee / menu / type).
+   * Deterministic at signup so two Sarab shops still look different.
+   * Partial is allowed in stored JSON; resolveShopTheme normalizes.
+   */
+  storeLook?: Partial<import("./store-look").StoreLook>;
+  /** Free Bundle curated pick (proposedId) — may differ from live templateId. */
+  catalogId?: string;
+  catalogLabel?: string;
 }
 
 export interface StorePatternDefinition {
@@ -117,4 +136,6 @@ export interface ResolvedShopTheme {
   radius: string;
   displayFont: ShopDisplayFont;
   previewGradient: string;
+  /** Within-template look knobs — omitted on older demos; normalize at render. */
+  storeLook?: import("./store-look").StoreLook;
 }

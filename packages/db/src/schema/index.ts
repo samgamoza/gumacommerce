@@ -162,6 +162,16 @@ export const tenants = pgTable(
       tagline?: string;
       promoTitle?: string;
       promoSubtitle?: string;
+      storeLook?: {
+        heroLayout?: "circle" | "split" | "stack";
+        marquee?: "on" | "off";
+        floatCards?: "on" | "off";
+        menuColumns?: "2" | "3";
+        typeScale?: "classic" | "bold" | "soft";
+        radiusTone?: "soft" | "sharp";
+      };
+      catalogId?: string;
+      catalogLabel?: string;
     }>(),
     /**
      * GUMA Launch Store DNA — business profile used for template scoring.
@@ -194,6 +204,16 @@ export const tenants = pgTable(
       tagline?: string;
       promoTitle?: string;
       promoSubtitle?: string;
+      storeLook?: {
+        heroLayout?: "circle" | "split" | "stack";
+        marquee?: "on" | "off";
+        floatCards?: "on" | "off";
+        menuColumns?: "2" | "3";
+        typeScale?: "classic" | "bold" | "soft";
+        radiusTone?: "soft" | "sharp";
+      };
+      catalogId?: string;
+      catalogLabel?: string;
     }>(),
     /** Buyer-facing published theme. Storefront reads this (fallback: theme_json). */
     themePublishedJson: jsonb("theme_published_json").$type<{
@@ -208,6 +228,16 @@ export const tenants = pgTable(
       tagline?: string;
       promoTitle?: string;
       promoSubtitle?: string;
+      storeLook?: {
+        heroLayout?: "circle" | "split" | "stack";
+        marquee?: "on" | "off";
+        floatCards?: "on" | "off";
+        menuColumns?: "2" | "3";
+        typeScale?: "classic" | "bold" | "soft";
+        radiusTone?: "soft" | "sharp";
+      };
+      catalogId?: string;
+      catalogLabel?: string;
     }>(),
     customizationVersion: integer("customization_version").default(1).notNull(),
     /** Working SEO draft (Workspace SEO editor / AI suggest). */
@@ -1087,6 +1117,104 @@ export const supportTicketMessages = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [index("support_ticket_messages_ticket_idx").on(table.ticketId, table.createdAt)]
+);
+
+// ─── Template Intelligence (ops-managed categories + stock) ───────────────────
+
+export const shopCategoryStatusEnum = pgEnum("shop_category_status", [
+  "enabled",
+  "disabled",
+]);
+
+export const templateStockStatusEnum = pgEnum("template_stock_status", [
+  "draft",
+  "approved",
+  "published",
+  "archived",
+]);
+
+export const templateStockSourceEnum = pgEnum("template_stock_source", [
+  "free_bundle",
+  "ops_manual",
+  "ai_curated",
+]);
+
+/** Business categories shown in seller onboarding / Launch DNA. Ops-managed. */
+export const shopBusinessCategories = pgTable(
+  "shop_business_categories",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    slug: varchar("slug", { length: 80 }).notNull(),
+    label: varchar("label", { length: 120 }).notNull(),
+    status: shopCategoryStatusEnum("status").default("enabled").notNull(),
+    sortOrder: integer("sort_order").default(0).notNull(),
+    /** Minimum distinct skins ops aims for (default 3). */
+    minVariants: integer("min_variants").default(3).notNull(),
+    /** Comfortable stock target (default 5). */
+    targetVariants: integer("target_variants").default(5).notNull(),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("shop_business_categories_slug_idx").on(table.slug),
+    uniqueIndex("shop_business_categories_label_idx").on(table.label),
+    index("shop_business_categories_status_sort_idx").on(table.status, table.sortOrder),
+  ]
+);
+
+/**
+ * Ops / AI curated storefront skins beyond the Free Bundle code catalog.
+ * Published rows appear in Launch for the matching category.
+ */
+export const templateStock = pgTable(
+  "template_stock",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    stockKey: varchar("stock_key", { length: 80 }).notNull(),
+    label: varchar("label", { length: 160 }).notNull(),
+    categoryId: uuid("category_id").references(() => shopBusinessCategories.id, {
+      onDelete: "set null",
+    }),
+    categoryLabel: varchar("category_label", { length: 120 }).notNull(),
+    liveTemplateId: varchar("live_template_id", { length: 64 }).notNull(),
+    status: templateStockStatusEnum("status").default("draft").notNull(),
+    source: templateStockSourceEnum("source").default("ops_manual").notNull(),
+    sourceRef: varchar("source_ref", { length: 120 }),
+    notes: text("notes"),
+    previewImageUrl: text("preview_image_url"),
+    storeLookJson: jsonb("store_look_json").$type<{
+      heroLayout?: "circle" | "split" | "stack";
+      marquee?: "on" | "off";
+      floatCards?: "on" | "off";
+      menuColumns?: "2" | "3";
+      typeScale?: "classic" | "bold" | "soft";
+      radiusTone?: "soft" | "sharp";
+    }>(),
+    createdByUserId: uuid("created_by_user_id"),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("template_stock_key_idx").on(table.stockKey),
+    index("template_stock_category_status_idx").on(table.categoryLabel, table.status),
+  ]
+);
+
+/** Lightweight learning log for Template Intelligence (selections, seeds, publishes). */
+export const templateIntelligenceEvents = pgTable(
+  "template_intelligence_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    eventType: varchar("event_type", { length: 64 }).notNull(),
+    categoryLabel: varchar("category_label", { length: 120 }),
+    stockKey: varchar("stock_key", { length: 80 }),
+    tenantId: uuid("tenant_id"),
+    payloadJson: jsonb("payload_json").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index("template_intelligence_events_type_idx").on(table.eventType, table.createdAt)]
 );
 
 // ─── Relations ───────────────────────────────────────────────────────────────

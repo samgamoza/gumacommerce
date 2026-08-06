@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -9,14 +9,10 @@ import {
   AuthSubmitButton,
   authInputClassName,
 } from "@/components/auth-layout";
+import { BusinessCategoryPicker } from "@/components/business-category-picker";
 import { VibePicker } from "@/components/vibe-picker";
 import { shopUrlDisplayPrefix } from "@/lib/utils";
-import {
-  DEFAULT_SHOP_BUSINESS_CATEGORY,
-  SHOP_BUSINESS_CATEGORIES,
-} from "@guma-commerce/storefront-themes";
-
-const CATEGORIES = SHOP_BUSINESS_CATEGORIES;
+import { SHOP_BUSINESS_CATEGORIES } from "@guma-commerce/storefront-themes";
 
 function slugify(value: string): string {
   return value
@@ -35,12 +31,24 @@ export function GoogleShopSetupForm() {
   const [slugStatus, setSlugStatus] = useState<string | null>(null);
   const [slugEdited, setSlugEdited] = useState(false);
   const [email, setEmail] = useState("");
+  const [categories, setCategories] = useState<string[]>([...SHOP_BUSINESS_CATEGORIES]);
   const [form, setForm] = useState({
     shopName: "",
     shopSlug: "",
-    category: DEFAULT_SHOP_BUSINESS_CATEGORY,
+    category: "",
     vibe: "",
   });
+
+  useEffect(() => {
+    void fetch("/api/onboarding/categories")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.ok && Array.isArray(data.categories) && data.categories.length > 0) {
+          setCategories(data.categories);
+        }
+      })
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     fetch("/api/auth/session")
@@ -82,6 +90,12 @@ export function GoogleShopSetupForm() {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
+    if (!form.category.trim()) {
+      setError(
+        "Pick the category that best fits your business — search in plain words if you are unsure."
+      );
+      return;
+    }
     setLoading(true);
 
     try {
@@ -157,30 +171,16 @@ export function GoogleShopSetupForm() {
                 slugStatus === "available" ? "text-emerald-600" : "text-red-600"
               }`}
             >
-              {slugStatus === "available" ? "✓ Available" : slugStatus}
+              {slugStatus === "available" ? "Available" : slugStatus}
             </p>
           )}
         </AuthField>
 
-        <AuthField label="Category" id="category">
-          <select
-            id="category"
-            value={form.category}
-            onChange={(e) =>
-              setForm((current) => ({
-                ...current,
-                category: e.target.value as typeof current.category,
-              }))
-            }
-            className={authInputClassName}
-          >
-            {CATEGORIES.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-        </AuthField>
+        <BusinessCategoryPicker
+          value={form.category}
+          onChange={(category) => setForm((current) => ({ ...current, category }))}
+          allowedCategories={categories}
+        />
 
         <VibePicker
           value={form.vibe}
@@ -192,3 +192,4 @@ export function GoogleShopSetupForm() {
     </AuthLayout>
   );
 }
+

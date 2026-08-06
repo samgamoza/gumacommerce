@@ -101,9 +101,9 @@ export function SettingsActions({
 }
 
 export function inputClassName() {
-  return "h-10 w-full rounded-xl border border-border px-3 text-sm";
+  return "h-10 w-full rounded-xl border border-border bg-card px-3 text-sm text-foreground";
 }
 
 export function textareaClassName() {
-  return "w-full rounded-xl border border-border px-3 py-2 text-sm";
+  return "w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground";
 }

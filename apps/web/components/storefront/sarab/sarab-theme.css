@@ -602,3 +602,69 @@
 .sarab-fbot strong {
   color: #fff;
 }
+
+/* ── Deterministic storeLook variants (signup seed) ───────────────────────── */
+
+.sarab-root[data-type="bold"] .sarab-htitle {
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.sarab-root[data-type="soft"] .sarab-htitle {
+  font-family: "Dancing Script", cursive;
+  font-weight: 700;
+}
+
+.sarab-root[data-type="soft"] h2 {
+  font-family: "Dancing Script", cursive;
+}
+
+.sarab-root[data-radius="sharp"] .sarab-hcircle,
+.sarab-root[data-radius="sharp"] .sarab-hcircle img,
+.sarab-root[data-radius="sharp"] .sarab-mcard,
+.sarab-root[data-radius="sharp"] .sarab-fcard,
+.sarab-root[data-radius="sharp"] .sarab-btn-red,
+.sarab-root[data-radius="sharp"] .sarab-filtbtn {
+  border-radius: 6px;
+}
+
+.sarab-hero--split .sarab-hcircle {
+  border-radius: 28px;
+}
+
+.sarab-hero--split .sarab-hcircle img {
+  border-radius: 22px;
+}
+
+.sarab-hero--stack .sarab-hero-grid {
+  grid-template-columns: 1fr;
+  text-align: center;
+}
+
+.sarab-hero--stack .sarab-hcircle-wrap {
+  order: -1;
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+.sarab-hero--stack .sarab-hbadge {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.sarab-root[data-menu="2"] .sarab-mgrid {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 576px) {
+  .sarab-root[data-menu="2"] .sarab-mgrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 992px) {
+  .sarab-root[data-menu="2"] .sarab-mgrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+

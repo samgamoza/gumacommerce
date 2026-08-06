@@ -10,6 +10,7 @@ import {
   LayoutTemplate,
   LogOut,
   Menu,
+  Palette,
   ScrollText,
   ShieldCheck,
   ShoppingCart,
@@ -27,6 +28,7 @@ const NAV = [
   { href: "/helpdesk", label: "Helpdesk", icon: Headphones },
   { href: "/moderation", label: "Moderation", icon: ShieldCheck },
   { href: "/orders", label: "Orders", icon: ShoppingCart },
+  { href: "/templates", label: "Template Intel", icon: Palette },
   { href: "/frontends", label: "Frontends", icon: LayoutTemplate },
   { href: "/audit", label: "Audit Log", icon: ScrollText },
 ];

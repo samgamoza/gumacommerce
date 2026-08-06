@@ -14,6 +14,17 @@ export type ThemeJson = {
   tagline?: string;
   promoTitle?: string;
   promoSubtitle?: string;
+  storeLook?: {
+    heroLayout?: "circle" | "split" | "stack";
+    marquee?: "on" | "off";
+    floatCards?: "on" | "off";
+    menuColumns?: "2" | "3";
+    typeScale?: "classic" | "bold" | "soft";
+    radiusTone?: "soft" | "sharp";
+  };
+  /** Free Bundle curated pick — may differ from live templateId. */
+  catalogId?: string;
+  catalogLabel?: string;
 };
 
 export type StoreDnaJson = NonNullable<(typeof tenants.$inferSelect)["storeDnaJson"]>;
@@ -184,4 +195,43 @@ export async function resolveSellerHomePath(input: {
   const state = await getLaunchTenantState(input.tenantId);
   if (needsGumaLaunch(state)) return "/launch";
   return "/";
+}
+
+/**
+ * Recent published (or draft) template picks in a category — used for soft
+ * anti-collision so Launch Top-3 spreads across similar shops.
+ */
+export async function listRecentTemplateIdsByCategory(
+  category: string | null | undefined,
+  options?: { limit?: number; excludeTenantId?: string }
+): Promise<string[]> {
+  const cat = category?.trim();
+  if (!cat) return [];
+
+  const db = getDb();
+  const limit = options?.limit ?? 12;
+  const rows = await db
+    .select({
+      id: tenants.id,
+      themePublishedJson: tenants.themePublishedJson,
+      themeDraftJson: tenants.themeDraftJson,
+      themeJson: tenants.themeJson,
+    })
+    .from(tenants)
+    .where(eq(tenants.category, cat))
+    .orderBy(sql`${tenants.createdAt} desc`)
+    .limit(limit + 4);
+
+  const ids: string[] = [];
+  for (const row of rows) {
+    if (options?.excludeTenantId && row.id === options.excludeTenantId) continue;
+    const theme =
+      (row.themePublishedJson as ThemeJson | null) ??
+      (row.themeDraftJson as ThemeJson | null) ??
+      (row.themeJson as ThemeJson | null);
+    const templateId = theme?.templateId?.trim();
+    if (templateId) ids.push(templateId);
+    if (ids.length >= limit) break;
+  }
+  return ids;
 }

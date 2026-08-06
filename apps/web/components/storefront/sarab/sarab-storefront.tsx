@@ -32,7 +32,7 @@ export function SarabStorefront({ tenant }: { tenant: DemoTenant }) {
       <SarabTopbar tenant={tenant} />
       <SarabNavbar tenant={tenant} />
       <SarabHero tenant={tenant} />
-      <SarabMarquee />
+      <SarabMarquee tenant={tenant} />
       <SarabMenu tenant={tenant} />
       <SarabFooter tenant={tenant} />
       <StorefrontCartBar tenantSlug={tenant.slug} accent={primary} />

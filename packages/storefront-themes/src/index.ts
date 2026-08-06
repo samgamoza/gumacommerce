@@ -6,6 +6,36 @@ export {
   type ShopBusinessCategory,
 } from "./shop-categories";
 export {
+  CATEGORY_GROUPS,
+  SHOP_CATEGORY_GUIDE,
+  emojiForGuideCategory,
+  getCategoryGuideEntry,
+  guideEntryOrFallback,
+  groupCategoriesForOnboarding,
+  matchBusinessCategories,
+  popularCategoryLabels,
+  type CategoryGuideEntry,
+  type CategoryGroup,
+  type CategoryGroupId,
+  type CategoryMatch,
+} from "./shop-category-guide";
+export {
+  FOOD_VERTICAL_TEMPLATE_IDS,
+  filterTemplatesForCategory,
+  isFoodBusinessCategory,
+  isFoodVerticalTemplate,
+  preferredTemplatesForCategory,
+  templateFitsCategory,
+  templatePoolForSignup,
+} from "./category-fit";
+export {
+  DEDICATED_PORT_PRIORITY,
+  isServiceBusinessCategory,
+  resolveCommerceChrome,
+  type CommerceChrome,
+  type CommerceMode,
+} from "./commerce-chrome";
+export {
   SHOP_TEMPLATES,
   SHOP_TEMPLATE_MAP,
   TIER_DESCRIPTIONS,
@@ -32,6 +62,25 @@ export {
   type ShopVibe,
   type ShopVibeId,
 } from "./brand-kit";
+export {
+  DEFAULT_STORE_LOOK,
+  STORE_LOOK_COMBINATIONS,
+  STORE_FLOAT_CARD_MODES,
+  STORE_HERO_LAYOUTS,
+  STORE_MARQUEE_MODES,
+  STORE_MENU_COLUMNS,
+  STORE_RADIUS_TONES,
+  STORE_TYPE_SCALES,
+  deriveStoreLook,
+  normalizeStoreLook,
+  type StoreFloatCardMode,
+  type StoreHeroLayout,
+  type StoreLook,
+  type StoreMarqueeMode,
+  type StoreMenuColumns,
+  type StoreRadiusTone,
+  type StoreTypeScale,
+} from "./store-look";
 export {
   SIMPLY_SWEET_HERO_STYLES,
   SIMPLY_SWEET_SECTION_FLAGS,
@@ -100,6 +149,16 @@ export {
   type RankedTemplate,
   type TemplateScoreBreakdown,
 } from "./recommend-templates";
+export {
+  countBundleSellerReadyByCategory,
+  defaultLiveTemplateForCategory,
+  listCatalogByCategory,
+  listCuratedTemplatesForDna,
+  resolveCatalogInstall,
+  resolveLiveTemplateForCatalogEntry,
+  type CatalogInstallResolution,
+  type CuratedTemplateCard,
+} from "./catalog-install";
 export {
   TEMPLATE_PREVIEW_IMAGES,
   previewImageForTemplate,

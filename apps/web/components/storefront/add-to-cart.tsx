@@ -2,23 +2,34 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Check, Minus, Plus, ShoppingBag } from "lucide-react";
+import { Check, Minus, Plus, MessageCircle, ShoppingBag } from "lucide-react";
 import type { DemoProduct } from "@/lib/demo-data";
 import { useCart } from "@/lib/cart";
+import {
+  resolveCommerceChrome,
+  type CommerceChrome,
+} from "@guma-commerce/storefront-themes";
 
 export function AddToCartButton({
   tenantSlug,
   product,
   accent,
+  category,
+  chrome: chromeProp,
 }: {
   tenantSlug: string;
   product: DemoProduct;
   accent: string;
+  /** Tenant business category — drives retail vs service CTA language. */
+  category?: string | null;
+  chrome?: CommerceChrome;
 }) {
+  const chrome = chromeProp ?? resolveCommerceChrome(category);
   const { items, addItem, setQty, ready } = useCart(tenantSlug);
   const [justAdded, setJustAdded] = useState(false);
 
   const inCart = items.find((item) => item.productId === product.id);
+  const Icon = chrome.mode === "service" ? MessageCircle : ShoppingBag;
 
   function handleAdd() {
     addItem({
@@ -34,16 +45,21 @@ export function AddToCartButton({
 
   if (!inCart) {
     return (
-      <button
-        type="button"
-        onClick={handleAdd}
-        disabled={!ready}
-        className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full py-4 text-base font-semibold text-white transition hover:opacity-90 disabled:cursor-wait disabled:opacity-70 md:max-w-md"
-        style={{ backgroundColor: accent }}
-      >
-        <ShoppingBag className="h-5 w-5" />
-        {ready ? "Add to Cart" : "Loading cart…"}
-      </button>
+      <div className="mt-8 w-full md:max-w-md">
+        <button
+          type="button"
+          onClick={handleAdd}
+          disabled={!ready}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-full py-4 text-base font-semibold text-white transition hover:opacity-90 disabled:cursor-wait disabled:opacity-70"
+          style={{ backgroundColor: accent }}
+        >
+          <Icon className="h-5 w-5" />
+          {ready ? chrome.addLabel : "Loading…"}
+        </button>
+        {chrome.ctaHint ? (
+          <p className="mt-2 text-center text-xs text-neutral-500">{chrome.ctaHint}</p>
+        ) : null}
+      </div>
     );
   }
 
@@ -64,7 +80,7 @@ export function AddToCartButton({
               <Check className="h-4 w-4" /> Added
             </span>
           ) : (
-            `${inCart.qty} in cart`
+            chrome.inCartLabel(inCart.qty)
           )}
         </span>
         <button
@@ -82,7 +98,7 @@ export function AddToCartButton({
         className="inline-flex w-full items-center justify-center gap-2 rounded-full py-4 text-base font-semibold text-white transition hover:opacity-90"
         style={{ backgroundColor: accent }}
       >
-        Checkout now
+        {chrome.checkoutLabel}
       </Link>
     </div>
   );

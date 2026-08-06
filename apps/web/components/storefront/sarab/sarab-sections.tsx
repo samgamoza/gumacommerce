@@ -6,9 +6,18 @@ import type { DemoTenant } from "@/lib/demo-data";
 import { useCart } from "@/lib/cart";
 import { SarabHeroImage } from "./sarab-hero-image";
 import { splitSarabBrand } from "./sarab-utils";
+import type { StoreLook } from "@guma-commerce/storefront-themes";
+import { isFoodBusinessCategory, normalizeStoreLook } from "@guma-commerce/storefront-themes";
+
+function sarabIsFoodShop(tenant: DemoTenant): boolean {
+  return isFoodBusinessCategory(tenant.category || "Food & Beverage");
+}
 
 export function SarabTopbar({ tenant }: { tenant: DemoTenant }) {
-  const promo = tenant.shopTheme.promoTitle || "Free Delivery Today!";
+  const food = sarabIsFoodShop(tenant);
+  const promo =
+    tenant.shopTheme.promoTitle ||
+    (food ? "Free Delivery Today!" : "Book a consultation today");
   return (
     <div className="sarab-topbar">
       <div className="sarab-container sarab-topbar-inner">
@@ -19,7 +28,7 @@ export function SarabTopbar({ tenant }: { tenant: DemoTenant }) {
             </span>
           )}
           <span>
-            <Mail size={12} /> Order online — fast checkout
+            <Mail size={12} /> {food ? "Order online — fast checkout" : "Message us — we reply fast"}
           </span>
         </div>
         <span className="sarab-ttag">
@@ -56,7 +65,7 @@ export function SarabNavbar({ tenant }: { tenant: DemoTenant }) {
                   {lead}
                   <span>{accent}</span>
                 </div>
-                <div className="sarab-bsub">{tenant.category || "Restaurant"}</div>
+                <div className="sarab-bsub">{tenant.category || "Shop"}</div>
               </div>
             </>
           )}
@@ -70,7 +79,11 @@ export function SarabNavbar({ tenant }: { tenant: DemoTenant }) {
           </Link>
           <Link href={orderHref} className="sarab-nav-cta">
             <ShoppingBag size={16} />
-            {ready && cartCount > 0 ? "Checkout" : "Order Now"}
+            {ready && cartCount > 0
+              ? "Checkout"
+              : sarabIsFoodShop(tenant)
+                ? "Order Now"
+                : "View offers"}
           </Link>
         </div>
       </div>
@@ -78,7 +91,14 @@ export function SarabNavbar({ tenant }: { tenant: DemoTenant }) {
   );
 }
 
-export function SarabHero({ tenant }: { tenant: DemoTenant }) {
+export function SarabHero({
+  tenant,
+  look: lookProp,
+}: {
+  tenant: DemoTenant;
+  look?: StoreLook;
+}) {
+  const look = normalizeStoreLook(lookProp ?? tenant.shopTheme.storeLook);
   const fallback =
     "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&q=80";
   // Prefer cover, then each product photo (newest first) so a broken upload
@@ -89,70 +109,96 @@ export function SarabHero({ tenant }: { tenant: DemoTenant }) {
     fallback,
   ].filter((src, i, arr): src is string => Boolean(src) && arr.indexOf(src) === i);
   const tagline = tenant.tagline || tenant.shopTheme.tagline;
+  const food = sarabIsFoodShop(tenant);
 
   return (
-    <section className="sarab-hero" id="hero">
-      <div className="sarab-hbgtxt">FOOD</div>
+    <section className={`sarab-hero sarab-hero--${look.heroLayout}`} id="hero">
+      <div className="sarab-hbgtxt">{food ? "FOOD" : "SHOP"}</div>
       <div className="sarab-container sarab-hero-grid">
         <div>
           <div className="sarab-hbadge">
             <div className="sarab-hbadge-icon">
               <Star size={14} fill="currentColor" />
             </div>
-            <span>{tenant.shopTheme.promoSubtitle || "Fresh flavors · Fast delivery"}</span>
+            <span>
+              {tenant.shopTheme.promoSubtitle ||
+                (food ? "Fresh flavors · Fast delivery" : "Trusted guidance · Local support")}
+            </span>
           </div>
           <h1 className="sarab-htitle">
-            Delicious <span className="hl">Food</span>
-            <br />
-            from {tenant.name}
+            {food ? (
+              <>
+                Delicious <span className="hl">Food</span>
+                <br />
+                from {tenant.name}
+              </>
+            ) : (
+              <>
+                Welcome to <span className="hl">{tenant.name}</span>
+              </>
+            )}
           </h1>
           <p className="sarab-hdesc">{tagline}</p>
           <Link href={`/${tenant.slug}#menu`} className="sarab-btn-red">
             <UtensilsCrossed size={18} />
-            Explore Menu
+            {food ? "Explore Menu" : "Explore offers"}
           </Link>
         </div>
         <div className="sarab-hcircle-wrap">
           <div className="sarab-hcircle">
             <SarabHeroImage sources={heroSources} alt={tenant.name} />
           </div>
-          <div className="sarab-fcard fc1">
-            <Flame size={16} color="#e8281a" />
-            <div>
-              <span className="sarab-fcnum">Hot Deal</span>
-              <span className="sarab-fcsm">Order today</span>
-            </div>
-          </div>
-          <div className="sarab-fcard fc2">
-            <Star size={16} color="#f6a623" fill="#f6a623" />
-            <div>
-              <span className="sarab-fcnum">4.9/5</span>
-              <span className="sarab-fcsm">Customer rated</span>
-            </div>
-          </div>
-          <div className="sarab-fcard fc3">
-            <Phone size={16} color="#2d6a4f" />
-            <div>
-              <span className="sarab-fcnum">Fast</span>
-              <span className="sarab-fcsm">Delivery</span>
-            </div>
-          </div>
+          {look.floatCards === "on" ? (
+            <>
+              <div className="sarab-fcard fc1">
+                <Flame size={16} color="#e8281a" />
+                <div>
+                  <span className="sarab-fcnum">{food ? "Hot Deal" : "Featured"}</span>
+                  <span className="sarab-fcsm">{food ? "Order today" : "Ask today"}</span>
+                </div>
+              </div>
+              <div className="sarab-fcard fc2">
+                <Star size={16} color="#f6a623" fill="#f6a623" />
+                <div>
+                  <span className="sarab-fcnum">4.9/5</span>
+                  <span className="sarab-fcsm">Customer rated</span>
+                </div>
+              </div>
+              <div className="sarab-fcard fc3">
+                <Phone size={16} color="#2d6a4f" />
+                <div>
+                  <span className="sarab-fcnum">Fast</span>
+                  <span className="sarab-fcsm">{food ? "Delivery" : "Response"}</span>
+                </div>
+              </div>
+            </>
+          ) : null}
         </div>
       </div>
     </section>
   );
 }
 
-export function SarabMarquee() {
-  const items = [
-    "Crispy Fried Chicken",
-    "Gourmet Burgers",
-    "Artisan Pizzas",
-    "Fresh Wraps & Rolls",
-    "Loaded Fries",
-    "Ice Cream Shakes",
-    "Grilled Sandwiches",
-  ];
+export function SarabMarquee({ tenant }: { tenant?: DemoTenant }) {
+  const food = !tenant || sarabIsFoodShop(tenant);
+  const items = food
+    ? [
+        "Crispy Fried Chicken",
+        "Gourmet Burgers",
+        "Artisan Pizzas",
+        "Fresh Wraps & Rolls",
+        "Loaded Fries",
+        "Ice Cream Shakes",
+        "Grilled Sandwiches",
+      ]
+    : [
+        tenant?.category || "Professional services",
+        "Clear options",
+        "Local support",
+        "Trusted guidance",
+        "Book a consultation",
+        "Plans that fit",
+      ];
   const track = [...items, ...items];
   return (
     <div className="sarab-mqsec">

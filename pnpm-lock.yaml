@@ -111,6 +111,9 @@ importers:
       '@guma-commerce/services':
         specifier: workspace:*
         version: link:../../packages/services
+      '@guma-commerce/storefront-themes':
+        specifier: workspace:*
+        version: link:../../packages/storefront-themes
       '@guma-commerce/ui':
         specifier: workspace:*
         version: link:../../packages/ui

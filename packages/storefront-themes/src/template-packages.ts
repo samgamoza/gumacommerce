@@ -40,7 +40,12 @@ const DEFAULT_PACKAGE: Omit<TemplatePackageMetadata, "id"> = {
 export const TEMPLATE_PACKAGES: Partial<Record<ShopTemplateId, TemplatePackageMetadata>> = {
   "clean-guma": {
     id: "clean-guma",
-    industryFit: ["General", "Food & Beverage", "Retail & General Merchandise"],
+    industryFit: [
+      "General",
+      "Retail & General Merchandise",
+      "Professional & Consulting",
+      "Insurance & Financial Services",
+    ],
     idealProductCount: { min: 1, max: 50 },
     targetAudience: ["first-time sellers", "everyday shops"],
     visualStyle: ["fresh", "minimal"],
@@ -151,13 +156,15 @@ export const TEMPLATE_PACKAGES: Partial<Record<ShopTemplateId, TemplatePackageMe
   "mono-market": {
     id: "mono-market",
     industryFit: [
-      "Printing & Signage",
+      "Insurance & Financial Services",
       "Professional & Consulting",
+      "Printing & Signage",
       "Fashion & Apparel",
       "Retail & General Merchandise",
+      "Education & Training",
     ],
     idealProductCount: { min: 4, max: 60 },
-    targetAudience: ["print studios", "agencies", "modern boutiques"],
+    targetAudience: ["advisors", "agencies", "professional services", "modern boutiques"],
     visualStyle: ["minimal", "premium"],
     conversionFocus: "editorial",
     mobileScore: 90,

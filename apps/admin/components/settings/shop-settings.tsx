@@ -24,6 +24,7 @@ import {
 
 } from "@/components/settings/settings-forms";
 
+import { BusinessCategoryPicker } from "@/components/business-category-picker";
 import { storefrontUrl } from "@/lib/utils";
 import { SHOP_BUSINESS_CATEGORIES } from "@guma-commerce/storefront-themes";
 
@@ -32,6 +33,8 @@ import { SHOP_BUSINESS_CATEGORIES } from "@guma-commerce/storefront-themes";
 export function ShopSettingsPage() {
 
   const { settings, loading, saving, error, saved, save } = useTenantSettings();
+
+  const [categories, setCategories] = useState<string[]>([...SHOP_BUSINESS_CATEGORIES]);
 
   const [name, setName] = useState("");
 
@@ -52,6 +55,17 @@ export function ShopSettingsPage() {
   const [timezone, setTimezone] = useState("Asia/Manila");
 
 
+
+  useEffect(() => {
+    void fetch("/api/onboarding/categories")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.ok && Array.isArray(data.categories) && data.categories.length > 0) {
+          setCategories(data.categories);
+        }
+      })
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
 
@@ -121,24 +135,19 @@ export function ShopSettingsPage() {
 
           </SettingsField>
 
-          <SettingsField label="Business category">
-            <select
-              className={inputClassName()}
+          <SettingsField
+            label="Business category"
+            hint="Search in plain words — we map it to the right shop type."
+          >
+            <BusinessCategoryPicker
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            >
-              {!SHOP_BUSINESS_CATEGORIES.includes(
-                category as (typeof SHOP_BUSINESS_CATEGORIES)[number]
-              ) &&
-                category && (
-                  <option value={category}>{category}</option>
-                )}
-              {SHOP_BUSINESS_CATEGORIES.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
+              onChange={setCategory}
+              allowedCategories={
+                category && !categories.includes(category)
+                  ? [category, ...categories]
+                  : categories
+              }
+            />
           </SettingsField>
 
           <SettingsField label="Tagline" hint="Shown under your shop name on the storefront.">

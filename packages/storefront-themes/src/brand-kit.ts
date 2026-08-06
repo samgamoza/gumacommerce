@@ -1,7 +1,11 @@
 import { SHOP_TEMPLATES } from "./templates";
 import { canUseTemplate } from "./resolve-theme";
 import { matchStorePattern } from "./patterns";
+import { deriveStoreLook, STORE_LOOK_COMBINATIONS } from "./store-look";
+import { isFoodBusinessCategory, templatePoolForSignup } from "./category-fit";
 import type { ShopTemplateId, TenantThemeJson } from "./types";
+import type { StoreLook } from "./store-look";
+import type { ShopDisplayFont } from "./types";
 
 /**
  * Zero-cost brand differentiation engine.
@@ -114,7 +118,7 @@ export function isShopVibeId(value: string): value is ShopVibeId {
   return value in VIBE_MAP;
 }
 
-const PROMO_COPY: Array<{ title: string; subtitle: string }> = [
+const PROMO_COPY_RETAIL: Array<{ title: string; subtitle: string }> = [
   { title: "Free delivery on orders ₱500+", subtitle: "Metro Manila · Until 9 PM" },
   { title: "Opening promo — 10% off first orders", subtitle: "This week only · While stocks last" },
   { title: "Same-day delivery available", subtitle: "Order before 3 PM · GCash & COD accepted" },
@@ -125,14 +129,38 @@ const PROMO_COPY: Array<{ title: string; subtitle: string }> = [
   { title: "Handled with care, shipped fast", subtitle: "Packed same day · Tracked delivery" },
 ];
 
-const TAGLINE_PATTERNS: Array<(shopName: string, category: string) => string> = [
+const PROMO_COPY_PROFESSIONAL: Array<{ title: string; subtitle: string }> = [
+  { title: "Book a consultation today", subtitle: "Clear next steps · No pressure" },
+  { title: "Trusted guidance for every stage", subtitle: "Ask about a free discovery call" },
+  { title: "Plans built around your goals", subtitle: "Transparent options · Local support" },
+  { title: "Protection that grows with you", subtitle: "Family · Business · Retirement" },
+  { title: "Talk to an advisor", subtitle: "Weekday evenings available by appointment" },
+  { title: "Start with a free assessment", subtitle: "Know where you stand in 15 minutes" },
+];
+
+const TAGLINE_PATTERNS_RETAIL: Array<(shopName: string, category: string) => string> = [
   (name) => `Welcome to ${name}`,
   (name) => `${name} — made with love, delivered fast`,
   (name, category) => `Your neighborhood ${category.toLowerCase()} shop`,
-  (name) => `Thanks for dropping by ${name} 💚`,
+  (name) => `Thanks for dropping by ${name}`,
   (name) => `${name} · order in seconds, no app needed`,
   (name, category) => `Small-batch ${category.toLowerCase()}, big heart`,
 ];
+
+const TAGLINE_PATTERNS_PROFESSIONAL: Array<(shopName: string, category: string) => string> = [
+  (name) => `Welcome to ${name}`,
+  (name) => `${name} — clarity you can act on`,
+  (name, category) => `Professional ${category.toLowerCase()} you can trust`,
+  (name) => `${name} · advice first, products second`,
+  (name) => `Protect what matters with ${name}`,
+  (name) => `${name} — planning for every stage of life`,
+];
+
+function isProfessionalCategory(category: string): boolean {
+  return /insurance|financial|consult|professional|healthcare|real estate|education|legal|account/i.test(
+    category
+  );
+}
 
 /** FNV-1a — tiny, stable, good spread for short strings. */
 function hashString(value: string): number {
@@ -149,6 +177,10 @@ function pick<T>(items: readonly T[], seed: number, salt: number): T {
 }
 
 const CATEGORY_VIBE_HINTS: Array<{ match: RegExp; vibe: ShopVibeId }> = [
+  { match: /insurance|financial|fintech|banking|lending/i, vibe: "premium" },
+  { match: /professional|consult|agency|accountant|lawyer|legal/i, vibe: "minimal" },
+  { match: /healthcare|clinic|dental|wellness|fitness/i, vibe: "minimal" },
+  { match: /real.?estate|property|broker/i, vibe: "premium" },
   { match: /bakery|pastry|cake|dessert|sweet|home.?baking|vlog|recipe/i, vibe: "cute" },
   { match: /catering|events?|party.?food|banquet/i, vibe: "bold" },
   { match: /furniture|furnish|home.?decor|interior|sofa|living room/i, vibe: "premium" },
@@ -159,8 +191,8 @@ const CATEGORY_VIBE_HINTS: Array<{ match: RegExp; vibe: ShopVibeId }> = [
   { match: /camp|outdoor|adventure|hike|trek|travel gear/i, vibe: "bold" },
   { match: /wholesale|b2b|bulk|distributor|reseller/i, vibe: "minimal" },
   { match: /retail|merchandise|general store|sari-sari|convenience/i, vibe: "minimal" },
-  { match: /food|beverage|snack|drink/i, vibe: "bold" },
-  { match: /catering|restaurant|fast.?food|kitchen/i, vibe: "bold" },
+  // Food only — do NOT use bare "drink" (false-positives) or match non-food categories
+  { match: /food\s*&\s*beverage|^food$|beverage|snack|restaurant|fast.?food|kitchen/i, vibe: "bold" },
   { match: /handmade|craft|gift/i, vibe: "cute" },
 ];
 
@@ -173,6 +205,8 @@ export interface DeriveBrandKitInput {
   subscriptionPlan?: string | null;
 }
 
+const DISPLAY_FONTS: ShopDisplayFont[] = ["bricolage", "system", "mono-accent"];
+
 export interface DerivedBrandKit extends TenantThemeJson {
   patternId: import("./types").StorePatternId;
   templateId: ShopTemplateId;
@@ -180,6 +214,8 @@ export interface DerivedBrandKit extends TenantThemeJson {
   accentColor: string;
   paletteId: string;
   vibe: ShopVibeId;
+  displayFont: ShopDisplayFont;
+  storeLook: StoreLook;
 }
 
 export function deriveBrandKit(input: DeriveBrandKitInput): DerivedBrandKit {
@@ -194,19 +230,34 @@ export function deriveBrandKit(input: DeriveBrandKitInput): DerivedBrandKit {
   }
 
   const plan = input.subscriptionPlan ?? "free";
-  const allowedTemplates = vibe.templates.filter((id) => canUseTemplate(id, plan));
-  const fallbackTemplates = SHOP_TEMPLATES.filter((t) => canUseTemplate(t.id, plan)).map(
-    (t) => t.id
+  // Category wins over vibe — never put an insurance shop on a food menu skin.
+  const categoryPool = templatePoolForSignup(category, vibe.templates).filter((id) =>
+    canUseTemplate(id, plan)
   );
-  const templatePool = allowedTemplates.length > 0 ? allowedTemplates : fallbackTemplates;
-  // Weight toward the vibe's first-choice template but let the hash spread shops across the pool.
-  const templateId = pick(templatePool, seed, 2);
+  const fallbackTemplates = SHOP_TEMPLATES.filter(
+    (t) => canUseTemplate(t.id, plan) && templatePoolForSignup(category, [t.id]).includes(t.id)
+  ).map((t) => t.id);
+  const templatePool =
+    categoryPool.length > 0
+      ? categoryPool
+      : fallbackTemplates.length > 0
+        ? fallbackTemplates
+        : (["clean-guma", "mono-market"] as ShopTemplateId[]);
+  // Prefer first preferred templates; hash only spreads within the safe pool.
+  const templateId = pick(templatePool.slice(0, Math.min(4, templatePool.length)), seed, 2);
 
   const palettePool = BRAND_PALETTES.filter((p) => vibe.paletteIds.includes(p.id));
   const palette = pick(palettePool.length > 0 ? palettePool : BRAND_PALETTES, seed, 3);
 
-  const promo = pick(PROMO_COPY, seed, 4);
-  const taglineFn = pick(TAGLINE_PATTERNS, seed, 5);
+  const professional = isProfessionalCategory(category) && !isFoodBusinessCategory(category);
+  const promo = pick(professional ? PROMO_COPY_PROFESSIONAL : PROMO_COPY_RETAIL, seed, 4);
+  const taglineFn = pick(
+    professional ? TAGLINE_PATTERNS_PROFESSIONAL : TAGLINE_PATTERNS_RETAIL,
+    seed,
+    5
+  );
+  const displayFont = pick(DISPLAY_FONTS, seed, 6);
+  const storeLook = deriveStoreLook(seed);
   const patternId = matchStorePattern({
     category,
     vibe: vibe.id,
@@ -220,6 +271,8 @@ export function deriveBrandKit(input: DeriveBrandKitInput): DerivedBrandKit {
     accentColor: palette.accent,
     paletteId: palette.id,
     vibe: vibe.id,
+    displayFont,
+    storeLook,
     tagline: taglineFn(input.shopName.trim(), category),
     promoTitle: promo.title,
     promoSubtitle: promo.subtitle,
@@ -229,14 +282,30 @@ export function deriveBrandKit(input: DeriveBrandKitInput): DerivedBrandKit {
 /**
  * Distinct starting identities the deterministic engine can produce
  * (before the seller touches a single setting):
- *   free plan  : 3 templates × 18 palettes × 8 promos × 6 taglines = 2,592
- *   growth plan: 6 templates → 5,184
- *   pro plan   : 9 templates → 7,776
- * With the shop-builder font picker (×3) and free-form color wheels the
- * space is effectively unbounded.
+ *   free plan  : templates × palettes × promos × taglines × fonts × storeLook
+ * Custom colors / logo / cover make production space effectively unbounded.
  */
 export const BRAND_KIT_COMBINATIONS = {
-  free: 3 * BRAND_PALETTES.length * PROMO_COPY.length * TAGLINE_PATTERNS.length,
-  growth: 6 * BRAND_PALETTES.length * PROMO_COPY.length * TAGLINE_PATTERNS.length,
-  pro: 9 * BRAND_PALETTES.length * PROMO_COPY.length * TAGLINE_PATTERNS.length,
+  lookKnobs: STORE_LOOK_COMBINATIONS,
+  free:
+    3 *
+    BRAND_PALETTES.length *
+    PROMO_COPY_RETAIL.length *
+    TAGLINE_PATTERNS_RETAIL.length *
+    DISPLAY_FONTS.length *
+    STORE_LOOK_COMBINATIONS,
+  growth:
+    6 *
+    BRAND_PALETTES.length *
+    PROMO_COPY_RETAIL.length *
+    TAGLINE_PATTERNS_RETAIL.length *
+    DISPLAY_FONTS.length *
+    STORE_LOOK_COMBINATIONS,
+  pro:
+    9 *
+    BRAND_PALETTES.length *
+    PROMO_COPY_RETAIL.length *
+    TAGLINE_PATTERNS_RETAIL.length *
+    DISPLAY_FONTS.length *
+    STORE_LOOK_COMBINATIONS,
 };

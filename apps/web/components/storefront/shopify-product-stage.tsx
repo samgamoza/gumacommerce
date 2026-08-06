@@ -1,8 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, ShieldCheck, Truck } from "lucide-react";
+import { ArrowLeft, Headphones, ShieldCheck, Truck } from "lucide-react";
 import type { DemoProduct, DemoTenant } from "@/lib/demo-data";
 import { adminUrl } from "@/lib/utils";
+import { resolveCommerceChrome } from "@guma-commerce/storefront-themes";
 import { AddToCartButton } from "./add-to-cart";
 import { ShopifyRelatedProducts } from "./shopify-catalog";
 
@@ -22,7 +23,9 @@ export function ShopifyProductStage({
   product: DemoProduct;
 }) {
   const accent = tenant.shopTheme?.primaryColor ?? tenant.theme.primaryColor;
-  const breadcrumb = `${tenant.name.toUpperCase()} › ${product.category.toUpperCase()}`;
+  const breadcrumb = `${tenant.name.toUpperCase()} › ${(product.category || tenant.category).toUpperCase()}`;
+  const chrome = resolveCommerceChrome(tenant.category);
+  const SecondaryIcon = chrome.mode === "service" ? Headphones : Truck;
 
   return (
     <>
@@ -78,16 +81,22 @@ export function ShopifyProductStage({
               {product.shortDescription}
             </p>
 
-            <AddToCartButton tenantSlug={tenant.slug} product={product} accent={accent} />
+            <AddToCartButton
+              tenantSlug={tenant.slug}
+              product={product}
+              accent={accent}
+              category={tenant.category}
+              chrome={chrome}
+            />
 
             <div className="mt-6 flex flex-wrap gap-6 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
               <span className="inline-flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4" />
-                Secure payment
+                {chrome.trustPrimary}
               </span>
               <span className="inline-flex items-center gap-2">
-                <Truck className="h-4 w-4" />
-                Fast delivery
+                <SecondaryIcon className="h-4 w-4" />
+                {chrome.trustSecondary}
               </span>
             </div>
           </div>

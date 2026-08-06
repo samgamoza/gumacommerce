@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "tsc --noEmit",
-    "test": "tsx --test src/brand-guard.test.ts"
+    "test": "tsx --test src/brand-guard.test.ts src/brand-kit.test.ts src/catalog-install.test.ts src/category-fit.test.ts src/shop-category-guide.test.ts src/commerce-chrome.test.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

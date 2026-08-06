@@ -4,6 +4,7 @@ import {
   normalizeShopTemplateId,
   SHOP_TEMPLATES,
 } from "./templates";
+import { normalizeStoreLook } from "./store-look";
 import type { ResolvedShopTheme, ShopTemplateId, TenantThemeJson } from "./types";
 
 const DEFAULT_TEMPLATE_ID: ShopTemplateId = "clean-guma";
@@ -54,6 +55,7 @@ export function resolveShopTheme(
     radius: template.tokens.radius,
     displayFont: themeJson?.displayFont ?? template.tokens.displayFont,
     previewGradient: template.previewGradient,
+    storeLook: normalizeStoreLook(themeJson?.storeLook),
   };
 }
 

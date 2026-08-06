@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
   getLaunchTenantState,
+  getTemplateStockByKey,
+  listOnboardingCategoryLabels,
+  listRecentTemplateIdsByCategory,
+  listTemplateStock,
+  recordTemplateIntelligenceEvent,
   updateStoreDna,
   saveThemeDraft,
 } from "@guma-commerce/db";
@@ -9,14 +14,29 @@ import {
   brandGuardHasErrors,
   buildStoreDNA,
   deriveBrandKit,
-  isShopTemplateId,
+  listCuratedTemplatesForDna,
+  listLibraryMatchesForDna,
   matchStorePattern,
   recommendTemplates,
-  listLibraryMatchesForDna,
+  resolveCatalogInstall,
   resolveShopTheme,
+  SHOP_BUSINESS_CATEGORIES,
   validateBrandGuardPersonalize,
 } from "@guma-commerce/storefront-themes";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
+import { mergeCuratedWithStock, resolveStockInstall } from "@/lib/template-stock-launch";
+
+async function curatedForDna(
+  dna: Parameters<typeof listCuratedTemplatesForDna>[0],
+  plan: string | null | undefined
+) {
+  const base = listCuratedTemplatesForDna(dna, { plan, limit: 48 });
+  const stock = await listTemplateStock({
+    categoryLabel: dna.category,
+    statuses: ["published"],
+  });
+  return mergeCuratedWithStock(base, stock, plan, 48);
+}
 
 export async function GET() {
   try {
@@ -35,11 +55,18 @@ export async function GET() {
         launchStep: "dna",
       });
 
+    const avoidTemplateIds = await listRecentTemplateIdsByCategory(dna.category ?? state.category, {
+      limit: 12,
+      excludeTenantId: session.tenantId,
+    });
     const recommendations = recommendTemplates(dna, {
       plan: state.subscriptionPlan,
       limit: 3,
+      avoidTemplateIds,
     });
-    const libraryMatches = listLibraryMatchesForDna(dna, 6);
+    const curatedTemplates = await curatedForDna(dna, state.subscriptionPlan);
+    const libraryMatches = listLibraryMatchesForDna(dna, 12);
+    const onboardingCategories = await listOnboardingCategoryLabels(SHOP_BUSINESS_CATEGORIES);
 
     const draft = state.themeDraftJson ?? state.themeJson;
     const theme = resolveShopTheme(draft, state.name);
@@ -52,14 +79,17 @@ export async function GET() {
       state,
       dna,
       recommendations,
+      curatedTemplates,
       libraryMatches,
+      onboardingCategories,
       theme,
       draft,
       published,
       launchDone,
       libraryStats: {
-        liveInstallable: recommendations.length,
-        note: "Top 3 are scored from the live storefront library (HTML ports + Guma themes), boosted by Free Bundle 2023 category matches.",
+        curatedForCategory: curatedTemplates.length,
+        liveTopPicks: recommendations.length,
+        note: "Free Bundle + ops Template Stock for your category — each pick keeps a unique look.",
       },
       urls: {
         storefront: `${storefrontUrl}/${state.slug}`,
@@ -87,7 +117,7 @@ const dnaSchema = z.object({
 
 const selectSchema = z.object({
   action: z.literal("select_template"),
-  templateId: z.string().min(1).max(64),
+  templateId: z.string().min(1).max(80),
 });
 
 const personalizeSchema = z.object({
@@ -135,17 +165,43 @@ export async function POST(request: Request) {
         selectedTemplateId: current?.selectedTemplateId,
       });
       const updated = await updateStoreDna(session.tenantId, dna);
+      const avoidTemplateIds = await listRecentTemplateIdsByCategory(dna.category, {
+        limit: 12,
+        excludeTenantId: session.tenantId,
+      });
       const recommendations = recommendTemplates(dna, {
         plan: state.subscriptionPlan,
         limit: 3,
+        avoidTemplateIds,
       });
-      const libraryMatches = listLibraryMatchesForDna(dna, 6);
-      return NextResponse.json({ ok: true, dna, recommendations, libraryMatches, state: updated });
+      const curatedTemplates = await curatedForDna(dna, state.subscriptionPlan);
+      const libraryMatches = listLibraryMatchesForDna(dna, 12);
+      return NextResponse.json({
+        ok: true,
+        dna,
+        recommendations,
+        curatedTemplates,
+        libraryMatches,
+        state: updated,
+      });
     }
 
     if (body.action === "select_template") {
-      if (!isShopTemplateId(body.templateId)) {
+      let install = resolveCatalogInstall(body.templateId, {
+        plan: state.subscriptionPlan,
+      });
+      if (!install) {
+        const stock = await getTemplateStockByKey(body.templateId.trim().toLowerCase());
+        install = stock ? resolveStockInstall(stock, state.subscriptionPlan) : null;
+      }
+      if (!install) {
         return NextResponse.json({ ok: false, error: "Unknown template." }, { status: 400 });
+      }
+      if (!install.installableOnPlan) {
+        return NextResponse.json(
+          { ok: false, error: "This template needs a higher plan." },
+          { status: 403 }
+        );
       }
 
       const dnaBase =
@@ -165,21 +221,29 @@ export async function POST(request: Request) {
       });
 
       const patternId = matchStorePattern({
-        templateId: body.templateId,
+        templateId: install.liveTemplateId,
         category: dnaBase.category,
         vibe: String(dnaBase.vibe),
       });
 
       const draft = {
         ...brandKit,
-        templateId: body.templateId,
+        templateId: install.liveTemplateId,
         patternId,
         vibe: String(dnaBase.vibe),
+        // Curated pick identity + look knobs seeded from catalog id (not just shop name)
+        storeLook: install.storeLook,
+        ...(install.catalogId
+          ? {
+              catalogId: install.catalogId,
+              ...(install.catalogLabel ? { catalogLabel: install.catalogLabel } : {}),
+            }
+          : {}),
       };
 
       const dna = {
         ...dnaBase,
-        selectedTemplateId: body.templateId,
+        selectedTemplateId: install.selectionId,
         launchStep: "personalize" as const,
       };
 
@@ -187,7 +251,33 @@ export async function POST(request: Request) {
       const updated = await saveThemeDraft(session.tenantId, draft);
       const theme = resolveShopTheme(draft, state.name);
 
-      return NextResponse.json({ ok: true, draft, theme, dna, state: updated });
+      if (install.fromCatalog && install.catalogId) {
+        void recordTemplateIntelligenceEvent({
+          eventType: "seller_selected_skin",
+          categoryLabel: dnaBase.category,
+          stockKey: install.catalogId,
+          tenantId: session.tenantId,
+          payload: {
+            liveTemplateId: install.liveTemplateId,
+            selectionId: install.selectionId,
+          },
+        }).catch(() => undefined);
+      }
+
+      return NextResponse.json({
+        ok: true,
+        draft,
+        theme,
+        dna,
+        state: updated,
+        install: {
+          selectionId: install.selectionId,
+          liveTemplateId: install.liveTemplateId,
+          catalogId: install.catalogId,
+          catalogLabel: install.catalogLabel,
+          fromCatalog: install.fromCatalog,
+        },
+      });
     }
 
     if (body.action === "personalize") {

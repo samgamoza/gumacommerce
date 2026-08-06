@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -12,14 +12,10 @@ import {
 } from "@/components/auth-layout";
 import { PasswordInput } from "@/components/password-input";
 import { AuthDivider, GoogleSignInButton } from "@/components/google-sign-in-button";
+import { BusinessCategoryPicker } from "@/components/business-category-picker";
 import { VibePicker } from "@/components/vibe-picker";
 import { shopUrlDisplayPrefix } from "@/lib/utils";
-import {
-  DEFAULT_SHOP_BUSINESS_CATEGORY,
-  SHOP_BUSINESS_CATEGORIES,
-} from "@guma-commerce/storefront-themes";
-
-const CATEGORIES = SHOP_BUSINESS_CATEGORIES;
+import { SHOP_BUSINESS_CATEGORIES } from "@guma-commerce/storefront-themes";
 
 function slugify(value: string): string {
   return value
@@ -37,6 +33,7 @@ export function SignupWizard() {
   const [error, setError] = useState<string | null>(null);
   const [slugStatus, setSlugStatus] = useState<string | null>(null);
   const [slugEdited, setSlugEdited] = useState(false);
+  const [categories, setCategories] = useState<string[]>([...SHOP_BUSINESS_CATEGORIES]);
 
   const [form, setForm] = useState({
     displayName: "",
@@ -44,9 +41,20 @@ export function SignupWizard() {
     password: "",
     shopName: "",
     shopSlug: "",
-    category: DEFAULT_SHOP_BUSINESS_CATEGORY,
+    category: "",
     vibe: "",
   });
+
+  useEffect(() => {
+    void fetch("/api/onboarding/categories")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.ok && Array.isArray(data.categories) && data.categories.length > 0) {
+          setCategories(data.categories);
+        }
+      })
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     if (slugEdited || !form.shopName) return;
@@ -81,6 +89,13 @@ export function SignupWizard() {
       return;
     }
 
+    if (!form.category.trim()) {
+      setError(
+        "Pick the category that best fits your business — search in plain words if you are unsure."
+      );
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/auth/signup", {
@@ -110,7 +125,7 @@ export function SignupWizard() {
       subtitle={
         step === 1
           ? "Step 1 of 2 — Sign up with Google or email"
-          : "Step 2 of 2 — Set up your storefront"
+          : "Step 2 of 2 — Tell us about your shop"
       }
     >
       {step === 1 && (
@@ -204,25 +219,16 @@ export function SignupWizard() {
                     slugStatus === "available" ? "text-emerald-600" : "text-red-600"
                   }`}
                 >
-                  {slugStatus === "available" ? "✓ Available" : slugStatus}
+                  {slugStatus === "available" ? "Available" : slugStatus}
                 </p>
               )}
             </AuthField>
 
-            <AuthField label="Category" id="category">
-              <select
-                id="category"
-                value={form.category}
-                onChange={(e) => updateField("category", e.target.value as typeof form.category)}
-                className={authInputClassName}
-              >
-                {CATEGORIES.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </AuthField>
+            <BusinessCategoryPicker
+              value={form.category}
+              onChange={(category) => updateField("category", category)}
+              allowedCategories={categories}
+            />
 
             <VibePicker value={form.vibe} onChange={(vibe) => updateField("vibe", vibe)} />
           </>
