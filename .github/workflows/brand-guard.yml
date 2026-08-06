@@ -1,0 +1,28 @@
+name: Brand Guard
+
+on:
+  push:
+    paths:
+      - "apps/web/components/storefront/**"
+      - "scripts/brand-guard-scan.mjs"
+      - "packages/storefront-themes/src/brand-guard.ts"
+      - ".github/workflows/brand-guard.yml"
+  pull_request:
+    paths:
+      - "apps/web/components/storefront/**"
+      - "scripts/brand-guard-scan.mjs"
+      - "packages/storefront-themes/src/brand-guard.ts"
+      - ".github/workflows/brand-guard.yml"
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Brand Guard storefront scan
+        run: node scripts/brand-guard-scan.mjs
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Brand Guard Launch validators
+        run: npx --yes tsx --test packages/storefront-themes/src/brand-guard.test.ts

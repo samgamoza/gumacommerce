@@ -61,9 +61,18 @@ AI slop risk in Guma shows up where we already spend tokens: Workspace marketing
 
 **DoD**
 
-- [ ] Documented scan command in this file + `packages/storefront-templates/README.md`
-- [ ] At least one CI or `pnpm` script that reports hits on storefront renderers
-- [ ] Port checklist updated
+- [x] Documented scan command in this file + `packages/storefront-templates/README.md`
+- [x] At least one CI or `pnpm` script that reports hits on storefront renderers
+- [x] Port checklist updated
+
+**Scan command**
+
+```powershell
+pnpm brand-guard:scan
+# or: node scripts/brand-guard-scan.mjs
+```
+
+CI: `.github/workflows/brand-guard.yml` — fails on P0 tells, warns on P1.
 
 ### Slice B — Prevention in Launch + brand-kit (Free)
 
@@ -78,9 +87,15 @@ AI slop risk in Guma shows up where we already spend tokens: Workspace marketing
 
 **DoD**
 
-- [ ] Deterministic validators callable from Launch API (`personalize`) and unit-tested
-- [ ] False-positive allowlist for curated `BRAND_PALETTES` / vibes
-- [ ] Launch remains zero-LLM (no new provider calls)
+- [x] Deterministic validators callable from Launch API (`personalize`) and unit-tested
+- [x] False-positive allowlist for curated `BRAND_PALETTES` / vibes
+- [x] Launch remains zero-LLM (no new provider calls)
+
+Validators live in `packages/storefront-themes/src/brand-guard.ts` (`validateBrandGuardPersonalize`, `hintBrandGuardCopy`). Wired from `apps/admin/app/api/launch/route.ts` personalize + soft hints in `launch-wizard.tsx`.
+
+```powershell
+pnpm --filter @guma-commerce/storefront-themes test
+```
 
 ### Slice C — Paid Brand Guard “Polish” (Growth+)
 

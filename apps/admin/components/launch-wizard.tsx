@@ -7,6 +7,7 @@ import { PatternAdminShell } from "@/components/pattern-admin-shell";
 import { Button, Card } from "@guma-commerce/ui";
 import {
   BRAND_PALETTES,
+  hintBrandGuardCopy,
   SHOP_BUSINESS_CATEGORIES,
   SHOP_VIBES,
   type ProductCountHint,
@@ -568,6 +569,11 @@ export function LaunchWizard() {
                 value={tagline}
                 onChange={(e) => setTagline(e.target.value)}
               />
+              {hintBrandGuardCopy(tagline).map((hint) => (
+                <p key={hint} className="mt-1 text-xs text-amber-700">
+                  {hint}
+                </p>
+              ))}
             </label>
             <label className="block text-sm">
               Promo title
@@ -576,6 +582,11 @@ export function LaunchWizard() {
                 value={promoTitle}
                 onChange={(e) => setPromoTitle(e.target.value)}
               />
+              {hintBrandGuardCopy(promoTitle).map((hint) => (
+                <p key={hint} className="mt-1 text-xs text-amber-700">
+                  {hint}
+                </p>
+              ))}
             </label>
             <label className="block text-sm">
               Promo subtitle
@@ -584,6 +595,11 @@ export function LaunchWizard() {
                 value={promoSubtitle}
                 onChange={(e) => setPromoSubtitle(e.target.value)}
               />
+              {hintBrandGuardCopy(promoSubtitle).map((hint) => (
+                <p key={hint} className="mt-1 text-xs text-amber-700">
+                  {hint}
+                </p>
+              ))}
             </label>
 
             <div className="flex flex-wrap gap-2">

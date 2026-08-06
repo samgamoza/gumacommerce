@@ -268,3 +268,8 @@ Gadgets & tech layout: sticky header, hero billboard, service icons, mobile prod
 4. Add entry to `packages/storefront-themes/src/template-registry.ts`
 5. Wire `TenantStorefrontHome` dispatcher
 6. Add demo tenant in `apps/web/lib/demo-data.ts`
+7. **Brand Guard (required before marking Free Bundle entry `integrated`):**
+   - Run `pnpm brand-guard:scan` — must be **P0-clean** on `apps/web/components/storefront/**`
+   - No indigo→violet defaults, glass+glow stacks, Inter-only fonts, “not just X — it’s Y”, or fabricated stats copy
+   - Prefer template typography tokens + solid accents; curated `BRAND_PALETTES` (e.g. `ube-cream`) are allowlisted in Launch
+   - See `docs/PRIORITY-SCOPE-BRAND-GUARD.md`

@@ -113,7 +113,7 @@ Neon Postgres | PayMongo* | Lalamove* | Grab* | Semaphore* | optional Upstash/Bl
 | Platform helpdesk staffing | ⚠️ Ops | Monitor `/helpdesk` + email |
 | Legal entity footer | ⚠️ Content | SEC/TIN still placeholder in marketing |
 | Suspended user/tenant enforcement | ✅ Ready | Seller writes + dashboard blocked; storefront “unavailable”; checkout 403; user-level suspend blocks login. Existing order settle (payment proof / tracking) intentionally allowed. |
-| Brand Guard CI / Launch polish | ❌ Not started | Specced in `PRIORITY-SCOPE-BRAND-GUARD.md` |
+| Brand Guard CI / Launch polish | ✅ Slice A+B | CI scanner + Launch personalize validators (Slice C Workspace polish still deferred) |
 | Production Vercel + secrets | ⚠️ Assumed incomplete | Follow `DEPLOY-VERCEL.md` |
 
 **Recommended launch posture:** Soft launch with **frontend1 live**, manual e-wallet + COD, Book courier / Assign rider, staffed helpdesk — market auto-dispatch and partner Angkas APIs only after credentials + soak.

@@ -6,6 +6,7 @@ import {
   saveThemeDraft,
 } from "@guma-commerce/db";
 import {
+  brandGuardHasErrors,
   buildStoreDNA,
   deriveBrandKit,
   isShopTemplateId,
@@ -13,6 +14,7 @@ import {
   recommendTemplates,
   listLibraryMatchesForDna,
   resolveShopTheme,
+  validateBrandGuardPersonalize,
 } from "@guma-commerce/storefront-themes";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
@@ -197,6 +199,26 @@ export async function POST(request: Request) {
         );
       }
 
+      const brandGuardIssues = validateBrandGuardPersonalize({
+        tagline: body.tagline,
+        promoTitle: body.promoTitle,
+        promoSubtitle: body.promoSubtitle,
+        paletteId: body.paletteId,
+        primaryColor: body.primaryColor,
+        accentColor: body.accentColor,
+      });
+      if (brandGuardHasErrors(brandGuardIssues)) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: brandGuardIssues.find((i) => i.severity === "error")?.message ?? "Brand Guard rejected this copy.",
+            code: "BRAND_GUARD",
+            brandGuardIssues,
+          },
+          { status: 400 }
+        );
+      }
+
       const draft = {
         ...current,
         ...(body.tagline !== undefined ? { tagline: body.tagline } : {}),
@@ -216,7 +238,13 @@ export async function POST(request: Request) {
 
       const updated = await saveThemeDraft(session.tenantId, draft);
       const theme = resolveShopTheme(draft, state.name);
-      return NextResponse.json({ ok: true, draft, theme, state: updated });
+      return NextResponse.json({
+        ok: true,
+        draft,
+        theme,
+        state: updated,
+        brandGuardIssues,
+      });
     }
 
     if (body.action === "publish") {

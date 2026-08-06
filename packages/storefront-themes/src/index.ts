@@ -105,3 +105,13 @@ export {
   previewImageForTemplate,
   previewImageForCategory,
 } from "./template-previews";
+export {
+  BRAND_GUARD_PALETTE_ALLOWLIST,
+  brandGuardHasErrors,
+  hintBrandGuardCopy,
+  lintBrandGuardCopy,
+  validateBrandGuardPersonalize,
+  type BrandGuardIssue,
+  type BrandGuardPersonalizeInput,
+  type BrandGuardSeverity,
+} from "./brand-guard";
