@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import {
   addSupportTicketMessage,
+  getSupportTicketById,
   moderateContentItem,
   setActiveLanding,
   setTenantPlan,
@@ -17,6 +18,7 @@ import {
   type TenantStatus,
   type UserStatus,
 } from "@guma-commerce/db";
+import { notifyHelpdeskAgentReply } from "@guma-commerce/services";
 import { requireSuperAdminApi } from "@/lib/api-auth";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
@@ -210,6 +212,27 @@ export async function replySupportTicketAction(
       body: trimmed,
       isInternal,
     });
+
+    if (!isInternal) {
+      const ticket = await getSupportTicketById(ticketId, { includeInternal: true });
+      if (ticket?.requesterEmail) {
+        const notify = await notifyHelpdeskAgentReply({
+          ticketNumber: ticket.ticketNumber,
+          subject: ticket.subject,
+          requesterEmail: ticket.requesterEmail,
+          agentName: session.displayName || session.email,
+          body: trimmed,
+        });
+        if (!notify.sent) {
+          console.warn("[helpdesk] Agent reply email not delivered", {
+            ticketNumber: ticket.ticketNumber,
+            mock: notify.mock ?? false,
+            error: notify.error,
+          });
+        }
+      }
+    }
+
     await writeAudit({
       actorId: session.userId,
       actorEmail: session.email,

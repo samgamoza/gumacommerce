@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupportTicket } from "@guma-commerce/db";
-import { clientIpFrom, createLogger, rateLimit } from "@guma-commerce/services";
+import {
+  clientIpFrom,
+  createLogger,
+  notifyHelpdeskTicketCreated,
+  rateLimit,
+} from "@guma-commerce/services";
 
 const log = createLogger("support:public");
 
@@ -40,10 +45,28 @@ export async function POST(request: Request) {
       body: body.message,
     });
 
+    const notify = await notifyHelpdeskTicketCreated({
+      ticketNumber: ticket.ticketNumber,
+      ticketId: ticket.id,
+      subject: body.topic.slice(0, 200),
+      requesterName: body.name,
+      requesterEmail: body.email,
+      channel: "web_contact",
+      body: body.message,
+    });
+    if (!notify.sent) {
+      log.warn("Helpdesk create email not delivered", {
+        ticketNumber: ticket.ticketNumber,
+        mock: notify.mock ?? false,
+        error: notify.error,
+      });
+    }
+
     return NextResponse.json({
       ok: true,
       ticketNumber: ticket.ticketNumber,
       ticketId: ticket.id,
+      notified: notify.sent,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

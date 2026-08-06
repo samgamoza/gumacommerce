@@ -21,6 +21,7 @@ export type IntegrationId =
   | "google_oauth"
   | "ai"
   | "web_push"
+  | "email"
   | "auth_secret";
 
 export type IntegrationSeverity = "required" | "optional";
@@ -117,6 +118,7 @@ export function getIntegrationChecks(): IntegrationCheck[] {
     present(process.env.GROQ_API_KEY);
   const pushConfigured =
     present(process.env.VAPID_PUBLIC_KEY) && present(process.env.VAPID_PRIVATE_KEY);
+  const emailConfigured = present(process.env.RESEND_API_KEY);
   const webhookConfigured = present(process.env.PAYMONGO_WEBHOOK_SECRET);
   const authSecret = process.env.AUTH_SECRET?.trim() ?? "";
   const authConfigured =
@@ -250,6 +252,20 @@ export function getIntegrationChecks(): IntegrationCheck[] {
         ? "VAPID keys are set."
         : "VAPID not configured — push sends 0 (does not claim success).",
       envVars: ["VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY", "VAPID_SUBJECT"],
+    }),
+    buildCheck({
+      id: "email",
+      label: "Transactional email (Resend)",
+      severity: "optional",
+      status: emailConfigured ? "configured" : mocks ? "mock_allowed" : "missing",
+      configured: emailConfigured,
+      wouldMock: !emailConfigured && mocks,
+      message: emailConfigured
+        ? "RESEND_API_KEY is set."
+        : mocks
+          ? "Resend not configured — labeled email mocks allowed in this runtime (sent=false, mock=true)."
+          : "Resend not configured — notifications must report not sent (never fake success). Set RESEND_API_KEY + HELPDESK_NOTIFY_EMAIL for helpdesk.",
+      envVars: ["RESEND_API_KEY", "EMAIL_FROM", "HELPDESK_NOTIFY_EMAIL"],
     }),
   ];
 }

@@ -108,6 +108,9 @@ importers:
       '@guma-commerce/plans':
         specifier: workspace:*
         version: link:../../packages/plans
+      '@guma-commerce/services':
+        specifier: workspace:*
+        version: link:../../packages/services
       '@guma-commerce/ui':
         specifier: workspace:*
         version: link:../../packages/ui

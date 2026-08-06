@@ -75,6 +75,15 @@ export {
   type PushPayload,
 } from "./notifications/push";
 export {
+  sendTransactionalEmail,
+  notifyHelpdeskTicketCreated,
+  notifyHelpdeskAgentReply,
+  isEmailConfigured,
+  helpdeskNotifyEmail,
+  type SendEmailInput,
+  type SendEmailResult,
+} from "./notifications/email";
+export {
   getRuntimeMode,
   isProductionRuntime,
   allowIntegrationMocks,

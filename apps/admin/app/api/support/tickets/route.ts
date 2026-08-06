@@ -6,6 +6,7 @@ import {
   listSupportTickets,
   addSupportTicketMessage,
 } from "@guma-commerce/db";
+import { notifyHelpdeskTicketCreated } from "@guma-commerce/services";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 const createSchema = z.object({
@@ -72,10 +73,28 @@ export async function POST(request: Request) {
       body: body.body,
     });
 
+    const notify = await notifyHelpdeskTicketCreated({
+      ticketNumber: ticket.ticketNumber,
+      ticketId: ticket.id,
+      subject: body.subject,
+      requesterName: session.displayName || session.email,
+      requesterEmail: session.email,
+      channel: "seller_admin",
+      body: body.body,
+    });
+    if (!notify.sent) {
+      console.warn("[support] Helpdesk create email not delivered", {
+        ticketNumber: ticket.ticketNumber,
+        mock: notify.mock ?? false,
+        error: notify.error,
+      });
+    }
+
     return NextResponse.json({
       ok: true,
       ticketId: ticket.id,
       ticketNumber: ticket.ticketNumber,
+      notified: notify.sent,
     });
   } catch (error) {
     if (error instanceof ApiAuthError) {

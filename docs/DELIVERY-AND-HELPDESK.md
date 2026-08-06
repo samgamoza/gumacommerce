@@ -34,4 +34,11 @@ SLA clocks (from create):
 - First response: 4 hours
 - Resolve: 48 hours
 
+Email notifications (Resend — optional, fail-closed):
+
+- New ticket (web `/contact` or admin Help & support) → `HELPDESK_NOTIFY_EMAIL`
+- Agent reply (platform `/helpdesk`, non-internal) → ticket `requesterEmail`
+- Env: `RESEND_API_KEY`, `EMAIL_FROM`, `HELPDESK_NOTIFY_EMAIL`, `NEXT_PUBLIC_PLATFORM_URL`
+- Missing config: ticket writes still succeed; email reports `sent: false` (never fake success in production). Health: `/api/health/integrations` → `email`.
+
 Migration: `packages/db/drizzle/0013_support_helpdesk.sql` — run `pnpm db:migrate`.
