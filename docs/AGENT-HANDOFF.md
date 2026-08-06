@@ -1,15 +1,75 @@
 # Guma Commerce — Agent Handoff Document
 
-**Last updated:** 2026-08-06  
+**Last updated:** 2026-08-06 (post Chief Engineer Phases 1–6 + marketing legal refresh)  
 **Purpose:** Hands-off context for the next agent or developer. Read this before making changes.
 
 > **Chief Engineer review:** [`CHIEF-ENGINEER-REVIEW-SUMMARY.md`](./CHIEF-ENGINEER-REVIEW-SUMMARY.md)  
+> **Execution prompt (binding for that pass):** [`CURSOR-CHIEF-ENGINEER-PROMPT-2026-08-06.md`](./CURSOR-CHIEF-ENGINEER-PROMPT-2026-08-06.md)  
 > **Whole-repo truth:** Prefer [`COMPREHENSIVE-HANDOFF-2026-07-12.md`](./COMPREHENSIVE-HANDOFF-2026-07-12.md) for architecture, sprints, and roadmap.  
 > **This file** keeps session narratives + durable pitfalls. Where they conflict, comprehensive handoff + ADR-0001 + chief summary win.
 
-> Newest durable deltas (2026-08): **delivery orchestrator live in apps**, **helpdesk tickets**, **Chat MVP Beta**, **manual e-wallet**, **Frontend1 CTA polish**. Detail: `DELIVERY-AND-HELPDESK.md`, `MVP-MANUAL-EWALLET-CHAT.md`.
+> Newest durable deltas (2026-08-06): **Phases 1–6 executed** — commit hygiene, suspend enforcement, Brand Guard A+B, helpdesk email (Resend), honest marketing, webhook/Sentry test hardening; **marketing footer + About/Privacy/Terms/Refunds/Contact UX**. Prior MVP: delivery orchestrator, helpdesk tickets, Chat MVP Beta, manual e-wallet. Detail: `DELIVERY-AND-HELPDESK.md`, `MVP-MANUAL-EWALLET-CHAT.md`, `PRIORITY-SCOPE-BRAND-GUARD.md`.
 
-> **After soft-launch hygiene:** [`PRIORITY-SCOPE-BRAND-GUARD.md`](./PRIORITY-SCOPE-BRAND-GUARD.md) — Brand Guard anti-slop. Do not wire yetone’s coding agent into merchant Launch.
+> **Deferred post-MVP beta:** Trust / Legal entity page (real SEC/TIN). **Do not start** Workstation / LangGraph / Meta Messenger without a new Chief Engineer directive (Phase 7).
+
+---
+
+## Session 2026-08-06 — Chief Engineer directive (Phases 1–6) + marketing legal UX
+
+**Branch:** `wip/uncommitted-work-2026-08-01` (pushed to `origin`)  
+**Binding:** ADR-0001 wins on conflict; fail-closed integrations; no Prisma/RLS/new draft tables; no killaislop SaaS.
+
+### What landed (by phase)
+
+1. **Phase 1 — Commit hygiene** — Prior ~130-file working tree sliced into reviewable commits (`3ac9706`…`fe645bf`): db/schema → infra/fail-closed → delivery+helpdesk → chat+manual-pay → frontend1 polish → docs.  
+   - Still uncommitted locally (intentionally): `apps/*/tsconfig.tsbuildinfo`, dirty `simply-sweet-source` submodule — **ask before deciding** (gitignore vs keep).
+2. **Phase 2 — Suspend enforcement** (`672783d`) — Shared `packages/db/src/tenant-access.ts`.  
+   - Admin writes hard-blocked (`requireTenantSession`); dashboard shows suspended notice; `/api/shop` GET allows suspended so UI can load.  
+   - Storefront shows “Shop unavailable” (not Coming soon); checkout returns **403** `TENANT_SUSPENDED`.  
+   - User-level suspend blocks seller login; tenant-level suspend allows login to see the notice.  
+   - **Decision:** buyer payment-proof / order tracking for open orders stays allowed.
+3. **Phase 3 — Brand Guard Slice A+B** (`457a0af`) — `pnpm brand-guard:scan` + `.github/workflows/brand-guard.yml`; validators in `packages/storefront-themes/src/brand-guard.ts` wired to Launch personalize + soft hints. Slice C (Workspace polish) **not** started.
+4. **Phase 4 — Helpdesk email** (`dd29aa5`) — Resend via `packages/services/src/notifications/email.ts`.  
+   - New ticket → `HELPDESK_NOTIFY_EMAIL`; agent reply → requester email. Fail-closed (`sent: false`, never fake success in prod). Health id: `email`.
+5. **Phase 5 — Honest marketing** (`3f2b177`) — frontend1 FAQ/comparison/footer; frontend2 Hero/HowItWorks/Pricing/etc. stripped of auto-dispatch / fake stats overclaims. `getActiveLanding()` still defaults to **frontend1**.
+6. **Phase 6 — Observability / tests** (`9884ae9`) — PayMongo + Grab HMAC unit tests; Sentry in integration health; checkout errors → `createLogger`; Inngest consumers ticketed `INNGEST-001…004` (still acknowledge-only); migration journal test for `0013`.
+7. **Marketing footer + legal pages** (`b220639`) — Footer CTA/hierarchy; `LegalDocLayout` TOC; About/Privacy/Terms/Refunds/Contact refreshed for soft-launch honesty.  
+   - **Deferred:** Trust / Legal entity page until real SEC/TIN (post MVP beta).
+
+### Env notes (new / important)
+```
+RESEND_API_KEY=
+EMAIL_FROM=
+HELPDESK_NOTIFY_EMAIL=
+NEXT_PUBLIC_PLATFORM_URL=http://localhost:3002
+SENTRY_DSN=   # set on web + admin + platform Vercel projects
+PAYMENTS_MODE=manual_ewallet
+```
+
+### Commands that should be green
+```powershell
+pnpm --filter @guma-commerce/db exec tsc --noEmit
+pnpm --filter @guma-commerce/web exec tsc --noEmit
+pnpm --filter @guma-commerce/admin exec tsc --noEmit
+pnpm --filter @guma-commerce/platform exec tsc --noEmit
+pnpm --filter @guma-commerce/db test
+pnpm --filter @guma-commerce/services test
+pnpm --filter @guma-commerce/storefront-themes test
+pnpm brand-guard:scan
+```
+
+### Open / next (after this pass)
+| Priority | Item |
+|----------|------|
+| Ops | Prod env checklist (`DEPLOY-VERCEL.md`): AUTH_SECRET, DATABASE_URL*, URLs, demo flag, payment/delivery/email/Sentry keys |
+| Ops | Keep platform `active_landing` = **frontend1** for soft launch |
+| Content | Real SEC / TIN / phone when available → then Trust / Legal entity page |
+| Housekeeping | Decide `*.tsbuildinfo` gitignore; clean `simply-sweet-source` dirty submodule |
+| Eng (later) | Brand Guard Slice C; fill Inngest stubs `INNGEST-001…004`; broader E2E |
+| **Do not** | Workstation convergence / Meta Messenger / 100-template push without new directive |
+
+### Recommended next prompt
+> Read `docs/AGENT-HANDOFF.md` (this file) + `docs/CHIEF-ENGINEER-REVIEW-SUMMARY.md`. Branch `wip/uncommitted-work-2026-08-01` is pushed through Phases 1–6 + marketing legal UX. Next: prod cutover checklist / PR review — not Workstation. Constraints: never `db:push`; never `@guma-commerce/db` from `"use client"`; fail-closed integrations; ADR-0001.
 
 ---
 
@@ -44,8 +104,8 @@ pnpm --filter @guma-commerce/platform run dev
 - Never hardcode plan prices outside `@guma-commerce/plans`
 - Production mocks refused — see `MVP-HARDENING-P1-INTEGRATION-MOCKS.md`
 
-### Recommended next prompt
-> Read `docs/CHIEF-ENGINEER-REVIEW-SUMMARY.md` then `docs/COMPREHENSIVE-HANDOFF-2026-07-12.md`. Soft-launch hygiene first (commit slices, demo flag, suspend enforcement, staff helpdesk). Brand Guard only after that.
+### Status note
+Soft-launch hygiene from the prior “recommended next” is largely **done** in the 2026-08-06 Chief Engineer session (see section above). Prefer that section for current open items.
 
 ---
 
@@ -117,9 +177,9 @@ Added:
 - **High:** `pnpm db:generate` to create the migration file for the schema additions (DB is ahead of `drizzle/`).
 - ~~**High:** Reconcile the 3 plan-price sources~~ — **done** (`@guma-commerce/plans`).
 - **Medium:** `next build` the platform app; add it to CI/Vercel (new project, port 3002, same monorepo build command, needs `AUTH_SECRET` + `DATABASE_URL*`).
-- **Medium:** Enforce `users.status='suspended'` and `tenants.status='suspended'` at the **seller** login/storefront layer (platform can suspend, but `apps/admin`/`apps/web` don't yet block suspended accounts/shops).
+- ~~**Medium:** Enforce suspended user/tenant on seller + storefront~~ — **done** (2026-08-06 Phase 2; see top session).
 - **Low:** Moderation currently only covers `content_queue`; extend to products if needed. Add pagination to platform tables (currently limit 200–500).
-- **Housekeeping:** Prefer `COMPREHENSIVE-HANDOFF` + sprint docs for post-2026-07-05 work.
+- **Housekeeping:** Prefer `COMPREHENSIVE-HANDOFF` + sprint docs for post-2026-07-05 work; current open items live in the **2026-08-06 Chief Engineer** session section above.
 
 ### 9. Next-agent quick start (platform work)
 ```cmd
@@ -131,7 +191,7 @@ pnpm --dir apps/platform exec tsc --noEmit
 Inspect first: `apps/platform/app/actions.ts`, `packages/db/src/queries/platform.ts`, `apps/platform/components/platform-shell.tsx`, `apps/platform/lib/plans.ts`. **Warning:** never import `@guma-commerce/db` from a `"use client"` file; never run `db:push`.
 
 ### 10. Recommended next prompt (paste to continue)
-> You're working in the `guma-commerce` pnpm+Turbo monorepo at `D:\All Apps\gumacommerce`. Read `docs/CHIEF-ENGINEER-REVIEW-SUMMARY.md` first, then `docs/COMPREHENSIVE-HANDOFF-2026-07-12.md`. Apps: `web` (:3010), `admin` (:3001), `platform` (:3002). **Already done (2026-08):** delivery orchestrator + Grab webhook + Assign rider; helpdesk tickets; Chat MVP Beta; manual e-wallet; Frontend1 CTA polish; plans ADR D4; crown-jewel CR domains; 18 template ports. **Open:** commit/PR hygiene; prod demo flag + secrets; suspend enforcement; Brand Guard (`PRIORITY-SCOPE-BRAND-GUARD.md`). Constraints: never import `@guma-commerce/db` from `"use client"`; never `db:push`; never hardcode plan prices outside `@guma-commerce/plans`. Don't commit unless asked.
+> You're working in the `guma-commerce` pnpm+Turbo monorepo at `D:\All Apps\gumacommerce`. Read `docs/AGENT-HANDOFF.md` (top session 2026-08-06) + `docs/CHIEF-ENGINEER-REVIEW-SUMMARY.md`. Branch `wip/uncommitted-work-2026-08-01` is pushed through Chief Engineer Phases 1–6 + marketing legal UX. Apps: `web` (:3010), `admin` (:3001), `platform` (:3002). **Open:** prod cutover / secrets / demo flag; real SEC/TIN then Trust page; tsbuildinfo/submodule housekeeping; Brand Guard Slice C + Inngest fill-out later. **Do not** start Workstation without a new directive. Constraints: never import `@guma-commerce/db` from `"use client"`; never `db:push`; never hardcode plan prices outside `@guma-commerce/plans`; fail-closed integrations.
 
 ---
 
