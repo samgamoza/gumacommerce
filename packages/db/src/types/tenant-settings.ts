@@ -33,6 +33,20 @@ export interface TenantShopAssistantSettings {
   name?: string;
   greeting?: string;
   tone?: "friendly_taglish" | "professional_en" | "gen_z_taglish";
+  humanInbox?: boolean;
+}
+
+export interface TenantPaymentsSettings {
+  mode?: "manual_ewallet" | "paymongo" | "both";
+  receiving?: {
+    gcashNumber?: string;
+    gcashName?: string;
+    mayaNumber?: string;
+    mayaName?: string;
+    bankName?: string;
+    bankAccountName?: string;
+    bankAccountNumber?: string;
+  };
 }
 
 export interface TenantAgentSettings {
@@ -66,6 +80,7 @@ export interface TenantSettingsJson {
   shopAssistant?: TenantShopAssistantSettings;
   agents?: TenantAgentSettings;
   wallet?: TenantWalletSettings;
+  payments?: TenantPaymentsSettings;
 }
 
 export interface TenantSettingsRecord {
@@ -106,5 +121,8 @@ export interface UpdateTenantSettingsInput {
     shopAssistant?: Partial<TenantShopAssistantSettings>;
     agents?: Partial<TenantAgentSettings>;
     wallet?: Partial<TenantWalletSettings>;
+    payments?: Partial<TenantPaymentsSettings> & {
+      receiving?: Partial<NonNullable<TenantPaymentsSettings["receiving"]>>;
+    };
   };
 }

@@ -506,6 +506,8 @@ export interface TenantOrderListItem {
   itemsSummary: string;
   itemCount: number;
   createdAt: Date;
+  paymentReference: string | null;
+  paymentProofUrl: string | null;
 }
 
 export async function listOrdersForTenant(tenantId: string): Promise<TenantOrderListItem[]> {
@@ -540,8 +542,42 @@ export async function listOrdersForTenant(tenantId: string): Promise<TenantOrder
     itemsByOrder.set(item.orderId, list);
   }
 
+  const paymentRows = await db
+    .select({
+      orderId: paymentTransactions.orderId,
+      status: paymentTransactions.status,
+      rawWebhookJson: paymentTransactions.rawWebhookJson,
+    })
+    .from(paymentTransactions)
+    .where(
+      and(
+        eq(paymentTransactions.tenantId, tenantId),
+        eq(paymentTransactions.gateway, "manual"),
+        inArray(
+          paymentTransactions.orderId,
+          rows.map((row) => row.id)
+        )
+      )
+    );
+
+  const paymentMetaByOrder = new Map<
+    string,
+    { reference: string | null; proofUrl: string | null }
+  >();
+  for (const txn of paymentRows) {
+    const raw = (txn.rawWebhookJson ?? {}) as {
+      buyerReference?: string;
+      proofUrl?: string | null;
+    };
+    paymentMetaByOrder.set(txn.orderId, {
+      reference: raw.buyerReference ?? null,
+      proofUrl: raw.proofUrl ?? null,
+    });
+  }
+
   return rows.map((row) => {
     const orderItemsList = itemsByOrder.get(row.id) ?? [];
+    const payMeta = paymentMetaByOrder.get(row.id);
     return {
       id: row.id,
       orderNumber: row.orderNumber,
@@ -557,6 +593,8 @@ export async function listOrdersForTenant(tenantId: string): Promise<TenantOrder
         .map((item) => `${item.quantity}× ${item.title}`)
         .join(", "),
       createdAt: row.createdAt,
+      paymentReference: payMeta?.reference ?? null,
+      paymentProofUrl: payMeta?.proofUrl ?? null,
     };
   });
 }
@@ -707,6 +745,7 @@ export interface OrderTrackingDelivery {
 }
 
 export interface OrderTrackingData {
+  orderId: string;
   orderNumber: string;
   tenantSlug: string;
   tenantName: string;
@@ -756,6 +795,7 @@ export async function getOrderForTracking(
     .limit(1);
 
   return {
+    orderId: row.order.id,
     orderNumber: row.order.orderNumber,
     tenantSlug: row.tenant.slug,
     tenantName: row.tenant.name,

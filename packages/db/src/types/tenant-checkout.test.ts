@@ -11,7 +11,8 @@ describe("normalizeCheckoutJson", () => {
     const normalized = normalizeCheckoutJson({});
     assert.equal(normalized.codEnabled, true);
     assert.equal(normalized.abandonedAfterMinutes, 60);
-    assert.equal(normalized.paymentAdapters?.paymongo?.gcash, true);
+    assert.equal(normalized.paymentAdapters?.manual_ewallet?.gcash, true);
+    assert.equal(normalized.paymentAdapters?.paymongo?.gcash, false);
     assert.equal(normalized.paymentAdapters?.paymongo?.card, false);
   });
 });
@@ -53,6 +54,7 @@ describe("isPaymentMethodEnabled", () => {
       codEnabled: true,
       paymentAdapters: {
         cod: true,
+        manual_ewallet: { gcash: false, maya: false, bank: false },
         paymongo: { gcash: true, paymaya: false, qrph: true, card: true },
       },
     });

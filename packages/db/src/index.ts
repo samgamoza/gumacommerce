@@ -31,6 +31,21 @@ export {
   type ActiveLanding,
 } from "./queries/platform-settings";
 export {
+  createSupportTicket,
+  listSupportTickets,
+  getSupportTicketCounts,
+  getSupportTicketById,
+  addSupportTicketMessage,
+  updateSupportTicket,
+  type CreateSupportTicketInput,
+  type SupportTicketListItem,
+  type SupportTicketDetail,
+  type SupportTicketStatus,
+  type SupportTicketPriority,
+  type SupportTicketChannel,
+  type SupportRequesterType,
+} from "./queries/support-tickets";
+export {
   getTenantStorefrontSettings,
   updateTenantStorefront,
   type TenantStorefrontSettings,
@@ -211,11 +226,13 @@ export {
   advanceOrderStatusFromDelivery,
   getDeliveryForOrder,
   getOrderForDeliveryBooking,
+  upsertManualDeliveryForOrder,
   type RecordDeliveryQuoteInput,
   type CreateDeliveryBookingInput,
   type DeliveryStatusPatch,
   type OrderDeliveryInfo,
   type OrderForDeliveryBooking,
+  type UpsertManualDeliveryInput,
 } from "./queries/deliveries";
 export {
   getOrderInsightsLast7d,
@@ -232,6 +249,8 @@ export {
   listRecentAgentRuns,
   listActiveTenantsForAgents,
   saveShopChatMessage,
+  listShopChatMessages,
+  listShopChatSessions,
   getTenantIdBySlug,
   resolveAgentSettings,
   resolveShopAssistantSettings,
@@ -241,6 +260,15 @@ export {
   type AgentSettings,
   type ShopAssistantSettings,
 } from "./queries/agents";
+export {
+  resolveTenantPaymentsSettings,
+  recordManualPaymentIntent,
+  submitManualPaymentReference,
+  confirmManualOrderPayment,
+  getManualPaymentMetaForOrder,
+  type PaymentsReceivingAccounts,
+  type TenantPaymentsSettings,
+} from "./queries/manual-payments";
 export {
   PLATFORM_PLANS,
   TENANT_STATUSES,

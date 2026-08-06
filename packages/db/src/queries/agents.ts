@@ -30,6 +30,8 @@ export type ShopAssistantSettings = {
   name: string;
   greeting: string;
   tone: "friendly_taglish" | "professional_en" | "gen_z_taglish";
+  /** Buyer↔seller inbox on the same chat widget (MVP/beta). */
+  humanInbox: boolean;
 };
 
 export const DEFAULT_AGENT_SETTINGS: AgentSettings = {
@@ -43,9 +45,11 @@ export const DEFAULT_AGENT_SETTINGS: AgentSettings = {
 
 export const DEFAULT_SHOP_ASSISTANT: ShopAssistantSettings = {
   enabled: true,
-  name: "Shop Assistant",
-  greeting: "Hi! 👋 Ask me about products, delivery, or payment before you order.",
+  name: "Shop chat",
+  greeting:
+    "Hi! Ask about products, delivery, or payment. You can also message the seller directly here.",
   tone: "friendly_taglish",
+  humanInbox: true,
 };
 
 export function resolveAgentSettings(
@@ -66,6 +70,7 @@ export function resolveShopAssistantSettings(
   return {
     ...DEFAULT_SHOP_ASSISTANT,
     ...assistant,
+    humanInbox: assistant?.humanInbox !== false,
   };
 }
 
@@ -236,16 +241,94 @@ export async function listActiveTenantsForAgents(): Promise<
 export async function saveShopChatMessage(input: {
   tenantId: string;
   sessionId: string;
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "buyer" | "seller";
   content: string;
-}): Promise<void> {
+}): Promise<{ id: string; createdAt: Date }> {
   const db = getDb();
-  await db.insert(shopChatMessages).values({
-    tenantId: input.tenantId,
-    sessionId: input.sessionId,
-    role: input.role,
-    content: input.content,
-  });
+  const [row] = await db
+    .insert(shopChatMessages)
+    .values({
+      tenantId: input.tenantId,
+      sessionId: input.sessionId,
+      role: input.role,
+      content: input.content,
+    })
+    .returning({ id: shopChatMessages.id, createdAt: shopChatMessages.createdAt });
+  return row!;
+}
+
+export async function listShopChatMessages(input: {
+  tenantId: string;
+  sessionId: string;
+  limit?: number;
+}): Promise<Array<{ id: string; role: string; content: string; createdAt: Date }>> {
+  const db = getDb();
+  return db
+    .select({
+      id: shopChatMessages.id,
+      role: shopChatMessages.role,
+      content: shopChatMessages.content,
+      createdAt: shopChatMessages.createdAt,
+    })
+    .from(shopChatMessages)
+    .where(
+      and(
+        eq(shopChatMessages.tenantId, input.tenantId),
+        eq(shopChatMessages.sessionId, input.sessionId)
+      )
+    )
+    .orderBy(shopChatMessages.createdAt)
+    .limit(input.limit ?? 120);
+}
+
+export async function listShopChatSessions(
+  tenantId: string,
+  limit = 40
+): Promise<
+  Array<{
+    sessionId: string;
+    lastMessage: string;
+    lastRole: string;
+    lastAt: Date;
+    messageCount: number;
+  }>
+> {
+  const db = getDb();
+  const rows = await db
+    .select({
+      sessionId: shopChatMessages.sessionId,
+      content: shopChatMessages.content,
+      role: shopChatMessages.role,
+      createdAt: shopChatMessages.createdAt,
+    })
+    .from(shopChatMessages)
+    .where(eq(shopChatMessages.tenantId, tenantId))
+    .orderBy(desc(shopChatMessages.createdAt))
+    .limit(500);
+
+  const bySession = new Map<
+    string,
+    { sessionId: string; lastMessage: string; lastRole: string; lastAt: Date; messageCount: number }
+  >();
+
+  for (const row of rows) {
+    const existing = bySession.get(row.sessionId);
+    if (!existing) {
+      bySession.set(row.sessionId, {
+        sessionId: row.sessionId,
+        lastMessage: row.content,
+        lastRole: row.role,
+        lastAt: row.createdAt,
+        messageCount: 1,
+      });
+    } else {
+      existing.messageCount += 1;
+    }
+  }
+
+  return Array.from(bySession.values())
+    .sort((a, b) => b.lastAt.getTime() - a.lastAt.getTime())
+    .slice(0, limit);
 }
 
 export async function getTenantIdBySlug(slug: string): Promise<string | null> {

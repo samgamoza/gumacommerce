@@ -222,6 +222,74 @@ export async function getOrderForDeliveryBooking(
   };
 }
 
+export interface UpsertManualDeliveryInput {
+  orderId: string;
+  driverName: string;
+  driverPhone: string;
+  driverPlateNumber?: string;
+  trackingUrl?: string;
+  courierLabel?: string;
+}
+
+/**
+ * Seller-entered rider (Angkas / Move It / own rider). Creates a manual
+ * delivery row when none exists, or patches driver fields on the latest one.
+ */
+export async function upsertManualDeliveryForOrder(
+  input: UpsertManualDeliveryInput
+): Promise<{ providerOrderId: string; status: string; deliveryId: string }> {
+  const db = getDb();
+  const [existing] = await db
+    .select()
+    .from(deliveries)
+    .where(eq(deliveries.orderId, input.orderId))
+    .orderBy(desc(deliveries.bookedAt))
+    .limit(1);
+
+  const statusLabel = input.courierLabel
+    ? `ASSIGNED_${input.courierLabel.replace(/\s+/g, "_").toUpperCase()}`
+    : "ASSIGNED_MANUAL";
+
+  if (existing) {
+    await db
+      .update(deliveries)
+      .set({
+        provider: "manual",
+        status: statusLabel,
+        driverName: input.driverName,
+        driverPhone: input.driverPhone,
+        ...(input.driverPlateNumber !== undefined
+          ? { driverPlateNumber: input.driverPlateNumber }
+          : {}),
+        ...(input.trackingUrl !== undefined ? { trackingUrl: input.trackingUrl } : {}),
+      })
+      .where(eq(deliveries.id, existing.id));
+    return {
+      deliveryId: existing.id,
+      providerOrderId: existing.providerOrderId ?? `manual_${existing.id}`,
+      status: statusLabel,
+    };
+  }
+
+  const providerOrderId = `manual_${input.orderId.slice(0, 8)}_${Date.now()}`;
+  const [row] = await db
+    .insert(deliveries)
+    .values({
+      orderId: input.orderId,
+      provider: "manual",
+      providerOrderId,
+      status: statusLabel,
+      driverName: input.driverName,
+      driverPhone: input.driverPhone,
+      driverPlateNumber: input.driverPlateNumber,
+      trackingUrl: input.trackingUrl,
+      bookedAt: new Date(),
+    })
+    .returning({ id: deliveries.id });
+  if (!row) throw new Error("Failed to create manual delivery");
+  return { deliveryId: row.id, providerOrderId, status: statusLabel };
+}
+
 export async function getDeliveryForOrder(orderId: string): Promise<OrderDeliveryInfo | null> {
   const db = getDb();
   const [row] = await db

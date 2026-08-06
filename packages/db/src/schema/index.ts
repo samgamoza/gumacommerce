@@ -270,6 +270,20 @@ export const tenants = pgTable(
         name?: string;
         greeting?: string;
         tone?: "friendly_taglish" | "professional_en" | "gen_z_taglish";
+        /** When true, buyer messages are also visible to the seller inbox */
+        humanInbox?: boolean;
+      };
+      payments?: {
+        mode?: "manual_ewallet" | "paymongo" | "both";
+        receiving?: {
+          gcashNumber?: string;
+          gcashName?: string;
+          mayaNumber?: string;
+          mayaName?: string;
+          bankName?: string;
+          bankAccountName?: string;
+          bankAccountNumber?: string;
+        };
       };
       agents?: {
         postingEnabled?: boolean;
@@ -995,6 +1009,85 @@ export const platformSettings = pgTable("platform_settings", {
   value: text("value").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+// ─── Platform helpdesk ───────────────────────────────────────────────────────
+
+export const supportTicketStatusEnum = pgEnum("support_ticket_status", [
+  "open",
+  "pending",
+  "in_progress",
+  "resolved",
+  "closed",
+]);
+export const supportTicketPriorityEnum = pgEnum("support_ticket_priority", [
+  "low",
+  "normal",
+  "high",
+  "urgent",
+]);
+export const supportTicketChannelEnum = pgEnum("support_ticket_channel", [
+  "web_contact",
+  "seller_admin",
+  "buyer_order",
+  "internal",
+]);
+export const supportRequesterTypeEnum = pgEnum("support_requester_type", [
+  "anonymous",
+  "seller_user",
+  "buyer",
+]);
+
+export const supportTickets = pgTable(
+  "support_tickets",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ticketNumber: varchar("ticket_number", { length: 24 }).notNull(),
+    channel: supportTicketChannelEnum("channel").notNull(),
+    requesterType: supportRequesterTypeEnum("requester_type").notNull(),
+    requesterName: varchar("requester_name", { length: 160 }),
+    requesterEmail: varchar("requester_email", { length: 255 }),
+    requesterPhone: varchar("requester_phone", { length: 40 }),
+    userId: uuid("user_id").references(() => users.id),
+    tenantId: uuid("tenant_id").references(() => tenants.id),
+    orderId: uuid("order_id").references(() => orders.id),
+    subject: varchar("subject", { length: 200 }).notNull(),
+    category: varchar("category", { length: 64 }).notNull().default("general"),
+    priority: supportTicketPriorityEnum("priority").notNull().default("normal"),
+    status: supportTicketStatusEnum("status").notNull().default("open"),
+    assigneeId: uuid("assignee_id").references(() => users.id),
+    firstResponseAt: timestamp("first_response_at", { withTimezone: true }),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    closedAt: timestamp("closed_at", { withTimezone: true }),
+    slaFirstResponseDueAt: timestamp("sla_first_response_due_at", { withTimezone: true }),
+    slaResolveDueAt: timestamp("sla_resolve_due_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("support_tickets_number_idx").on(table.ticketNumber),
+    index("support_tickets_status_idx").on(table.status),
+    index("support_tickets_tenant_idx").on(table.tenantId),
+    index("support_tickets_assignee_idx").on(table.assigneeId),
+    index("support_tickets_created_idx").on(table.createdAt),
+  ]
+);
+
+export const supportTicketMessages = pgTable(
+  "support_ticket_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ticketId: uuid("ticket_id")
+      .references(() => supportTickets.id, { onDelete: "cascade" })
+      .notNull(),
+    authorType: varchar("author_type", { length: 32 }).notNull(),
+    authorUserId: uuid("author_user_id").references(() => users.id),
+    authorName: varchar("author_name", { length: 160 }),
+    body: text("body").notNull(),
+    isInternal: boolean("is_internal").default(false).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index("support_ticket_messages_ticket_idx").on(table.ticketId, table.createdAt)]
+);
 
 // ─── Relations ───────────────────────────────────────────────────────────────
 

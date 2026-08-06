@@ -28,6 +28,12 @@ export interface CheckoutAutomaticDiscount {
 
 export interface CheckoutPaymentAdapters {
   cod?: boolean;
+  /** Direct GCash/Maya/bank (seller confirms) — MVP/beta bridge without PayMongo */
+  manual_ewallet?: {
+    gcash?: boolean;
+    maya?: boolean;
+    bank?: boolean;
+  };
   paymongo?: {
     gcash?: boolean;
     paymaya?: boolean;
@@ -65,7 +71,9 @@ export const EMPTY_CHECKOUT: TenantCheckoutJson = {
   automaticDiscount: null,
   paymentAdapters: {
     cod: true,
-    paymongo: { gcash: true, paymaya: true, qrph: true, card: false },
+    // Beta default: direct e-wallet until PayMongo API is secured
+    manual_ewallet: { gcash: true, maya: true, bank: false },
+    paymongo: { gcash: false, paymaya: false, qrph: false, card: false },
   },
   customer: { requireEmail: false, requireStructuredAddress: false },
   abandonedAfterMinutes: 60,
@@ -139,10 +147,15 @@ export function normalizeCheckoutJson(input: unknown): TenantCheckoutJson {
         : null,
     paymentAdapters: {
       cod: adapters?.cod !== false,
+      manual_ewallet: {
+        gcash: adapters?.manual_ewallet?.gcash !== false,
+        maya: adapters?.manual_ewallet?.maya !== false,
+        bank: adapters?.manual_ewallet?.bank === true,
+      },
       paymongo: {
-        gcash: adapters?.paymongo?.gcash !== false,
-        paymaya: adapters?.paymongo?.paymaya !== false,
-        qrph: adapters?.paymongo?.qrph !== false,
+        gcash: adapters?.paymongo?.gcash === true,
+        paymaya: adapters?.paymongo?.paymaya === true,
+        qrph: adapters?.paymongo?.qrph === true,
         card: adapters?.paymongo?.card === true,
       },
     },
@@ -265,11 +278,23 @@ export function isPaymentMethodEnabled(
   checkout: TenantCheckoutJson,
   method: string
 ): boolean {
-  if (method === "cod") return checkout.paymentAdapters?.cod !== false && checkout.codEnabled !== false;
+  if (method === "cod") {
+    return checkout.paymentAdapters?.cod !== false && checkout.codEnabled !== false;
+  }
+
+  const manual = checkout.paymentAdapters?.manual_ewallet;
   const pm = checkout.paymentAdapters?.paymongo;
-  if (method === "gcash") return pm?.gcash !== false;
-  if (method === "paymaya") return pm?.paymaya !== false;
-  if (method === "qrph") return pm?.qrph !== false;
+
+  if (method === "gcash") {
+    return manual?.gcash !== false || pm?.gcash === true;
+  }
+  if (method === "paymaya") {
+    return manual?.maya !== false || pm?.paymaya === true;
+  }
+  if (method === "bank") {
+    return manual?.bank === true;
+  }
+  if (method === "qrph") return pm?.qrph === true;
   if (method === "card") return pm?.card === true;
   return false;
 }

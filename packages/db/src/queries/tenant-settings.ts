@@ -27,6 +27,15 @@ function mergeSettings(
       : current?.shopAssistant,
     agents: patch.agents ? { ...current?.agents, ...patch.agents } : current?.agents,
     wallet: patch.wallet ? { ...current?.wallet, ...patch.wallet } : current?.wallet,
+    payments: patch.payments
+      ? {
+          ...current?.payments,
+          ...patch.payments,
+          receiving: patch.payments.receiving
+            ? { ...current?.payments?.receiving, ...patch.payments.receiving }
+            : current?.payments?.receiving,
+        }
+      : current?.payments,
   };
 }
 
