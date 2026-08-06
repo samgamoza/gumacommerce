@@ -19,12 +19,12 @@ export default function DeliveryRouting() {
     setCalculating(true);
     setLogs([]);
     const steps = [
-      '> Initializing dispatch router...',
-      `> Geo-locating ${city}...`,
-      '> Pinging Lalamove API...',
-      '> Syncing Angkas rider network...',
-      '> Querying Move It rates...',
-      '> ETA calculated. Fees locked.',
+      '> Opening order fulfillment...',
+      `> Checking pickup for ${city}...`,
+      '> Quoting Lalamove / Grab when keyed...',
+      '> Offline couriers: Assign rider (Angkas / Move It / own)...',
+      '> Seller confirms Book or Assign...',
+      '> Tracking available on the order page.',
     ];
     let i = 0;
     const interval = setInterval(() => {
@@ -45,11 +45,13 @@ export default function DeliveryRouting() {
       <div className="flex items-center gap-2 mb-4">
         <div className="w-2 h-2 rounded-full bg-[#818CF8] animate-pulse-glow" />
         <span className="font-mono text-xs tracking-widest text-slate-400 uppercase">
-          03 // Instant Delivery Routing
+          03 // Courier booking
         </span>
       </div>
-      <h3 className="font-display text-xl font-semibold text-white mb-1">Zero-Touch Fulfillment</h3>
-      <p className="font-body text-sm text-slate-400 mb-6">Payment clears → rider auto-booked. Customer gets SMS/Viber tracking.</p>
+      <h3 className="font-display text-xl font-semibold text-white mb-1">Book or assign a rider</h3>
+      <p className="font-body text-sm text-slate-400 mb-6">
+        After you&apos;re ready to ship: Book Lalamove/Grab when keyed, or Assign Angkas / Move It / own rider.
+      </p>
 
       <div className="flex gap-2 mb-4">
         {Object.keys(cities).map((c) => (

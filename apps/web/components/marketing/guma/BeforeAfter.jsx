@@ -11,11 +11,11 @@ const beforeItems = [
 ];
 
 const afterItems = [
-  'AI auto-replies to comments with a direct checkout link',
-  'Customer pays via GCash, Maya, or GoTyme — validated instantly',
-  'Shipping coordinates auto-pushed directly to riders',
-  'Fake receipts flagged automatically by the reconciliation engine',
-  'Customer gets SMS/Viber tracking link in seconds',
+  'Buyers open your branded storefront link (not a buried DM thread)',
+  'GCash/Maya instructions + seller confirm, or COD — PayMongo when keyed',
+  'Book Lalamove/Grab or assign Angkas / Move It / own rider from orders',
+  'Payment proof + reference number in seller chat for manual settle',
+  'Optional SMS when configured — tracking link on the order page',
 ];
 
 export default function BeforeAfter() {
@@ -26,10 +26,10 @@ export default function BeforeAfter() {
           // The Anti-PM-Sent Campaign
         </span>
         <h2 className="font-display text-4xl md:text-5xl font-bold text-white mt-4 tracking-tight">
-          From manual chaos to <span className="text-gradient-purple">zero-touch commerce</span>
+          From chat chaos to a <span className="text-gradient-purple">real storefront</span>
         </h2>
         <p className="font-body text-slate-400 mt-4 max-w-2xl mx-auto text-lg">
-          Social media buying in the Philippines is notoriously friction-filled. Here's how Guma One.Ai kills the manual loop.
+          Social selling in the Philippines is messy. Soft launch keeps checkout and dispatch honest — owner-led, not fake auto-magic.
         </p>
       </Reveal>
 

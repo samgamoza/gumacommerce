@@ -4,9 +4,11 @@ export const company = {
   email: "hello@gumacommerce.ph",
   support: "support@gumacommerce.ph",
   privacy: "privacy@gumacommerce.ph",
-  phone: "+63 2 8123 4567",
-  address: "Bonifacio Global City, Taguig City, Metro Manila, Philippines",
-  registry: "SEC Registration No. [Pending] · BIR TIN [Pending]",
+  /** Placeholder phone — replace with the real business line when available. */
+  phone: "",
+  address: "Metro Manila, Philippines",
+  /** Explicit pending state — do not invent SEC/TIN numbers. */
+  registry: "SEC & BIR registration pending — legal entity details will be published here when issued.",
 };
 
 export const footerLinks = {
@@ -46,7 +48,7 @@ export const faqCategories = [
     items: [
       {
         q: "What is Guma One?",
-        a: "Guma One is an all-in-one social commerce platform built for Philippine sellers. It turns your Facebook, TikTok, and Instagram posts into a branded mobile storefront with GCash/Maya checkout, AI marketing tools, and Lalamove delivery — so you stop losing sales in Messenger chats.",
+        a: "Guma One is a social commerce platform for Philippine sellers. It turns Facebook, TikTok, and Instagram posts into a branded mobile storefront with guest checkout (GCash/Maya instructions or COD), seller tools, and optional courier booking — so buyers order from a shop link instead of burying requests in Messenger chats.",
       },
       {
         q: "Who is Guma One for?",
@@ -54,7 +56,7 @@ export const faqCategories = [
       },
       {
         q: "How long does setup take?",
-        a: "Most sellers launch in under 30 minutes. Create your account, add products (or let AI generate listings), connect payments, and paste your Order Now link in your bio and posts.",
+        a: "Most sellers launch in under 30 minutes. Create your account, add products, set your GCash/Maya receiving details (or COD), and paste your Order Now link in your bio and posts. AI helpers can enhance descriptions later — listing stays manual-first.",
       },
       {
         q: "Do I need a website or coding skills?",
@@ -68,15 +70,15 @@ export const faqCategories = [
     items: [
       {
         q: "What payment methods can my customers use?",
-        a: "GCash, Maya, QRPh, credit/debit cards, and Cash on Delivery (COD) — all optimized for Filipino buyers. You choose which methods to enable per shop.",
+        a: "Soft launch default: buyers pay you directly via GCash, Maya, or bank transfer (you confirm in the seller inbox), plus Cash on Delivery. Card/QRPh via PayMongo is available when your shop and environment have live payment keys enabled.",
       },
       {
         q: "How much does Guma One cost?",
-        a: "Start free on the Free plan. Pro is ₱499/month for GUMA Workspace, agents, and higher AI limits. Advance is ₱999/month for advanced campaigns and priority support. A small per-order platform fee applies on paid transactions.",
+        a: "Start free on the Free plan. Pro is ₱499/month for GUMA Workspace, agents, and higher AI limits. Advance is ₱999/month for advanced campaigns and priority support. A small per-order platform fee may apply on paid gateway transactions when PayMongo is enabled.",
       },
       {
         q: "When do I receive my money?",
-        a: "E-wallet and card payments are settled through our licensed payment partners (PayMongo/Xendit) according to their payout schedule — typically T+1 to T+2 business days to your linked bank account or e-wallet.",
+        a: "With manual e-wallet checkout, funds go straight to your GCash/Maya/bank account when the buyer pays you — you confirm payment in the seller console. When PayMongo gateway mode is enabled with live keys, settlement follows the partner payout schedule (typically T+1 to T+2).",
       },
       {
         q: "Is there a contract or lock-in period?",
@@ -90,7 +92,7 @@ export const faqCategories = [
     items: [
       {
         q: "How does delivery work?",
-        a: "Guma One integrates with Lalamove for instant quotes and rider booking. Customers see delivery fees at checkout. You can also enter manual rider details for Angkas, GrabExpress, or your own riders.",
+        a: "At checkout, buyers can see a delivery fee (seller flat rate and/or live courier quotes when Lalamove/Grab credentials are configured). After payment, you Book a courier or Assign a rider (Angkas, Move It, or your own) from the order screen — auto-dispatch on payment is not the v1 story.",
       },
       {
         q: "Can customers order without creating an account?",

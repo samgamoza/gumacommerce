@@ -6,22 +6,22 @@ const steps = [
   {
     num: '01',
     icon: MessageCircle,
-    title: 'Customer Comments',
-    desc: 'Buyer comments "Buy" or "HM" on your Facebook, TikTok, or Instagram post. Guma One.Ai instantly replies with a secure checkout link — no DMs, no waiting, no "PM sent".',
+    title: 'Share your shop link',
+    desc: 'Put your Guma storefront link in your bio, stories, and replies. Buyers open a real product page instead of burying “HM po?” in Messenger threads.',
     accent: '#A78BFA',
   },
   {
     num: '02',
     icon: CreditCard,
-    title: '1-Tap Payment',
-    desc: 'Customer pays via GCash, Maya, or GoTyme. Our system validates the transaction in real time — no more squinting at screenshots or worrying about fake receipts.',
+    title: 'Guest checkout',
+    desc: 'Customers pay via GCash/Maya/bank instructions (you confirm) or COD. PayMongo card/e-wallet gateway is available when live keys are enabled — not assumed for every shop.',
     accent: '#34D399',
   },
   {
     num: '03',
     icon: Truck,
-    title: 'Auto-Dispatch Rider',
-    desc: 'The moment payment clears, Guma One.Ai auto-books the nearest Lalamove, Angkas, or Move It rider. Customer gets an SMS/Viber tracking link instantly.',
+    title: 'Book or assign a rider',
+    desc: 'After you’re ready to ship, book Lalamove/Grab from the order screen when credentials are set, or assign Angkas, Move It, or your own rider. Payment does not auto-dispatch in v1.',
     accent: '#818CF8',
   },
 ];

@@ -4,9 +4,9 @@ import CountUp from './CountUp';
 import MagneticButton from './MagneticButton';
 
 const stats = [
-  { icon: '⚡', value: 1.2, decimals: 1, suffix: 's', label: 'Average Checkout' },
-  { icon: '₱', value: 80, decimals: 0, suffix: 'M+', label: 'Transactions Settled' },
-  { icon: '◆', value: 99.9, decimals: 1, suffix: '%', label: 'SSL Uptime' },
+  { icon: '⚡', value: 3, decimals: 0, suffix: '', label: 'Apps: buyer · seller · ops' },
+  { icon: '₱', value: 499, decimals: 0, suffix: '', label: 'Pro plan (₱/mo)' },
+  { icon: '◆', value: 18, decimals: 0, suffix: '+', label: 'Live storefront themes' },
 ];
 
 export default function Hero() {
@@ -49,15 +49,16 @@ export default function Hero() {
             No More <span className="text-gradient-purple">&lsquo;HM&rsquo;</span> or{' '}
             <span className="text-gradient-purple">&lsquo;PM Sent.&rsquo;</span>
             <br />
-            Auto-verify GCash &amp; Maya in 1-Click.
+            Branded checkout for social sellers.
           </h1>
         </Reveal>
 
         <Reveal delay={0.2}>
           <p className="font-body text-slate-300 text-lg md:text-xl mt-8 max-w-3xl mx-auto leading-relaxed">
-            Transform your Facebook, Instagram, or TikTok comments into instant, paid orders. Guma One.Ai auto-generates
-            secure checkout links, validates GCash &amp; Maya payments in real time, and pre-books riders (Lalamove,
-            Angkas, Grab) — before you even finish packing the order.
+            Turn Facebook, Instagram, or TikTok traffic into a mobile storefront with guest checkout
+            (GCash/Maya instructions or COD). Confirm payments in your seller inbox, then book Lalamove/Grab
+            when keyed — or assign Angkas, Move It, or your own rider. Auto-dispatch and Meta Messenger bots
+            are not the soft-launch story.
           </p>
         </Reveal>
 

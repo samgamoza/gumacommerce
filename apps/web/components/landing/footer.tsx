@@ -102,9 +102,10 @@ export function LandingFooter() {
         </div>
 
         <p className="mt-6 text-center text-[11px] leading-relaxed text-muted-foreground/80">
-          Guma One complies with the Philippine Data Privacy Act (RA 10173), Internet Transactions
-          Act (RA 11967), and DTI e-commerce guidelines. Payment processing via BSP-regulated
-          partners.
+          Guma One is built to comply with the Philippine Data Privacy Act (RA 10173), Internet
+          Transactions Act (RA 11967), and DTI e-commerce guidelines. Soft-launch payments are
+          typically direct GCash/Maya/COD; gateway partners (e.g. PayMongo) are used only when
+          enabled with live credentials.
         </p>
       </div>
     </footer>

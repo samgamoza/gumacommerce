@@ -10,8 +10,8 @@ const painPoints = [
 const wins = [
   "Prices, stock & variants on every product",
   "Orders land in one dashboard, not your inbox",
-  "GCash / Maya paid & verified automatically",
-  "Official receipt + live rider tracking",
+  "GCash / Maya instructions + seller confirm (or COD)",
+  "Book courier or assign rider when you're ready",
 ];
 
 function ChatBubble({
