@@ -133,10 +133,10 @@ export function LandingHero() {
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <Link href={`${adminUrl}/ai-studio`}>
+            <Link href={`${adminUrl}/signup`}>
               <Button variant="outline" size="xl" className="w-full sm:w-auto">
                 <Sparkles className="h-4 w-4" />
-                AI Content Studio
+                Start free
               </Button>
             </Link>
           </div>

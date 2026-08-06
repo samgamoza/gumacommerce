@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Mail, MapPin } from "lucide-react";
 import { GumaMark } from "@guma-commerce/ui";
 import { company, footerLinks } from "@/lib/site-content";
@@ -10,7 +13,7 @@ function FooterColumn({ title, links }: { title: string; links: { label: string;
       <h3 className="text-sm font-semibold text-foreground">{title}</h3>
       <ul className="mt-4 space-y-2.5">
         {links.map((link) => (
-          <li key={link.href}>
+          <li key={`${link.label}-${link.href}`}>
             <Link
               href={link.href}
               className="text-sm text-muted-foreground transition hover:text-primary"
@@ -25,12 +28,21 @@ function FooterColumn({ title, links }: { title: string; links: { label: string;
 }
 
 export function LandingFooter() {
+  const pathname = usePathname() ?? "/";
+  const onFrontend1Preview = pathname === "/frontend1" || pathname.startsWith("/frontend1/");
+  const home = onFrontend1Preview ? "/frontend1" : "/";
+  const featuresHref = onFrontend1Preview ? "/frontend1#features" : "/#features";
+
+  const productLinks = footerLinks.product.map((link) =>
+    link.label === "Features" ? { ...link, href: featuresHref } : link
+  );
+
   return (
     <footer className="border-t border-border/60 bg-muted/30">
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-6">
           <div className="sm:col-span-2 lg:col-span-2">
-            <Link href="/" className="flex items-center gap-2.5">
+            <Link href={home} className="flex items-center gap-2.5">
               <GumaMark className="h-9 w-9 drop-shadow-sm" />
               <span className="font-display text-xl font-bold tracking-tight">
                 Guma<span className="text-gradient">Commerce</span>
@@ -55,12 +67,12 @@ export function LandingFooter() {
                 href="/contact"
                 className="text-sm text-muted-foreground transition hover:text-primary"
               >
-                Follow Guma One on social — coming soon
+                Contact us
               </Link>
             </div>
           </div>
 
-          <FooterColumn title="Product" links={footerLinks.product} />
+          <FooterColumn title="Product" links={productLinks} />
           <FooterColumn title="Company" links={footerLinks.company} />
           <FooterColumn title="Support" links={footerLinks.support} />
           <FooterColumn title="Legal" links={footerLinks.legal} />
@@ -83,7 +95,7 @@ export function LandingFooter() {
             <Link href="/refunds" className="hover:text-primary">
               Refunds
             </Link>
-            <Link href={adminUrl} className="hover:text-primary">
+            <Link href={`${adminUrl}/login`} className="hover:text-primary">
               Seller portal
             </Link>
           </div>

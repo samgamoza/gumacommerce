@@ -69,6 +69,7 @@ export function getModelStoreTenant(): DemoTenant {
         name: "Guma Assistant",
         greeting: "Hi! Need help finding something?",
         tone: "friendly_taglish",
+        humanInbox: true,
       },
     },
     products: mappedProducts,

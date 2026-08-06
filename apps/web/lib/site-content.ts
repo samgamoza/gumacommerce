@@ -14,7 +14,10 @@ export const footerLinks = {
     { label: "Features", href: "/#features" },
     { label: "Pricing", href: "/pricing" },
     { label: "Demo shop", href: "/demo" },
-    { label: "AI Content Studio", href: `${process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3001"}/ai-studio` },
+    {
+      label: "Start free",
+      href: `${process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3001"}/signup`,
+    },
   ],
   company: [
     { label: "About us", href: "/about" },

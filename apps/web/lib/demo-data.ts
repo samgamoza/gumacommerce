@@ -2427,7 +2427,7 @@ export function getProduct(tenant: DemoTenant, productSlug: string): DemoProduct
 }
 
 export function getStorefrontUrl(slug: string, path = ""): string {
-  const base = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3000";
+  const base = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3010";
   return `${base}/${slug}${path}`;
 }
 

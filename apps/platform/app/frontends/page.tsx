@@ -9,7 +9,10 @@ export const dynamic = "force-dynamic";
 export default async function FrontendsPage() {
   const session = await requireSuperAdmin();
   const active = await getActiveLanding();
-  const webUrl = process.env.NEXT_PUBLIC_WEB_URL ?? "http://localhost:3000";
+  const webUrl =
+    process.env.NEXT_PUBLIC_WEB_URL ??
+    process.env.NEXT_PUBLIC_STOREFRONT_URL ??
+    "http://localhost:3010";
 
   return (
     <PlatformShell

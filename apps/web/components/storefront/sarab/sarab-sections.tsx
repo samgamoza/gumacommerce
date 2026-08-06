@@ -36,6 +36,8 @@ export function SarabNavbar({ tenant }: { tenant: DemoTenant }) {
   const { lead, accent } = splitSarabBrand(tenant.name);
   const checkoutHref = `/${tenant.slug}/checkout`;
   const homeHref = `/${tenant.slug}`;
+  const menuHref = `/${tenant.slug}#menu`;
+  const orderHref = ready && cartCount > 0 ? checkoutHref : menuHref;
 
   return (
     <nav className="sarab-nav">
@@ -65,9 +67,9 @@ export function SarabNavbar({ tenant }: { tenant: DemoTenant }) {
               <span className="sarab-cart-count">{cartCount > 99 ? "99+" : cartCount}</span>
             )}
           </Link>
-          <Link href="#menu" className="sarab-nav-cta">
+          <Link href={orderHref} className="sarab-nav-cta">
             <ShoppingBag size={16} />
-            Order Now
+            {ready && cartCount > 0 ? "Checkout" : "Order Now"}
           </Link>
         </div>
       </div>
@@ -99,7 +101,7 @@ export function SarabHero({ tenant }: { tenant: DemoTenant }) {
             from {tenant.name}
           </h1>
           <p className="sarab-hdesc">{tagline}</p>
-          <Link href="#menu" className="sarab-btn-red">
+          <Link href={`/${tenant.slug}#menu`} className="sarab-btn-red">
             <UtensilsCrossed size={18} />
             Explore Menu
           </Link>

@@ -30,7 +30,7 @@ export function MottoStorefront({ tenant }: { tenant: DemoTenant }) {
         <MottoProducts tenant={tenant} />
       </main>
       <MottoFooter tenant={tenant} />
-      {tenant.storeSettings.shopAssistant.enabled && (
+      {(tenant.storeSettings.shopAssistant.enabled || tenant.storeSettings.shopAssistant.humanInbox !== false) && (
         <ShopAssistant
           tenantSlug={tenant.slug}
           shopName={tenant.name}

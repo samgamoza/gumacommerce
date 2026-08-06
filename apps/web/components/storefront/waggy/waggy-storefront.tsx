@@ -30,7 +30,7 @@ export function WaggyStorefront({ tenant }: { tenant: DemoTenant }) {
         <WaggyServices />
       </main>
       <WaggyFooter tenant={tenant} />
-      {tenant.storeSettings.shopAssistant.enabled && (
+      {(tenant.storeSettings.shopAssistant.enabled || tenant.storeSettings.shopAssistant.humanInbox !== false) && (
         <ShopAssistant
           tenantSlug={tenant.slug}
           shopName={tenant.name}

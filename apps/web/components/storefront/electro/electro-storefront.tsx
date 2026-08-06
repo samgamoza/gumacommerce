@@ -28,7 +28,7 @@ export function ElectroStorefront({ tenant }: { tenant: DemoTenant }) {
         <ElectroProductGrid tenant={tenant} />
       </main>
       <ElectroFooter tenant={tenant} />
-      {tenant.storeSettings.shopAssistant.enabled && (
+      {(tenant.storeSettings.shopAssistant.enabled || tenant.storeSettings.shopAssistant.humanInbox !== false) && (
         <ShopAssistant
           tenantSlug={tenant.slug}
           shopName={tenant.name}

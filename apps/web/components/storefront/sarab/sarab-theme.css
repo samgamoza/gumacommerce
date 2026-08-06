@@ -546,11 +546,19 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: 0.3s;
+  transition: background 0.2s, box-shadow 0.2s;
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
 }
 
 .sarab-madd:hover {
-  transform: scale(1.15) rotate(90deg);
+  box-shadow: 0 6px 16px rgba(232, 40, 26, 0.35);
+  filter: brightness(1.05);
+}
+
+.sarab-madd.is-added {
+  background: linear-gradient(135deg, #16a34a, #15803d);
 }
 
 .sarab-footer {

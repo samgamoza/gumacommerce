@@ -25,23 +25,11 @@ export function AddToCartButton({
       productId: product.id,
       slug: product.slug,
       title: product.title,
-      price: product.price,
+      price: Number(product.price),
       image: product.image,
     });
     setJustAdded(true);
     window.setTimeout(() => setJustAdded(false), 1600);
-  }
-
-  if (!ready) {
-    return (
-      <span
-        className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full py-4 text-base font-semibold text-white opacity-80 md:max-w-md"
-        style={{ backgroundColor: accent }}
-      >
-        <ShoppingBag className="h-5 w-5" />
-        Add to Cart
-      </span>
-    );
   }
 
   if (!inCart) {
@@ -49,11 +37,12 @@ export function AddToCartButton({
       <button
         type="button"
         onClick={handleAdd}
-        className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full py-4 text-base font-semibold text-white transition hover:opacity-90 md:max-w-md"
+        disabled={!ready}
+        className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full py-4 text-base font-semibold text-white transition hover:opacity-90 disabled:cursor-wait disabled:opacity-70 md:max-w-md"
         style={{ backgroundColor: accent }}
       >
         <ShoppingBag className="h-5 w-5" />
-        Add to Cart
+        {ready ? "Add to Cart" : "Loading cart…"}
       </button>
     );
   }

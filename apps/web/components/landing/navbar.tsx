@@ -1,14 +1,56 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Menu } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { ArrowRight, Menu, X } from "lucide-react";
 import { GumaMark } from "@guma-commerce/ui";
 import { Button } from "@/components/ui/button";
 import { adminUrl } from "@/lib/utils";
 
+function useMarketingHome() {
+  const pathname = usePathname() ?? "/";
+  const onFrontend1Preview = pathname === "/frontend1" || pathname.startsWith("/frontend1/");
+  const home = onFrontend1Preview ? "/frontend1" : "/";
+  return {
+    home,
+    featuresHref: onFrontend1Preview ? "/frontend1#features" : "/#features",
+    howHref: onFrontend1Preview ? "/frontend1#how-it-works" : "/#how-it-works",
+  };
+}
+
+const pageLinks = [
+  { label: "Pricing", href: "/pricing" },
+  { label: "FAQ", href: "/faq" },
+  { label: "About", href: "/about" },
+] as const;
+
 export function LandingNav() {
+  const { home, featuresHref, howHref } = useMarketingHome();
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [home]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  const sectionLinks = [
+    { label: "Features", href: featuresHref },
+    { label: "How it works", href: howHref },
+  ];
+
   return (
     <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Link href="/" className="group flex items-center gap-2.5">
+        <Link href={home} className="group flex items-center gap-2.5">
           <GumaMark className="h-9 w-9 drop-shadow-sm transition-transform group-hover:-rotate-3 group-hover:scale-105" />
           <span className="font-display text-xl font-bold tracking-tight">
             Guma<span className="text-gradient">Commerce</span>
@@ -16,21 +58,16 @@ export function LandingNav() {
         </Link>
 
         <nav className="hidden items-center gap-8 text-sm font-medium text-muted-foreground md:flex">
-          <Link href="/#features" className="transition hover:text-foreground">
-            Features
-          </Link>
-          <Link href="/#how-it-works" className="transition hover:text-foreground">
-            How it works
-          </Link>
-          <Link href="/pricing" className="transition hover:text-foreground">
-            Pricing
-          </Link>
-          <Link href="/faq" className="transition hover:text-foreground">
-            FAQ
-          </Link>
-          <Link href="/about" className="transition hover:text-foreground">
-            About
-          </Link>
+          {sectionLinks.map((link) => (
+            <Link key={link.href} href={link.href} className="transition hover:text-foreground">
+              {link.label}
+            </Link>
+          ))}
+          {pageLinks.map((link) => (
+            <Link key={link.href} href={link.href} className="transition hover:text-foreground">
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
         <div className="flex items-center gap-2">
@@ -45,11 +82,54 @@ export function LandingNav() {
               <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           </Link>
-          <Button variant="ghost" size="icon" className="md:hidden">
-            <Menu className="h-5 w-5" />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            aria-expanded={open}
+            aria-controls="landing-mobile-nav"
+            aria-label={open ? "Close menu" : "Open menu"}
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
       </div>
+
+      {open && (
+        <div
+          id="landing-mobile-nav"
+          className="border-t border-border/50 bg-background px-4 py-4 md:hidden"
+        >
+          <nav className="flex flex-col gap-1 text-sm font-medium">
+            {[...sectionLinks, ...pageLinks].map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="rounded-lg px-3 py-2.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                onClick={() => setOpen(false)}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <Link
+              href={`${adminUrl}/login`}
+              className="rounded-lg px-3 py-2.5 text-muted-foreground transition hover:bg-muted hover:text-foreground sm:hidden"
+              onClick={() => setOpen(false)}
+            >
+              Seller login
+            </Link>
+            <Link
+              href={`${adminUrl}/signup`}
+              className="mt-2 rounded-lg bg-primary px-3 py-2.5 text-center font-semibold text-primary-foreground"
+              onClick={() => setOpen(false)}
+            >
+              Start free
+            </Link>
+          </nav>
+        </div>
+      )}
     </header>
   );
 }

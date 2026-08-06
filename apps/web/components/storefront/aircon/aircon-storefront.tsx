@@ -35,7 +35,7 @@ export function AirconStorefront({ tenant }: { tenant: DemoTenant }) {
         <AirconQuote tenant={tenant} />
       </main>
       <AirconFooter tenant={tenant} />
-      {tenant.storeSettings.shopAssistant.enabled && (
+      {(tenant.storeSettings.shopAssistant.enabled || tenant.storeSettings.shopAssistant.humanInbox !== false) && (
         <ShopAssistant
           tenantSlug={tenant.slug}
           shopName={tenant.name}

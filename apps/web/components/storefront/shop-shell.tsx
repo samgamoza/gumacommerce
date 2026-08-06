@@ -76,13 +76,22 @@ export function ShopShell({
 
       {children}
 
-      {tenant.storeSettings.shopAssistant.enabled && (
+      {tenant.storeSettings.shopAssistant.enabled ||
+      tenant.storeSettings.shopAssistant.humanInbox !== false ? (
         <ShopAssistant
           tenantSlug={tenant.slug}
           shopName={tenant.name}
           assistant={tenant.storeSettings.shopAssistant}
+          whatsappUrl={
+            tenant.storeSettings.whatsapp.enabled && tenant.storeSettings.whatsapp.phone
+              ? whatsappChatUrl(
+                  tenant.storeSettings.whatsapp.phone,
+                  `${tenant.storeSettings.whatsapp.greeting}\n\n${storefrontUrl}/${tenant.slug}`
+                )
+              : null
+          }
         />
-      )}
+      ) : null}
 
       {tenant.storeSettings.whatsapp.enabled && tenant.storeSettings.whatsapp.phone && (
         <a

@@ -28,7 +28,9 @@ export default async function TenantStorefrontLayout({ children, params }: Layou
   return (
     <div className={`${spaceGrotesk.variable} ${inter.variable}`}>
       {tenant && <StorefrontTracking tracking={tenant.storeSettings.tracking} />}
-      {tenant?.seo?.jsonLd && tenant.seo.jsonLd.length > 0 && (
+      {tenant?.seo?.jsonLd &&
+        Array.isArray(tenant.seo.jsonLd) &&
+        tenant.seo.jsonLd.length > 0 && (
         <StorefrontJsonLd blocks={tenant.seo.jsonLd} />
       )}
       {children}

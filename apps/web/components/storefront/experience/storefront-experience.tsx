@@ -105,7 +105,7 @@ function TenantV0StoreBody({ tenant }: { tenant: DemoTenant }) {
         <CustomerReviews items={catalog.reviews} />
       </main>
       <SiteFooter />
-      {tenant.storeSettings.shopAssistant.enabled && (
+      {(tenant.storeSettings.shopAssistant.enabled || tenant.storeSettings.shopAssistant.humanInbox !== false) && (
         <ShopAssistant
           tenantSlug={tenant.slug}
           shopName={tenant.name}

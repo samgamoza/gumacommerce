@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Check, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { DemoProduct, DemoTenant } from "@/lib/demo-data";
 import { useCart } from "@/lib/cart";
@@ -16,7 +16,22 @@ function SarabMenuCard({
   product: DemoProduct;
 }) {
   const { addItem } = useCart(tenantSlug);
+  const [justAdded, setJustAdded] = useState(false);
   const productHref = `/${tenantSlug}/products/${product.slug}`;
+
+  function handleAdd(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    addItem({
+      productId: product.id,
+      slug: product.slug,
+      title: product.title,
+      price: Number(product.price),
+      image: product.image,
+    });
+    setJustAdded(true);
+    window.setTimeout(() => setJustAdded(false), 1400);
+  }
 
   return (
     <article className="sarab-mcard">
@@ -42,19 +57,11 @@ function SarabMenuCard({
           </div>
           <button
             type="button"
-            className="sarab-madd"
-            aria-label="Add to cart"
-            onClick={() =>
-              addItem({
-                productId: product.id,
-                slug: product.slug,
-                title: product.title,
-                price: product.price,
-                image: product.image,
-              })
-            }
+            className={`sarab-madd${justAdded ? " is-added" : ""}`}
+            aria-label={justAdded ? "Added to cart" : "Add to cart"}
+            onClick={handleAdd}
           >
-            <Plus size={18} />
+            {justAdded ? <Check size={18} strokeWidth={3} /> : <Plus size={18} />}
           </button>
         </div>
       </div>
@@ -141,7 +148,7 @@ export function SarabFooter({ tenant }: { tenant: DemoTenant }) {
                 </Link>
               </li>
               <li>
-                <Link href="#menu" className="hover:text-white">
+                <Link href={`/${tenant.slug}#menu`} className="hover:text-white">
                   Menu
                 </Link>
               </li>

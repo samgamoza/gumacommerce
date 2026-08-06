@@ -4,7 +4,7 @@ import { SELLER_PLANS, PLAN_AI_LIMITS } from "@guma-commerce/plans";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { adminUrl, modelStoreUrl } from "@/lib/utils";
+import { adminUrl } from "@/lib/utils";
 
 const plans = SELLER_PLANS.map((plan) => {
   const limits = PLAN_AI_LIMITS[plan.id];
@@ -20,7 +20,7 @@ const plans = SELLER_PLANS.map((plan) => {
           `${limits.generationsPerMonth} AI generations / month`,
           ...plan.features,
         ],
-    cta: plan.id === "free" ? "Start free" : plan.id === "growth" ? "Get Pro" : "Get Advance",
+    cta: plan.id === "free" ? "Start free" : plan.id === "growth" ? "Get Pro" : "Talk to sales",
     href: plan.id === "pro" ? "/contact" : `${adminUrl}/signup`,
     highlighted: plan.id === "growth",
   };
@@ -41,7 +41,7 @@ export function LandingPricing() {
         </div>
 
         <Link
-          href={modelStoreUrl("pricing")}
+          href="/model?ref=pricing"
           className="mx-auto mt-10 flex max-w-2xl items-center gap-4 rounded-2xl border border-primary/25 bg-gradient-to-r from-emerald-50 to-amber-50/80 p-4 transition hover:border-primary/40 hover:shadow-md sm:p-5"
         >
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -177,7 +177,7 @@ export function LandingCta() {
                   Start free
                 </Button>
               </Link>
-              <Link href={modelStoreUrl("cta")}>
+              <Link href="/model?ref=cta">
                 <Button
                   size="xl"
                   variant="outline"
