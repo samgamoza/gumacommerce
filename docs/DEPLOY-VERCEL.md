@@ -29,6 +29,9 @@ See [DATABASE.md](./DATABASE.md) for troubleshooting.
 |---------|----------------|------------------|
 | Storefront | `apps/web` | `guma.ph` or `*.vercel.app` |
 | Admin | `apps/admin` | `app.guma.ph` or `*-admin.vercel.app` |
+| Platform | `apps/platform` | `ops.guma.ph` or `*-platform.vercel.app` |
+
+**Observability:** set `SENTRY_DSN` on **all three** Vercel projects. `@guma-commerce/services` `createLogger` / `captureError` forward exceptions when present (no separate Sentry SDK required). Confirm via each app’s `/api/health/integrations` (web/admin) that `sentry` shows `configured`.
 
 **Framework:** Next.js (auto-detected)
 

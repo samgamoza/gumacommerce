@@ -28,6 +28,7 @@ export {
   type GrabBookInput,
   type GrabBookResult,
 } from "./delivery/grab";
+export { verifyTimestampedHmacSignature } from "./delivery/webhook-signature";
 export {
   haversineKm,
   type DeliveryProvider,

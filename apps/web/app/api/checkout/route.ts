@@ -19,6 +19,7 @@ import {
 import {
   buildManualEwalletInstructions,
   clientIpFrom,
+  createLogger,
   createSemaphoreClient,
   formatPhp,
   generateOrderNumber,
@@ -32,6 +33,8 @@ import {
   startOnlinePayment,
   type CheckoutPaymentMethod,
 } from "@guma-commerce/services";
+
+const log = createLogger("checkout");
 import { getTenant as getDemoTenant } from "@/lib/demo-data";
 import { getCheckoutDeliveryQuote } from "@/lib/delivery-quote";
 import {
@@ -472,7 +475,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message, code: error.code }, { status });
     }
     if (error instanceof IntegrationNotConfiguredError) {
-      console.error("[checkout] Integration not configured:", error.message);
+      log.error("Integration not configured", error, { integration: error.integration });
       return NextResponse.json(
         {
           error: error.message,
@@ -482,7 +485,7 @@ export async function POST(request: Request) {
         { status: 503 }
       );
     }
-    console.error("Checkout error:", error);
+    log.error("Checkout failed", error);
     return NextResponse.json(
       { error: "Checkout failed. Please try again." },
       { status: 500 }

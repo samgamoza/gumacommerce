@@ -22,6 +22,7 @@ export type IntegrationId =
   | "ai"
   | "web_push"
   | "email"
+  | "sentry"
   | "auth_secret";
 
 export type IntegrationSeverity = "required" | "optional";
@@ -119,6 +120,7 @@ export function getIntegrationChecks(): IntegrationCheck[] {
   const pushConfigured =
     present(process.env.VAPID_PUBLIC_KEY) && present(process.env.VAPID_PRIVATE_KEY);
   const emailConfigured = present(process.env.RESEND_API_KEY);
+  const sentryConfigured = present(process.env.SENTRY_DSN);
   const webhookConfigured = present(process.env.PAYMONGO_WEBHOOK_SECRET);
   const authSecret = process.env.AUTH_SECRET?.trim() ?? "";
   const authConfigured =
@@ -266,6 +268,18 @@ export function getIntegrationChecks(): IntegrationCheck[] {
           ? "Resend not configured — labeled email mocks allowed in this runtime (sent=false, mock=true)."
           : "Resend not configured — notifications must report not sent (never fake success). Set RESEND_API_KEY + HELPDESK_NOTIFY_EMAIL for helpdesk.",
       envVars: ["RESEND_API_KEY", "EMAIL_FROM", "HELPDESK_NOTIFY_EMAIL"],
+    }),
+    buildCheck({
+      id: "sentry",
+      label: "Sentry error tracking",
+      severity: "optional",
+      status: sentryConfigured ? "configured" : "missing",
+      configured: sentryConfigured,
+      wouldMock: false,
+      message: sentryConfigured
+        ? "SENTRY_DSN is set — createLogger/captureError forward exceptions."
+        : "SENTRY_DSN missing — errors stay in app logs only. Set on web, admin, and platform Vercel projects for production.",
+      envVars: ["SENTRY_DSN"],
     }),
   ];
 }

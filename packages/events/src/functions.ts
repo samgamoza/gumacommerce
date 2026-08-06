@@ -4,6 +4,13 @@ import { EVENT_NAMES } from "./schemas";
 /**
  * Inngest functions — side-effect consumers.
  * Keep request path fast; heavy work belongs here.
+ *
+ * TRACKED STUBS (do not silently leave as log-only forever):
+ * - INNGEST-001 Store.Published.V1 → revalidatePath / CDN purge / merchant notify
+ * - INNGEST-002 Order.PaymentSucceeded.V1 → inventory adjust, shipment quote, analytics fan-out
+ * - INNGEST-003 Theme.Published.V1 / Theme.ChangeApproved.V1 → cache bust + audit fan-out
+ * - INNGEST-004 Merchant.Upgraded.V1 / Tenant.Created.V1 → welcome email / plan entitlement sync
+ * Soft launch may keep these as acknowledge-only; fill before relying on event-driven ops.
  */
 export const onStorePublished = inngest.createFunction(
   { id: "store-published", retries: 3 },
@@ -11,9 +18,8 @@ export const onStorePublished = inngest.createFunction(
   async ({ event, step }) => {
     await step.run("log-publish", async () => {
       console.info("[inngest] Store.Published.V1", event.data);
-      return { acknowledged: true };
+      return { acknowledged: true, stub: "INNGEST-001" };
     });
-    // Future: revalidatePath, CDN purge, notify merchant
   }
 );
 
@@ -23,9 +29,8 @@ export const onOrderPaymentSucceeded = inngest.createFunction(
   async ({ event, step }) => {
     await step.run("log-payment", async () => {
       console.info("[inngest] Order.PaymentSucceeded.V1", event.data);
-      return { acknowledged: true };
+      return { acknowledged: true, stub: "INNGEST-002" };
     });
-    // Future: inventory adjust, shipment quote, analytics fan-out
   }
 );
 
@@ -35,7 +40,7 @@ export const onMerchantUpgraded = inngest.createFunction(
   async ({ event, step }) => {
     await step.run("log-upgrade", async () => {
       console.info("[inngest] Merchant.Upgraded.V1", event.data);
-      return { acknowledged: true };
+      return { acknowledged: true, stub: "INNGEST-004" };
     });
   }
 );
@@ -46,7 +51,7 @@ export const onTenantCreated = inngest.createFunction(
   async ({ event, step }) => {
     await step.run("log-tenant", async () => {
       console.info("[inngest] Tenant.Created.V1", event.data);
-      return { acknowledged: true };
+      return { acknowledged: true, stub: "INNGEST-004" };
     });
   }
 );
@@ -57,7 +62,7 @@ export const onThemePublished = inngest.createFunction(
   async ({ event, step }) => {
     await step.run("log-theme-publish", async () => {
       console.info("[inngest] Theme.Published.V1", event.data);
-      return { acknowledged: true };
+      return { acknowledged: true, stub: "INNGEST-003" };
     });
   }
 );
@@ -68,7 +73,7 @@ export const onThemeChangeApproved = inngest.createFunction(
   async ({ event, step }) => {
     await step.run("log-theme-approved", async () => {
       console.info("[inngest] Theme.ChangeApproved.V1", event.data);
-      return { acknowledged: true };
+      return { acknowledged: true, stub: "INNGEST-003" };
     });
   }
 );

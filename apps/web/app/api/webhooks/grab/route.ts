@@ -1,10 +1,9 @@
-import { createHmac, timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 import {
   advanceOrderStatusFromDelivery,
   updateDeliveryByProviderOrderId,
 } from "@guma-commerce/db";
-import { createLogger } from "@guma-commerce/services";
+import { createLogger, verifyTimestampedHmacSignature } from "@guma-commerce/services";
 
 const log = createLogger("webhook:grab");
 
@@ -35,15 +34,12 @@ interface GrabWebhookBody {
 
 function verifyOptionalSignature(rawBody: string, body: GrabWebhookBody, secret: string): boolean {
   if (!secret) return true;
-  const signature = body.signature ?? "";
-  const timestamp = body.timestamp;
-  if (!signature || timestamp === undefined) return false;
-  const signed = `${timestamp}.${rawBody}`;
-  const expected = createHmac("sha256", secret).update(signed).digest("hex");
-  const expectedBuf = Buffer.from(expected);
-  const providedBuf = Buffer.from(String(signature));
-  if (expectedBuf.length !== providedBuf.length) return false;
-  return timingSafeEqual(expectedBuf, providedBuf);
+  return verifyTimestampedHmacSignature({
+    rawBody,
+    signature: body.signature ?? "",
+    timestamp: body.timestamp ?? "",
+    secret,
+  });
 }
 
 const STATUS_TO_ORDER: Record<string, "out_for_delivery" | "delivered"> = {

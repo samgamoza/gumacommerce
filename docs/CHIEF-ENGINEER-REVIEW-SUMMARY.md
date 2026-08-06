@@ -68,8 +68,8 @@ Neon Postgres | PayMongo* | Lalamove* | Grab* | Semaphore* | optional Upstash/Bl
 | Templates | **Strong portfolio** | 18 live HTML→React ports + token themes; Free Bundle catalogued |
 | AI / CR rails | **Partial handbook** | Crown-jewel draft→approve→publish for theme/catalog/pricing/SEO/checkout/shipping; no unified Workstation |
 | Platform ops | **Useful** | Tenants/users/plans/moderation/helpdesk/frontends/audit |
-| Observability | **Thin** | Integration health routes; Sentry optional; no full SLO dashboards |
-| Test / CI | **Light** | Package unit tests (plans, orchestrator, etc.); not full E2E suite |
+| Observability | **Thin+** | Integration health includes email + Sentry; `createLogger`→Sentry when DSN set on all 3 apps; no SLO dashboards |
+| Test / CI | **Light+** | Brand Guard CI; webhook HMAC + suspend + email fail-closed tests; Inngest consumers still acknowledge-only (ticketed INNGEST-001…004) |
 | Deploy | **Documented** | Vercel 3-app; production cutover not assumed complete |
 
 ---
