@@ -162,7 +162,7 @@ export function LandingCta() {
               social following into a real business.
             </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link href="/demo">
+              <Link href="/model">
                 <Button size="xl" variant="white">
                   Launch demo shop
                   <ArrowRight className="h-4 w-4" />

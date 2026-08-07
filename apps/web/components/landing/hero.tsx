@@ -127,7 +127,7 @@ export function LandingHero() {
           </p>
 
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
-            <Link href="/demo">
+            <Link href="/model">
               <Button size="xl" className="w-full sm:w-auto">
                 Try live demo
                 <ArrowRight className="h-4 w-4" />
