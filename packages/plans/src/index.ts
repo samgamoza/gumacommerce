@@ -20,6 +20,14 @@ export {
 } from "./catalog";
 
 export {
+  TEMPLATE_SWITCH_REQUIRED_PLAN,
+  isSoftLaunchRuntime,
+  allowFreePostPublishTemplateSwitch,
+  canChangeStorefrontTemplateAfterPublish,
+  type TemplateSwitchEntitlement,
+} from "./template-switch";
+
+export {
   PLAN_AI_LIMITS,
   MAX_TOKENS_BY_TASK,
   THRIFTY_MODEL,

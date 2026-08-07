@@ -61,6 +61,14 @@ const MottoStorefront = dynamic(() =>
 const StudioStorefront = dynamic(() =>
   import("@/components/storefront/studio/studio-storefront").then((m) => ({ default: m.StudioStorefront }))
 );
+const HaircutStorefront = dynamic(() =>
+  import("@/components/storefront/haircut/haircut-storefront").then((m) => ({ default: m.HaircutStorefront }))
+);
+const SpecialtyStorefront = dynamic(() =>
+  import("@/components/storefront/specialty/specialty-storefront").then((m) => ({
+    default: m.SpecialtyStorefront,
+  }))
+);
 const StorefrontExperience = dynamic(() =>
   import("@/components/storefront/experience/storefront-experience").then((m) => ({
     default: m.StorefrontExperience,
@@ -148,6 +156,14 @@ export function TenantStorefrontHome({
 
   if (pattern.storefrontRenderer === "studio") {
     return <StudioStorefront tenant={tenant} />;
+  }
+
+  if (pattern.storefrontRenderer === "haircut") {
+    return <HaircutStorefront tenant={tenant} />;
+  }
+
+  if (pattern.storefrontRenderer === "specialty") {
+    return <SpecialtyStorefront tenant={tenant} />;
   }
 
   if (pattern.storefrontRenderer === "experience") {

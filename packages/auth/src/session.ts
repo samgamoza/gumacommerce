@@ -119,10 +119,19 @@ export async function verifyEmailToken(
   }
 }
 
+function cookieSecureFlag(): boolean {
+  // LAN / HTTP soft-launch: set AUTH_COOKIE_SECURE=false so browsers keep the session.
+  // Default: Secure in production (HTTPS), off in development.
+  const override = process.env.AUTH_COOKIE_SECURE?.trim().toLowerCase();
+  if (override === "false" || override === "0") return false;
+  if (override === "true" || override === "1") return true;
+  return process.env.NODE_ENV === "production";
+}
+
 export function getSessionCookieOptions(maxAge = SESSION_MAX_AGE_SECONDS) {
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: cookieSecureFlag(),
     sameSite: "lax" as const,
     path: "/",
     maxAge,

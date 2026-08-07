@@ -13,6 +13,11 @@ export type TemplateStockSource = "free_bundle" | "ops_manual" | "ai_curated";
 export type ShopBusinessCategoryRow = typeof shopBusinessCategories.$inferSelect;
 export type TemplateStockRow = typeof templateStock.$inferSelect;
 
+export type OnboardingCategoryGroup = {
+  parentLabel: string | null;
+  labels: string[];
+};
+
 export function slugifyShopCategory(label: string): string {
   return label
     .trim()
@@ -112,9 +117,100 @@ export async function listOnboardingCategoryLabels(
   return rows.map((r) => r.label);
 }
 
+/**
+ * Grouped labels for signup selects (optgroups).
+ * Parents with children become group headers; orphans stay in an ungrouped list.
+ */
+export async function listOnboardingCategoryGroups(
+  fallbackLabels: readonly string[]
+): Promise<OnboardingCategoryGroup[]> {
+  await ensureShopCategoriesSeeded(fallbackLabels);
+  const rows = await listShopBusinessCategories({ enabledOnly: true });
+  if (rows.length === 0) {
+    return [{ parentLabel: null, labels: [...fallbackLabels] }];
+  }
+
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  const childrenByParent = new Map<string, ShopBusinessCategoryRow[]>();
+  const roots: ShopBusinessCategoryRow[] = [];
+
+  for (const row of rows) {
+    if (row.parentId && byId.has(row.parentId)) {
+      const list = childrenByParent.get(row.parentId) ?? [];
+      list.push(row);
+      childrenByParent.set(row.parentId, list);
+    } else {
+      roots.push(row);
+    }
+  }
+
+  const groups: OnboardingCategoryGroup[] = [];
+  const ungrouped: string[] = [];
+
+  for (const root of roots) {
+    const children = childrenByParent.get(root.id) ?? [];
+    if (children.length > 0) {
+      groups.push({
+        parentLabel: root.label,
+        labels: children.map((c) => c.label),
+      });
+      // Parent remains selectable when it is also a real vertical (no dedicated "folder-only" flag).
+      ungrouped.push(root.label);
+    } else {
+      ungrouped.push(root.label);
+    }
+  }
+
+  // Orphaned children whose parent is disabled / missing — still offer the leaf.
+  for (const row of rows) {
+    if (!row.parentId) continue;
+    if (byId.has(row.parentId) && byId.get(row.parentId)?.status === "enabled") continue;
+    if (!ungrouped.includes(row.label)) ungrouped.push(row.label);
+  }
+
+  const result: OnboardingCategoryGroup[] = [];
+  if (ungrouped.length > 0) {
+    result.push({ parentLabel: null, labels: ungrouped });
+  }
+  result.push(...groups.filter((g) => g.parentLabel != null));
+  return result;
+}
+
+async function assertValidParentId(
+  parentId: string | null | undefined,
+  selfId?: string
+): Promise<string | null> {
+  if (!parentId) return null;
+  if (selfId && parentId === selfId) {
+    throw new Error("A category cannot be its own parent.");
+  }
+  const db = getDb();
+  const [parent] = await db
+    .select()
+    .from(shopBusinessCategories)
+    .where(eq(shopBusinessCategories.id, parentId))
+    .limit(1);
+  if (!parent) throw new Error("Parent category not found.");
+  if (parent.parentId) {
+    throw new Error("Only one level of subcategory is supported (choose a top-level parent).");
+  }
+  if (selfId) {
+    // Prevent making a parent into a child of one of its descendants (one-level, so just check kids).
+    const kids = await db
+      .select({ id: shopBusinessCategories.id })
+      .from(shopBusinessCategories)
+      .where(eq(shopBusinessCategories.parentId, selfId));
+    if (kids.some((k) => k.id === parentId)) {
+      throw new Error("Cannot nest a category under its own subcategory.");
+    }
+  }
+  return parent.id;
+}
+
 export async function upsertShopBusinessCategory(input: {
   id?: string;
   label: string;
+  parentId?: string | null;
   status?: ShopCategoryStatus;
   sortOrder?: number;
   minVariants?: number;
@@ -127,20 +223,37 @@ export async function upsertShopBusinessCategory(input: {
   const slug = slugifyShopCategory(label);
   const minVariants = Math.max(1, Math.min(20, input.minVariants ?? 3));
   const targetVariants = Math.max(minVariants, Math.min(40, input.targetVariants ?? 5));
+  const parentId =
+    input.parentId === undefined
+      ? undefined
+      : await assertValidParentId(input.parentId, input.id);
 
   if (input.id) {
+    const set: {
+      label: string;
+      slug: string;
+      status: ShopCategoryStatus;
+      sortOrder: number;
+      minVariants: number;
+      targetVariants: number;
+      notes: string | null;
+      updatedAt: Date;
+      parentId?: string | null;
+    } = {
+      label,
+      slug,
+      status: input.status ?? "enabled",
+      sortOrder: input.sortOrder ?? 0,
+      minVariants,
+      targetVariants,
+      notes: input.notes ?? null,
+      updatedAt: new Date(),
+    };
+    if (parentId !== undefined) set.parentId = parentId;
+
     const [updated] = await db
       .update(shopBusinessCategories)
-      .set({
-        label,
-        slug,
-        status: input.status ?? "enabled",
-        sortOrder: input.sortOrder ?? 0,
-        minVariants,
-        targetVariants,
-        notes: input.notes ?? null,
-        updatedAt: new Date(),
-      })
+      .set(set)
       .where(eq(shopBusinessCategories.id, input.id))
       .returning();
     if (!updated) throw new Error("Category not found.");
@@ -152,6 +265,7 @@ export async function upsertShopBusinessCategory(input: {
     .values({
       slug,
       label,
+      parentId: parentId ?? null,
       status: input.status ?? "enabled",
       sortOrder: input.sortOrder ?? 999,
       minVariants,
@@ -166,6 +280,7 @@ export async function upsertShopBusinessCategory(input: {
         minVariants,
         targetVariants,
         notes: input.notes ?? null,
+        ...(parentId !== undefined ? { parentId } : {}),
         updatedAt: new Date(),
       },
     })

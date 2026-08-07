@@ -16,10 +16,11 @@ export const footerLinks = {
     { label: "Features", href: "/#features" },
     { label: "How it works", href: "/#how-it-works" },
     { label: "Pricing", href: "/pricing" },
-    { label: "Demo shop", href: "/demo" },
+    { label: "Demo shop", href: "/model" },
     { label: "Model store", href: "/model" },
   ],
   sellers: [
+    { label: "Seller dashboard", href: `${process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3001"}` },
     { label: "Seller login", href: `${process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3001"}/login` },
     { label: "Start free", href: `${process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3001"}/signup` },
     { label: "Seller guide", href: "/help/sellers" },

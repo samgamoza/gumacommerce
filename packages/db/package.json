@@ -18,13 +18,15 @@
     "push": "drizzle-kit push",
     "studio": "drizzle-kit studio",
     "seed": "tsx src/seed.ts",
+    "seed:ph-locations": "tsx src/seed-ph-locations.ts",
     "seed:simply-sweet": "tsx src/seed-simply-sweet.ts",
     "test": "tsx --test src/types/tenant-seo.test.ts src/types/tenant-checkout.test.ts src/types/tenant-shipping.test.ts src/tenant-access.test.ts src/migration-journal.test.ts"
   },
   "dependencies": {
+    "@guma-commerce/plans": "workspace:*",
+    "@jobuntux/psgc": "^0.2.1",
     "drizzle-orm": "^0.38.3",
-    "postgres": "^3.4.5",
-    "@guma-commerce/plans": "workspace:*"
+    "postgres": "^3.4.5"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

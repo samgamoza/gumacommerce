@@ -106,6 +106,20 @@
       "when": 1784600000000,
       "tag": "0015_product_is_main",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1784700000000,
+      "tag": "0016_ph_locations",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1784800000000,
+      "tag": "0017_shop_category_parent",
+      "breakpoints": true
     }
   ]
 }

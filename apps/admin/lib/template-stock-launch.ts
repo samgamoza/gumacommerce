@@ -1,15 +1,16 @@
-import type { TemplateStockRow } from "@guma-commerce/db";
 import {
   canUseTemplate,
-  deriveStoreLook,
   isShopTemplateId,
   normalizeStoreLook,
   previewImageForCategory,
   previewImageForTemplate,
+  resolveStockSkin,
   type CatalogInstallResolution,
   type CuratedTemplateCard,
   type ShopTemplateId,
+  type StockSkin,
 } from "@guma-commerce/storefront-themes";
+import type { TemplateStockRow } from "@guma-commerce/db";
 
 function hashString(value: string): number {
   let hash = 0x811c9dc5;
@@ -26,12 +27,15 @@ export function stockRowToCuratedCard(
 ): CuratedTemplateCard | null {
   if (!isShopTemplateId(row.liveTemplateId)) return null;
   const live = row.liveTemplateId as ShopTemplateId;
+  const skin = resolveStockSkin(row.storeLookJson, row.stockKey);
   return {
     proposedId: row.stockKey,
     label: row.label,
     shopCategory: row.categoryLabel,
     status: row.source === "ai_curated" ? "queued-storefront" : "variant-of-integrated",
-    notes: row.notes ?? `Ops stock · ${row.source.replace(/_/g, " ")} · uses ${live}`,
+    notes:
+      row.notes ??
+      `Ops stock · ${row.source.replace(/_/g, " ")} · ${live} · ${skin.paletteId}`,
     previewImageUrl: row.previewImageUrl || previewImageForCategory(row.categoryLabel),
     installTemplateId: live,
     installable: canUseTemplate(live, plan ?? "free"),
@@ -43,13 +47,12 @@ export function stockRowToCuratedCard(
 export function resolveStockInstall(
   row: TemplateStockRow,
   plan?: string | null
-): CatalogInstallResolution | null {
+): (CatalogInstallResolution & { stockSkin: StockSkin }) | null {
   if (row.status !== "published") return null;
   if (!isShopTemplateId(row.liveTemplateId)) return null;
   const liveTemplateId = row.liveTemplateId as ShopTemplateId;
-  const storeLook = row.storeLookJson
-    ? normalizeStoreLook(row.storeLookJson)
-    : deriveStoreLook(hashString(`stock::${row.stockKey}`));
+  const stockSkin = resolveStockSkin(row.storeLookJson, row.stockKey);
+  const storeLook = normalizeStoreLook(stockSkin);
 
   return {
     selectionId: row.stockKey,
@@ -58,6 +61,7 @@ export function resolveStockInstall(
     catalogId: row.stockKey,
     catalogLabel: row.label,
     storeLook,
+    stockSkin,
     previewImageUrl:
       row.previewImageUrl ||
       previewImageForCategory(row.categoryLabel) ||

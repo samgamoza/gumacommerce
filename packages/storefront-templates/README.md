@@ -7,8 +7,8 @@ External full-code templates are extracted under `reference/` and integrated as 
 - **Source zip:** `Free.Bundle.2023.zip` → `reference/Free.Bundle.2023/Free bundle 2023/`
 - **Master catalog:** [BUNDLE-2023-CATALOG.md](./BUNDLE-2023-CATALOG.md)
 - **Machine registry:** `packages/storefront-themes/src/bundle-catalog.ts`
-- **Status:** Categorized — 18 live integrations + Free Bundle mapped to 39 shop categories (4 Sprint 5 priority ports integrated)
-- **Priority queue:** `aircon` → `carserv` → `motto` → `studio` (**integrated**)
+- **Status:** Categorized — live integrations + Free Bundle mapped to shop categories (`haircut` + native `specialty` included)
+- **Priority queue:** `aircon` → `carserv` → `motto` → `studio` → `haircut` (**integrated**)
 
 ## AirCon (aircon-1.0.0)
 
@@ -259,6 +259,22 @@ Gadgets & tech layout: sticky header, hero billboard, service icons, mobile prod
 
 - **Onboarding:** Electronics / gadget category hints auto-match (alongside Electro)
 - **Shop Builder:** Pick **MiniStore** template for minimal tech storefronts
+
+## HairCut (haircut-1.0.0)
+
+- **Source:** ThemeWagon / HTML Codex HairCut (free) → `reference/haircut-1.0.0/`
+- **Integrated renderer:** `apps/web/components/storefront/haircut/`
+- **Template / pattern ID:** `haircut`
+- **Demo:** http://localhost:3010/haircut-demo
+- **Fit:** Barber & Hair Salons / Beauty Salons & Spas — appointment booking + pricing
+
+## Specialty (native)
+
+- **Source:** Guma One native single-offer template
+- **Integrated renderer:** `apps/web/components/storefront/specialty/`
+- **Template / pattern ID:** `specialty`
+- **Demo:** http://localhost:3010/specialty-demo
+- **Fit:** Specialty sellers, flagship products, phone/device repair, signature services
 
 ## Adding the next template
 

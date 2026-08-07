@@ -88,10 +88,11 @@ export const DASHBOARD_NAV: DashboardNavGroup[] = [
       },
       {
         id: "launch",
-        label: "GUMA Launch",
+        label: "Storefront look",
         href: "/launch",
         icon: Sparkles,
-        description: "Store DNA, template pick, personalize, publish.",
+        badge: "new",
+        description: "Change template, colors, and publish your shop look.",
       },
     ],
   },

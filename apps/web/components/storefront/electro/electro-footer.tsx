@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { DemoTenant } from "@/lib/demo-data";
-import { adminUrl, shopPublicUrl, shopPublicUrlLabel } from "@/lib/utils";
+import { shopPublicUrl, shopPublicUrlLabel } from "@/lib/utils";
 import { electroBrandName } from "./electro-utils";
 
 export function ElectroFooter({ tenant }: { tenant: DemoTenant }) {
@@ -60,11 +60,6 @@ export function ElectroFooter({ tenant }: { tenant: DemoTenant }) {
               </li>
               <li>
                 <Link href={`/${tenant.slug}/checkout`}>Checkout</Link>
-              </li>
-              <li>
-                <a href={adminUrl} target="_blank" rel="noreferrer">
-                  Seller Dashboard
-                </a>
               </li>
             </ul>
           </div>

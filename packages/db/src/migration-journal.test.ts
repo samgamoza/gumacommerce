@@ -40,4 +40,15 @@ describe("drizzle migration journal", () => {
       `expected 0015_product_is_main in journal, got: ${tags.join(", ")}`
     );
   });
+
+  it("includes PH locations migration 0016", () => {
+    const journal = JSON.parse(readFileSync(journalPath, "utf8")) as {
+      entries: Array<{ tag: string }>;
+    };
+    const tags = journal.entries.map((e) => e.tag);
+    assert.ok(
+      tags.includes("0016_ph_locations"),
+      `expected 0016_ph_locations in journal, got: ${tags.join(", ")}`
+    );
+  });
 });

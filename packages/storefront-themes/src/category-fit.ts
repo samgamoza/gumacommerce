@@ -52,8 +52,11 @@ export function preferredTemplatesForCategory(category: string): ShopTemplateId[
   if (c === "Organic & Farm Produce") return ["organic", "fruitables", "foodmart"];
   if (c === "Fashion & Apparel") return ["bloom", "kaira", "stylish", "zay"];
   if (c === "Shoes & Footwear") return ["stylish", "bloom", "zay"];
-  if (c === "Beauty & Skincare" || c === "Beauty Salons & Spas" || c === "Barber & Hair Salons") {
-    return ["bloom", "kaira", "magazine-rack", "mellow"];
+  if (c === "Beauty & Skincare") {
+    return ["bloom", "kaira", "magazine-rack", "specialty"];
+  }
+  if (c === "Beauty Salons & Spas" || c === "Barber & Hair Salons") {
+    return ["haircut", "specialty", "mellow", "studio"];
   }
   if (
     c === "Auto Shop & Services" ||
@@ -68,7 +71,6 @@ export function preferredTemplatesForCategory(category: string): ShopTemplateId[
   }
   if (
     c === "HVAC & Air Conditioning" ||
-    c === "Appliance & Device Repair" ||
     c === "Home Services & Trades" ||
     c === "House Painting & Decorating" ||
     c === "Pest Control" ||
@@ -76,7 +78,10 @@ export function preferredTemplatesForCategory(category: string): ShopTemplateId[
   ) {
     return ["aircon", "clean-guma", "carserv"];
   }
-  if (c === "Electronics") return ["electro", "ministore", "zay"];
+  if (c === "Appliance & Device Repair") {
+    return ["specialty", "aircon", "electro", "ministore"];
+  }
+  if (c === "Electronics") return ["electro", "ministore", "zay", "specialty"];
   if (c === "Furniture & Home") return ["furnish", "mono-market", "zay"];
   if (c === "Pet Supplies & Lovers") return ["waggy", "zay", "clean-guma"];
   if (c === "Hotels & Resorts" || c === "Travel & Tours") return ["mellow", "clean-guma", "mono-market"];

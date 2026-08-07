@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import type { DemoTenant } from "@/lib/demo-data";
-import { adminUrl, shopPublicUrl, shopPublicUrlLabel } from "@/lib/utils";
+import { shopPublicUrl, shopPublicUrlLabel } from "@/lib/utils";
 import { zayBrandMark } from "./zay-utils";
 
 function slugify(value: string): string {
@@ -97,11 +97,6 @@ export function ZayFooter({ tenant }: { tenant: DemoTenant }) {
               </li>
               <li>
                 <a href="#footer">Contact</a>
-              </li>
-              <li>
-                <a href={adminUrl} target="_blank" rel="noreferrer">
-                  Seller Dashboard
-                </a>
               </li>
             </ul>
           </div>

@@ -6,7 +6,6 @@ import { Check, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { DemoProduct, DemoTenant } from "@/lib/demo-data";
 import { useCart } from "@/lib/cart";
-import { adminUrl } from "@/lib/utils";
 import { isFoodBusinessCategory } from "@guma-commerce/storefront-themes";
 import { formatSarabPrice, splitSarabBrand } from "./sarab-utils";
 
@@ -168,16 +167,6 @@ export function SarabFooter({ tenant }: { tenant: DemoTenant }) {
                 <Link href={checkoutHref} className="hover:text-white">
                   Cart & checkout
                 </Link>
-              </li>
-              <li>
-                <a
-                  href={adminUrl}
-                  className="hover:text-white"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Seller dashboard
-                </a>
               </li>
             </ul>
           </div>

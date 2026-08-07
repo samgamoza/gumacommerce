@@ -179,6 +179,12 @@ export function DashboardView({ displayName }: { displayName: string }) {
                 {activating ? "Activating..." : "Activate shop"}
               </Button>
             )}
+            <Link href="/launch?changeTemplate=1">
+              <Button variant="secondary" size="sm" className="gap-1.5">
+                Change template
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
           </div>
         </div>
       </Card>

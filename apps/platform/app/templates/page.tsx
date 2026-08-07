@@ -45,14 +45,18 @@ export default async function TemplatesCatalogPage() {
     }
   }
 
+  const categoryById = new Map(categories.map((c) => [c.id, c]));
   const coverage: CoverageRow[] = categories.map((cat) => {
     const bundleCount = bundleCountsMap.get(cat.label) ?? 0;
     const stockPublished = publishedStock.get(cat.label) ?? 0;
     const stockDraft = draftByCategory.get(cat.label) ?? 0;
     const total = bundleCount + stockPublished;
+    const parent = cat.parentId ? categoryById.get(cat.parentId) : null;
     return {
       id: cat.id,
       label: cat.label,
+      parentId: cat.parentId ?? null,
+      parentLabel: parent?.label ?? null,
       status: cat.status,
       minVariants: cat.minVariants,
       targetVariants: cat.targetVariants,
@@ -109,19 +113,44 @@ export default async function TemplatesCatalogPage() {
 
       <Panel className="mb-6">
         <SectionHeader title="How this compounds" />
-        <p className="text-sm text-muted-foreground">
-          On-demand services (repairs, painting, pest, lawn, wedding) are first-class categories.
-          Address a vertical gap once in Priority verticals (seed stock, later AI-curate or port a
-          dedicated skin). Sellers get honest commerce chrome today (inquiry vs cart by category) while
-          the library deepens. Free Bundle stays the seed ({BUNDLE_2023_STATS.total} skins).{" "}
-          {BUNDLE_2023_LICENSE}
-        </p>
+        <div className="space-y-3 text-sm text-muted-foreground">
+          <p>
+            On-demand services (repairs, painting, pest, lawn, wedding) are first-class categories.
+            Address a vertical gap once in Priority verticals (seed stock, later AI-curate or port a
+            dedicated skin). Sellers get honest commerce chrome today (inquiry vs cart by category)
+            while the library deepens. Free Bundle stays the seed ({BUNDLE_2023_STATS.total} skins).{" "}
+            {BUNDLE_2023_LICENSE}
+          </p>
+          <div className="rounded-xl border border-border bg-muted/30 px-4 py-3">
+            <p className="font-medium text-foreground">Recommended path to 3–5 variants / vertical</p>
+            <ol className="mt-2 list-decimal space-y-1 pl-5">
+              <li>
+                <span className="text-foreground">Fast (ops):</span> Coverage →{" "}
+                <strong className="font-medium text-foreground">Fill gaps to min</strong> or Seed
+                drafts, then review &amp; publish in Stock. Creates look variants on existing live
+                renderers — best way to clear zeros this week.
+              </li>
+              <li>
+                <span className="text-foreground">Manual skin:</span> Stock → add label + category +
+                live renderer → publish. Same engine as seed; you control naming.
+              </li>
+              <li>
+                <span className="text-foreground">True new layouts:</span> still a developer port
+                (Free Bundle HTML → React). No batch HTML upload from this UI yet — ask eng for
+                priority verticals that feel wrong on the interim chrome.
+              </li>
+            </ol>
+          </div>
+        </div>
       </Panel>
 
       <Panel className="mb-6">
         <TemplateIntelligencePanel
           coverage={coverage}
           priorityVerticals={priorityVerticals}
+          storefrontBaseUrl={
+            process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "https://commerce.guma.one"
+          }
           stock={stock.map((s) => ({
             id: s.id,
             stockKey: s.stockKey,

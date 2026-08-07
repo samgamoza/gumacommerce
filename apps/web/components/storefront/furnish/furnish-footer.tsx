@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { DemoTenant } from "@/lib/demo-data";
-import { adminUrl, shopPublicUrl, shopPublicUrlLabel } from "@/lib/utils";
+import { shopPublicUrl, shopPublicUrlLabel } from "@/lib/utils";
 import { furnishBrandLines } from "./furnish-utils";
 
 export function FurnishFooter({ tenant }: { tenant: DemoTenant }) {
@@ -32,11 +32,6 @@ export function FurnishFooter({ tenant }: { tenant: DemoTenant }) {
             </li>
             <li>
               <Link href={checkoutHref}>Cart</Link>
-            </li>
-            <li>
-              <a href={adminUrl} target="_blank" rel="noreferrer">
-                Seller Dashboard
-              </a>
             </li>
           </ul>
         </div>

@@ -63,6 +63,7 @@ export const SELLER_PLANS: PlanDefinition[] = [
     tagline: "AI Workspace for growing shops",
     features: [
       "Everything in Free",
+      "Change storefront template after publish",
       "GUMA Workspace",
       "AI content & campaigns",
       "Posting agents",
@@ -70,6 +71,7 @@ export const SELLER_PLANS: PlanDefinition[] = [
     ],
     marketingFeatures: [
       "Everything in Free",
+      "Change storefront template anytime",
       "GUMA Workspace",
       "100 AI generations / month",
       "Live selling & agents",

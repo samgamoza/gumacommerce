@@ -94,8 +94,10 @@ export interface CreateOrderInput {
   deliveryType: "delivery" | "pickup";
   deliveryAddress?: {
     line1: string;
+    line2?: string;
     city?: string;
     barangay?: string;
+    province?: string;
     postalCode?: string;
     notes?: string;
   };

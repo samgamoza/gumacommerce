@@ -1,5 +1,5 @@
 export const SETTINGS_SECTIONS = [
-  { href: "/settings/shop", label: "Shop", icon: "🏪", description: "Name, locale, and storefront basics" },
+  { href: "/settings/shop", label: "Shop", icon: "🏪", description: "Name, template, locale, and storefront basics" },
   {
     href: "/settings/delivery-shipping",
     label: "Delivery & Shipping",

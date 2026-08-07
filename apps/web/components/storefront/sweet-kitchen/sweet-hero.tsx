@@ -25,7 +25,7 @@ export function SweetHero({ tenant }: { tenant: DemoTenant }) {
             className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium uppercase tracking-wider"
             style={{ backgroundColor: `${accent}22`, color: accent }}
           >
-            <Sparkles className="h-3.5 w-3.5" /> Welcome to my kitchen
+            <Sparkles className="h-3.5 w-3.5" /> Welcome to my kitchen · QC
           </span>
           <h1 className="font-display mt-6 text-6xl leading-[0.95] text-[#2d1b1b] md:text-8xl">
             {tenant.name.split(" ").slice(0, -1).join(" ") || tenant.name}

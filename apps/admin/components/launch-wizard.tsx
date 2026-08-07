@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { PatternAdminShell } from "@/components/pattern-admin-shell";
-import { Button, Card } from "@guma-commerce/ui";
+import { Button, Card, fieldClassName } from "@guma-commerce/ui";
 import {
   BRAND_PALETTES,
   emojiForGuideCategory,
@@ -15,6 +15,7 @@ import {
   type StoreGoal,
   type SellingChannel,
 } from "@guma-commerce/storefront-themes";
+import { upgradeHref, PLAN_DISPLAY, type SubscriptionPlan } from "@/lib/plan-access";
 
 /** Dark-console chips — selected stays vivid; idle stays readable. */
 const chipIdle =
@@ -47,6 +48,8 @@ const PRODUCT_HINTS: { id: ProductCountHint; label: string }[] = [
 
 export function LaunchWizard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const wantChangeTemplate = searchParams.get("changeTemplate") === "1";
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -95,6 +98,14 @@ export function LaunchWizard() {
   const [primaryColor, setPrimaryColor] = useState("#059669");
   const [accentColor, setAccentColor] = useState("#f59e0b");
   const [paletteId, setPaletteId] = useState("guma-green");
+  const [published, setPublished] = useState(false);
+  const [revisingAfterPublish, setRevisingAfterPublish] = useState(false);
+  const [templateSwitch, setTemplateSwitch] = useState<{
+    allowed: boolean;
+    requiredPlan: SubscriptionPlan;
+    freeDuringSoftLaunch: boolean;
+    reason: string | null;
+  } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -113,6 +124,8 @@ export function LaunchWizard() {
       setRecommendations(data.recommendations ?? []);
       setCuratedTemplates(data.curatedTemplates ?? []);
       setLibraryMatches(data.libraryMatches ?? []);
+      setPublished(Boolean(data.published));
+      setTemplateSwitch(data.templateSwitch ?? null);
 
       const dna = data.dna;
       setCategory(dna?.category || data.state?.category || "General");
@@ -141,13 +154,27 @@ export function LaunchWizard() {
         setSelectedTemplateId(dna.selectedTemplateId);
       }
 
-      if (data.launchDone) {
+      const publishedNow = Boolean(data.published);
+      const switchEntitlement = data.templateSwitch ?? null;
+
+      if (wantChangeTemplate && publishedNow) {
+        if (switchEntitlement?.allowed !== false) {
+          setRevisingAfterPublish(true);
+          setStep("templates");
+        } else {
+          setStep("done");
+          setError(
+            switchEntitlement?.reason ??
+              "Changing your storefront template after publish is included on Pro and Advance."
+          );
+        }
+      } else if (data.launchDone && !revisingAfterPublish) {
         setStep("done");
       } else if (dna?.launchStep === "personalize" || dna?.launchStep === "preview") {
         setStep(dna.launchStep === "preview" ? "preview" : "personalize");
       } else if (dna?.launchStep === "templates") {
         setStep("templates");
-      } else {
+      } else if (!revisingAfterPublish) {
         setStep("dna");
       }
     } catch {
@@ -155,12 +182,12 @@ export function LaunchWizard() {
     } finally {
       setLoading(false);
     }
-  }, [category]);
+  }, [category, revisingAfterPublish, wantChangeTemplate]);
 
   useEffect(() => {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [wantChangeTemplate]);
 
   async function post(body: Record<string, unknown>) {
     setSaving(true);
@@ -174,7 +201,7 @@ export function LaunchWizard() {
       const data = await res.json();
       if (!data.ok) {
         setError(data.error ?? "Request failed.");
-        return null;
+        return data;
       }
       return data;
     } catch {
@@ -207,7 +234,7 @@ export function LaunchWizard() {
       goals,
       sellingChannels,
     });
-    if (!data) return;
+    if (!data?.ok) return;
     setRecommendations(data.recommendations ?? []);
     setCuratedTemplates(data.curatedTemplates ?? []);
     setLibraryMatches(data.libraryMatches ?? []);
@@ -216,7 +243,7 @@ export function LaunchWizard() {
 
   async function selectTemplate(id: string) {
     const data = await post({ action: "select_template", templateId: id });
-    if (!data) return;
+    if (!data?.ok) return;
     setSelectedTemplateId(data.install?.selectionId ?? id);
     setSelectedCatalogLabel(data.install?.catalogLabel ?? data.draft?.catalogLabel ?? null);
     if (data.draft) {
@@ -240,14 +267,29 @@ export function LaunchWizard() {
       accentColor,
       paletteId,
     });
-    if (!data) return;
+    if (!data?.ok) return;
     setStep("preview");
   }
 
   async function publish() {
     const data = await post({ action: "publish" });
-    if (!data) return;
+    if (!data?.ok) return;
+    setPublished(true);
+    setRevisingAfterPublish(false);
     setStep("done");
+  }
+
+  function startTemplateChange() {
+    if (templateSwitch && !templateSwitch.allowed) {
+      setError(
+        templateSwitch.reason ??
+          "Changing your storefront template after publish is included on Pro and Advance."
+      );
+      return;
+    }
+    setError(null);
+    setRevisingAfterPublish(true);
+    setStep("templates");
   }
 
   function applyPalette(id: string) {
@@ -271,11 +313,15 @@ export function LaunchWizard() {
       <div className="mx-auto max-w-3xl space-y-6">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-emerald-400">
-            Freemium · Zero AI cost
+            {revisingAfterPublish || published ? "Storefront look" : "Freemium · Zero AI cost"}
           </p>
-          <h1 className="mt-1 text-2xl font-bold text-foreground">Launch {shopName}</h1>
+          <h1 className="mt-1 text-2xl font-bold text-foreground">
+            {revisingAfterPublish ? `Change look · ${shopName}` : `Launch ${shopName}`}
+          </h1>
           <p className="mt-1 text-sm text-slate-300">
-            Confirm a few details, pick a look for your category, personalize, then publish.
+            {revisingAfterPublish
+              ? "Pick a new template, personalize colors/copy, then re-publish. Products stay as they are."
+              : "Confirm a few details, pick a look for your category, personalize, then publish."}
           </p>
         </div>
 
@@ -397,7 +443,7 @@ export function LaunchWizard() {
               <span className={sectionLabel}>Audience (optional)</span>
               <p className="mt-0.5 text-xs text-slate-400">Who do you mainly sell to?</p>
               <input
-                className="mt-2 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-slate-500 outline-none ring-emerald-500/30 focus:border-emerald-500 focus:ring-2"
+                className={`mt-2 ${fieldClassName}`}
                 value={audience}
                 onChange={(e) => setAudience(e.target.value)}
                 placeholder="e.g. Busy moms in Metro Manila"
@@ -414,12 +460,23 @@ export function LaunchWizard() {
           <Card className="space-y-5 p-5">
             <div>
               <h2 className="font-semibold text-foreground">
-                Pick a look for {category}
+                {revisingAfterPublish ? "Change your storefront look" : `Pick a look for ${category}`}
               </h2>
               <p className="mt-1 text-sm text-slate-300">
-                Based on <span className="font-medium text-foreground">{category}</span> from your
-                signup — only looks that fit that shop type.
+                {revisingAfterPublish
+                  ? "Pick a new template, personalize, then re-publish. Your products stay as they are."
+                  : (
+                    <>
+                      Based on <span className="font-medium text-foreground">{category}</span> from your
+                      signup — only looks that fit that shop type.
+                    </>
+                  )}
               </p>
+              {revisingAfterPublish && templateSwitch?.freeDuringSoftLaunch && (
+                <p className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
+                  Soft launch: template switching is free while we test. After hard launch this becomes a Pro feature.
+                </p>
+              )}
             </div>
 
             {recommendations.length > 0 && (
@@ -545,9 +602,16 @@ export function LaunchWizard() {
             <button
               type="button"
               className="text-sm text-muted-foreground underline"
-              onClick={() => setStep("dna")}
+              onClick={() => {
+                if (revisingAfterPublish) {
+                  setRevisingAfterPublish(false);
+                  setStep("done");
+                  return;
+                }
+                setStep("dna");
+              }}
             >
-              ← Back to Store DNA
+              {revisingAfterPublish ? "← Cancel change" : "← Back to Store DNA"}
             </button>
           </Card>
         )}
@@ -590,61 +654,61 @@ export function LaunchWizard() {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="text-sm">
+              <label className="text-sm font-medium text-foreground">
                 Primary
                 <input
                   type="color"
-                  className="mt-1 h-10 w-full"
+                  className="mt-1 h-10 w-full cursor-pointer rounded-xl border border-orange-300 bg-orange-50 p-1"
                   value={primaryColor}
                   onChange={(e) => setPrimaryColor(e.target.value)}
                 />
               </label>
-              <label className="text-sm">
+              <label className="text-sm font-medium text-foreground">
                 Accent
                 <input
                   type="color"
-                  className="mt-1 h-10 w-full"
+                  className="mt-1 h-10 w-full cursor-pointer rounded-xl border border-orange-300 bg-orange-50 p-1"
                   value={accentColor}
                   onChange={(e) => setAccentColor(e.target.value)}
                 />
               </label>
             </div>
 
-            <label className="block text-sm">
+            <label className="block text-sm font-medium text-foreground">
               Tagline
               <input
-                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
+                className={`mt-1 ${fieldClassName}`}
                 value={tagline}
                 onChange={(e) => setTagline(e.target.value)}
               />
               {hintBrandGuardCopy(tagline).map((hint) => (
-                <p key={hint} className="mt-1 text-xs text-amber-700">
+                <p key={hint} className="mt-1 text-xs text-amber-200">
                   {hint}
                 </p>
               ))}
             </label>
-            <label className="block text-sm">
+            <label className="block text-sm font-medium text-foreground">
               Promo title
               <input
-                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
+                className={`mt-1 ${fieldClassName}`}
                 value={promoTitle}
                 onChange={(e) => setPromoTitle(e.target.value)}
               />
               {hintBrandGuardCopy(promoTitle).map((hint) => (
-                <p key={hint} className="mt-1 text-xs text-amber-700">
+                <p key={hint} className="mt-1 text-xs text-amber-200">
                   {hint}
                 </p>
               ))}
             </label>
-            <label className="block text-sm">
+            <label className="block text-sm font-medium text-foreground">
               Promo subtitle
               <input
-                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
+                className={`mt-1 ${fieldClassName}`}
                 value={promoSubtitle}
                 onChange={(e) => setPromoSubtitle(e.target.value)}
               />
               {hintBrandGuardCopy(promoSubtitle).map((hint) => (
-                <p key={hint} className="mt-1 text-xs text-amber-700">
+                <p key={hint} className="mt-1 text-xs text-amber-200">
                   {hint}
                 </p>
               ))}
@@ -700,7 +764,11 @@ export function LaunchWizard() {
             )}
             <div className="flex flex-wrap gap-2">
               <Button disabled={saving} onClick={() => void publish()}>
-                {saving ? "Publishing…" : "Publish storefront"}
+                {saving
+                  ? "Publishing…"
+                  : revisingAfterPublish || published
+                    ? "Re-publish storefront"
+                    : "Publish storefront"}
               </Button>
               <button
                 type="button"
@@ -709,6 +777,18 @@ export function LaunchWizard() {
               >
                 ← Edit personalization
               </button>
+              {revisingAfterPublish && (
+                <button
+                  type="button"
+                  className="text-sm text-muted-foreground underline"
+                  onClick={() => {
+                    setRevisingAfterPublish(false);
+                    setStep("done");
+                  }}
+                >
+                  Cancel change
+                </button>
+              )}
             </div>
           </Card>
         )}
@@ -721,7 +801,23 @@ export function LaunchWizard() {
               <code className="rounded bg-muted px-1 text-xs">/{slug}</code> from the dashboard.
             </p>
             <div className="flex flex-wrap gap-2">
-              <Button onClick={() => router.push("/products")}>Add products</Button>
+              {templateSwitch?.allowed !== false ? (
+                <Button onClick={startTemplateChange}>Change storefront template</Button>
+              ) : (
+                <Link
+                  href={upgradeHref(
+                    (templateSwitch?.requiredPlan === "pro" ? "pro" : "growth") as "growth" | "pro",
+                    "launch-template-switch"
+                  )}
+                  className="inline-flex items-center rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-100"
+                >
+                  Upgrade to {PLAN_DISPLAY[templateSwitch?.requiredPlan ?? "growth"]} to change
+                  template
+                </Link>
+              )}
+              <Button variant="secondary" onClick={() => router.push("/products")}>
+                Add products
+              </Button>
               <Link
                 href="/"
                 className="inline-flex items-center rounded-xl border border-border px-4 py-2 text-sm font-medium"
@@ -729,6 +825,12 @@ export function LaunchWizard() {
                 Go to dashboard
               </Link>
             </div>
+            {templateSwitch?.freeDuringSoftLaunch && (
+              <p className="text-xs text-slate-400">
+                Soft launch tip: you can switch looks freely while testing. After production launch,
+                post-publish template changes will require Pro.
+              </p>
+            )}
           </Card>
         )}
       </div>

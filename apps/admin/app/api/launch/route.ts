@@ -26,6 +26,7 @@ import {
 } from "@guma-commerce/storefront-themes";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 import { mergeCuratedWithStock, resolveStockInstall } from "@/lib/template-stock-launch";
+import { canChangeStorefrontTemplateAfterPublish } from "@guma-commerce/plans";
 
 async function curatedForDna(
   dna: Parameters<typeof listCuratedTemplatesForDna>[0],
@@ -74,6 +75,7 @@ export async function GET() {
     const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3010";
     const published = Boolean(state.themePublishedJson?.templateId);
     const launchDone = dna.launchStep === "done" || published;
+    const templateSwitch = canChangeStorefrontTemplateAfterPublish(state.subscriptionPlan);
 
     return NextResponse.json({
       ok: true,
@@ -87,6 +89,7 @@ export async function GET() {
       draft,
       published,
       launchDone,
+      templateSwitch,
       libraryStats: {
         curatedForCategory: curatedTemplates.length,
         liveTopPicks: recommendations.length,
@@ -188,6 +191,24 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "select_template") {
+      const alreadyPublished = Boolean(state.themePublishedJson?.templateId);
+      if (alreadyPublished) {
+        const entitlement = canChangeStorefrontTemplateAfterPublish(state.subscriptionPlan);
+        if (!entitlement.allowed) {
+          return NextResponse.json(
+            {
+              ok: false,
+              error: entitlement.reason ?? "Upgrade required to change template.",
+              code: "TEMPLATE_SWITCH_UPGRADE",
+              upgradeRequired: true,
+              requiredPlan: entitlement.requiredPlan,
+              templateSwitch: entitlement,
+            },
+            { status: 403 }
+          );
+        }
+      }
+
       const dnaBase =
         state.storeDnaJson ??
         buildStoreDNA({
@@ -245,6 +266,16 @@ export async function POST(request: Request) {
         vibe: String(dnaBase.vibe),
       });
 
+      const stockSkin =
+        install && "stockSkin" in install
+          ? (install as { stockSkin?: {
+              primaryColor: string;
+              accentColor: string;
+              displayFont: "bricolage" | "system" | "mono-accent";
+              radius: string;
+            } }).stockSkin
+          : undefined;
+
       const draft = {
         ...brandKit,
         templateId: install.liveTemplateId,
@@ -252,6 +283,15 @@ export async function POST(request: Request) {
         vibe: String(dnaBase.vibe),
         // Curated pick identity + look knobs seeded from catalog id (not just shop name)
         storeLook: install.storeLook,
+        // Ops stock skins also carry palette/font/radius so variants aren't clones
+        ...(stockSkin
+          ? {
+              primaryColor: stockSkin.primaryColor,
+              accentColor: stockSkin.accentColor,
+              displayFont: stockSkin.displayFont,
+              radius: stockSkin.radius,
+            }
+          : {}),
         ...(install.catalogId
           ? {
               catalogId: install.catalogId,

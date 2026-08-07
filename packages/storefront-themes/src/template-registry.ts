@@ -183,6 +183,26 @@ export const STOREFRONT_TEMPLATE_REGISTRY: StorefrontTemplateRegistryEntry[] = [
     categoryHints: [/photograph|photo.?studio|creative.?studio|print(ing)?|signage|graphic.?design/i],
     storefrontPath: "apps/web/components/storefront/studio",
   },
+  {
+    id: "haircut",
+    patternId: "haircut",
+    label: "HairCut Salon",
+    version: "1.0.0",
+    source: "reference/haircut-1.0.0 (ThemeWagon / HTML Codex, free)",
+    license: "ThemeWagon free license",
+    categoryHints: [/barber|hair.?salon|haircut|beauty.?salon|spa|grooming/i],
+    storefrontPath: "apps/web/components/storefront/haircut",
+  },
+  {
+    id: "specialty",
+    patternId: "specialty",
+    label: "Specialty",
+    version: "1.0.0",
+    source: "Guma One native specialty / single-offer template",
+    license: "Guma One",
+    categoryHints: [/specialty|single.?product|flagship|phone.?repair|device.?repair/i],
+    storefrontPath: "apps/web/components/storefront/specialty",
+  },
 ];
 
 export function getTemplateRegistryEntry(

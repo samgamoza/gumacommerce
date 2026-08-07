@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { DemoTenant } from "@/lib/demo-data";
-import { adminUrl, shopPublicUrl, shopPublicUrlLabel } from "@/lib/utils";
+import { shopPublicUrl, shopPublicUrlLabel } from "@/lib/utils";
 
 export function KairaFooter({ tenant }: { tenant: DemoTenant }) {
   const phone =
@@ -29,11 +29,6 @@ export function KairaFooter({ tenant }: { tenant: DemoTenant }) {
               </li>
               <li>
                 <Link href={`/${tenant.slug}/checkout`}>Cart</Link>
-              </li>
-              <li>
-                <a href={adminUrl} target="_blank" rel="noreferrer">
-                  Seller Dashboard
-                </a>
               </li>
             </ul>
           </div>

@@ -147,8 +147,8 @@ export const DEDICATED_PORT_PRIORITY: Array<{
   {
     category: "Appliance & Device Repair",
     reason: "On-demand repair bookings — not retail cart chrome",
-    interimTemplate: "aircon",
-    suggestedPorts: ["apex", "aircon"],
+    interimTemplate: "specialty",
+    suggestedPorts: ["specialty", "apex", "aircon"],
   },
   {
     category: "House Painting & Decorating",

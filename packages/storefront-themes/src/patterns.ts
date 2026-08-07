@@ -109,7 +109,7 @@ export const STORE_PATTERNS: StorePatternDefinition[] = [
     tags: ["fashion", "apparel", "clothing", "boutique", "style"],
     categoryHints: [
       /fashion|apparel|clothing|boutique|streetwear|dress|wear/i,
-      /beauty|salon|accessories|handbag|jewelry/i,
+      /beauty.?product|skincare|accessories|handbag|jewelry/i,
     ],
     templateId: "kaira",
     storefrontRenderer: "kaira",
@@ -266,6 +266,34 @@ export const STORE_PATTERNS: StorePatternDefinition[] = [
     storefrontRenderer: "studio",
     dashboardRenderer: "guma",
   },
+  {
+    id: "haircut",
+    label: "HairCut Salon",
+    description:
+      "Barbershop & salon appointments with dark service grid and pricing — ported from HairCut (ThemeWagon).",
+    tags: ["barber", "salon", "haircut", "grooming", "beauty"],
+    categoryHints: [
+      /barber|hair.?salon|haircut|gupit|beauty.?salon|spa|nail.?salon|lash/i,
+      /grooming|fade|shave|hair.?color/i,
+    ],
+    templateId: "haircut",
+    storefrontRenderer: "haircut",
+    dashboardRenderer: "guma",
+  },
+  {
+    id: "specialty",
+    label: "Specialty",
+    description:
+      "Single-offer specialty storefront that highlights one hero product or service for focused conversion.",
+    tags: ["specialty", "single product", "flagship", "hero offer"],
+    categoryHints: [
+      /specialty|single.?product|flagship|signature.?service|one.?product/i,
+      /phone.?repair|device.?repair|cellphone.?repair|gadget.?repair/i,
+    ],
+    templateId: "specialty",
+    storefrontRenderer: "specialty",
+    dashboardRenderer: "guma",
+  },
 ];
 
 export const STORE_PATTERN_MAP = Object.fromEntries(
@@ -352,6 +380,8 @@ export function matchStorePattern(input: {
   if (templateId === "carserv") return "carserv";
   if (templateId === "motto") return "motto";
   if (templateId === "studio") return "studio";
+  if (templateId === "haircut") return "haircut";
+  if (templateId === "specialty") return "specialty";
 
   const category = input.category?.trim() ?? "";
   if (category) {

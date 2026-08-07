@@ -97,6 +97,13 @@ export {
   type StoreTypeScale,
 } from "./store-look";
 export {
+  deriveStockSkin,
+  hashStockKey,
+  resolveStockSkin,
+  type StockSkin,
+  type StockSkinJson,
+} from "./stock-skin";
+export {
   SIMPLY_SWEET_HERO_STYLES,
   SIMPLY_SWEET_SECTION_FLAGS,
   SIMPLY_SWEET_VARIATION_COUNT,

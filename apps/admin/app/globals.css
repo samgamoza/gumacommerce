@@ -63,7 +63,54 @@
   }
 }
 
+@layer base {
+  /*
+   * High-contrast form fields in the seller console main pane.
+   * Light orange surface + dark ink so typed/autofilled text never disappears
+   * on the dark dashboard (Launch personalize, products, settings, etc.).
+   */
+  .guma-console-main input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="color"]):not([type="range"]):not([type="submit"]):not([type="button"]):not([type="image"]),
+  .guma-console-main textarea,
+  .guma-console-main select {
+    /* !important beats leftover bg-card/text-foreground utilities during soft-launch review */
+    background-color: #fff7ed !important;
+    color: #1c1917 !important;
+    border-color: #fdba74 !important;
+    caret-color: #1c1917;
+  }
+
+  .guma-console-main input::placeholder,
+  .guma-console-main textarea::placeholder {
+    color: #78716c !important;
+    opacity: 1;
+  }
+
+  .guma-console-main input:-webkit-autofill,
+  .guma-console-main input:-webkit-autofill:hover,
+  .guma-console-main input:-webkit-autofill:focus,
+  .guma-console-main textarea:-webkit-autofill,
+  .guma-console-main select:-webkit-autofill {
+    -webkit-text-fill-color: #1c1917;
+    caret-color: #1c1917;
+    box-shadow: 0 0 0 1000px #fff7ed inset;
+    transition: background-color 99999s ease-out;
+  }
+
+  .guma-console-main input[type="color"] {
+    background-color: #fff7ed;
+    border: 1px solid #fdba74;
+    border-radius: 0.75rem;
+    padding: 0.25rem;
+    cursor: pointer;
+  }
+}
+
 @layer components {
+  /* Shared utility (also available via @guma-commerce/ui fieldClassName) */
+  .guma-field {
+    @apply h-11 w-full rounded-xl border border-orange-300 bg-orange-50 px-3 text-sm text-stone-900 placeholder:text-stone-500 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-400/30 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
   /* Frosted glass panels */
   .glass {
     background: rgba(15, 23, 42, 0.6);

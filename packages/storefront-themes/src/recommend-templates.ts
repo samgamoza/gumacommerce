@@ -92,10 +92,23 @@ const CATEGORY_AFFINITY: Record<string, Partial<Record<ShopTemplateId, number>>>
     "clean-guma": 14,
   },
   "Appliance & Device Repair": {
-    aircon: 46,
-    electro: 40,
-    carserv: 28,
-    "clean-guma": 20,
+    specialty: 50,
+    aircon: 40,
+    electro: 36,
+    carserv: 24,
+    "clean-guma": 18,
+  },
+  "Barber & Hair Salons": {
+    haircut: 50,
+    specialty: 28,
+    mellow: 18,
+    studio: 16,
+  },
+  "Beauty Salons & Spas": {
+    haircut: 48,
+    specialty: 30,
+    mellow: 22,
+    studio: 18,
   },
   "Home Services & Trades": {
     aircon: 40,
@@ -146,7 +159,7 @@ const CATEGORY_AFFINITY: Record<string, Partial<Record<ShopTemplateId, number>>>
     mellow: 28,
     studio: 24,
   },
-  Electronics: { electro: 48, ministore: 30, zay: 22 },
+  Electronics: { electro: 48, ministore: 30, zay: 22, specialty: 26 },
   "Fashion & Apparel": { bloom: 44, kaira: 42, stylish: 38, zay: 24 },
   "Food & Beverage": {
     sarab: 36,
@@ -162,7 +175,7 @@ const CATEGORY_AFFINITY: Record<string, Partial<Record<ShopTemplateId, number>>>
   "Hotels & Resorts": { mellow: 46 },
   "Travel & Tours": { mellow: 40, "clean-guma": 16 },
   "Retail & General Merchandise": { zay: 40, ministore: 34, electro: 22, motto: 18 },
-  "Beauty & Skincare": { bloom: 34, kaira: 28, "magazine-rack": 24 },
+  "Beauty & Skincare": { bloom: 34, kaira: 28, "magazine-rack": 24, specialty: 22 },
   "Healthcare & Clinics": { mellow: 40, "mono-market": 34, "clean-guma": 28 },
   "Real Estate & Property": { mellow: 42, furnish: 30, "mono-market": 28 },
   "Education & Training": { "mono-market": 40, "clean-guma": 32, studio: 26 },
@@ -217,7 +230,11 @@ function categoryScore(pkg: TemplatePackageMetadata, category: string, id: ShopT
   if (/print|sign|graphic|press|banner/i.test(category) && ["studio", "ministore", "mono-market", "zay"].includes(id)) {
     score = Math.max(score, 30);
   }
-  if (/auto|car|vehicle|motor|detail|garage|spa/i.test(category) && ["carserv", "motto", "electro", "ministore"].includes(id)) {
+  if (
+    /auto|car|vehicle|motor|detail|garage/i.test(category) &&
+    !/barber|salon|spa|hair/i.test(category) &&
+    ["carserv", "motto", "electro", "ministore"].includes(id)
+  ) {
     score = Math.max(score, 30);
   }
   if (/hvac|air.?con|cooling|heating/i.test(category) && id === "aircon") {
@@ -225,6 +242,15 @@ function categoryScore(pkg: TemplatePackageMetadata, category: string, id: ShopT
   }
   if (/photo|studio|creative|print/i.test(category) && id === "studio") {
     score = Math.max(score, 36);
+  }
+  if (/barber|hair.?salon|haircut|beauty.?salon|grooming/i.test(category) && id === "haircut") {
+    score = Math.max(score, 42);
+  }
+  if (
+    /specialty|single.?product|flagship|phone.?repair|device.?repair|cellphone.?repair/i.test(category) &&
+    id === "specialty"
+  ) {
+    score = Math.max(score, 40);
   }
   if (
     /insurance|financial|fintech|banking/i.test(category) &&
@@ -386,6 +412,10 @@ function resolveInstallId(entry: BundleTemplateCatalogEntry): ShopTemplateId | n
   if (entry.shopCategory === "Printing & Signage") return "studio";
   if (entry.shopCategory === "HVAC & Air Conditioning") return "aircon";
   if (entry.shopCategory === "Photography & Creative") return "studio";
+  if (entry.shopCategory === "Barber & Hair Salons" || entry.shopCategory === "Beauty Salons & Spas") {
+    return "haircut";
+  }
+  if (entry.shopCategory === "Appliance & Device Repair") return "specialty";
   if (entry.shopCategory === "Electronics") return "electro";
   if (entry.shopCategory === "Fashion & Apparel") return "bloom";
   if (entry.shopCategory === "Food & Beverage") return "sarab";

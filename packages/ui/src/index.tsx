@@ -70,3 +70,16 @@ export function formatPrice(amount: number): string {
     minimumFractionDigits: 0,
   }).format(amount);
 }
+
+/**
+ * High-contrast form fields for review/testing (warm orange surface + dark ink).
+ * Use on seller console and storefront checkout so typed text stays readable.
+ */
+export const fieldClassName =
+  "h-11 w-full rounded-xl border border-orange-300 bg-orange-50 px-3 text-sm text-stone-900 placeholder:text-stone-500 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-400/30 disabled:cursor-not-allowed disabled:opacity-50";
+
+export const textareaFieldClassName =
+  "w-full rounded-xl border border-orange-300 bg-orange-50 px-3 py-2 text-sm text-stone-900 placeholder:text-stone-500 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-400/30 disabled:cursor-not-allowed disabled:opacity-50";
+
+export const selectFieldClassName =
+  "h-11 w-full rounded-xl border border-orange-300 bg-orange-50 px-3 text-sm text-stone-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-400/30 disabled:cursor-not-allowed disabled:opacity-50";

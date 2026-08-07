@@ -13,7 +13,7 @@ import {
 import { useMemo, useState } from "react";
 import type { DemoProduct, DemoTenant } from "@/lib/demo-data";
 import { useCart } from "@/lib/cart";
-import { adminUrl, shopPublicUrl, shopPublicUrlLabel } from "@/lib/utils";
+import { shopPublicUrl, shopPublicUrlLabel } from "@/lib/utils";
 import {
   MOTTO_FEATURE_STRIP,
   MOTTO_HERO_IMAGES,
@@ -373,11 +373,6 @@ export function MottoFooter({ tenant }: { tenant: DemoTenant }) {
               </li>
               <li>
                 <Link href={`/${tenant.slug}/checkout`}>Checkout</Link>
-              </li>
-              <li>
-                <a href={adminUrl} target="_blank" rel="noreferrer">
-                  Seller Dashboard
-                </a>
               </li>
             </ul>
           </div>

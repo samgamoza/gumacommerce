@@ -60,8 +60,11 @@ const checkoutSchema = z.object({
     email: z.string().trim().email().max(255).optional().or(z.literal("")),
   }),
   address: z.string().trim().max(500).optional(),
+  street1: z.string().trim().max(255).optional(),
+  street2: z.string().trim().max(255).optional(),
   city: z.string().trim().max(120).optional(),
   barangay: z.string().trim().max(120).optional(),
+  province: z.string().trim().max(120).optional(),
   postalCode: z.string().trim().max(20).optional(),
   notes: z.string().trim().max(500).optional(),
   items: z
@@ -229,15 +232,20 @@ export async function POST(request: Request) {
     if (checkoutConfig.customer?.requireEmail && !body.customer.email) {
       return NextResponse.json({ error: "Email is required." }, { status: 400 });
     }
-    if (
-      body.fulfillment === "delivery" &&
-      checkoutConfig.customer?.requireStructuredAddress &&
-      (!(body.city?.trim()) || !(body.barangay?.trim()))
-    ) {
-      return NextResponse.json(
-        { error: "Please enter your city and barangay." },
-        { status: 400 }
-      );
+    if (body.fulfillment === "delivery") {
+      const street = body.street1?.trim() || body.address?.trim();
+      if (!street || street.length < 5) {
+        return NextResponse.json(
+          { error: "Please enter your street address." },
+          { status: 400 }
+        );
+      }
+      if (!body.province?.trim() || !body.city?.trim() || !body.barangay?.trim()) {
+        return NextResponse.json(
+          { error: "Please enter province, city/town, and barangay." },
+          { status: 400 }
+        );
+      }
     }
 
     if (body.sessionKey) {
@@ -247,9 +255,11 @@ export async function POST(request: Request) {
         cartJson: body.items,
         customerJson: body.customer,
         addressJson: {
-          line1: body.address,
+          line1: body.street1 || body.address,
+          line2: body.street2,
           city: body.city,
           barangay: body.barangay,
+          province: body.province,
           postalCode: body.postalCode,
         },
         couponCode: body.couponCode ?? null,
@@ -273,6 +283,7 @@ export async function POST(request: Request) {
           computeDeliveryFee(estimatedSubtotal, settings, {
             city: body.city,
             barangay: body.barangay,
+            province: body.province,
             postalCode: body.postalCode,
           });
 
@@ -286,11 +297,13 @@ export async function POST(request: Request) {
       },
       deliveryType: body.fulfillment,
       deliveryAddress:
-        body.fulfillment === "delivery" && body.address
+        body.fulfillment === "delivery" && (body.address || body.street1)
           ? {
-              line1: body.address,
+              line1: body.address || body.street1 || "",
+              line2: body.street2,
               city: body.city,
               barangay: body.barangay,
+              province: body.province,
               postalCode: body.postalCode,
               notes: body.notes,
             }

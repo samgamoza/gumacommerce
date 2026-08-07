@@ -27,7 +27,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { DemoProduct, DemoTenant } from "@/lib/demo-data";
 import { useCart } from "@/lib/cart";
 import { productCardCtaLabel, productCardPricing } from "@/lib/product-price-display";
-import { adminUrl, shopPublicUrl, shopPublicUrlLabel } from "@/lib/utils";
+import { shopPublicUrl, shopPublicUrlLabel } from "@/lib/utils";
 import {
   CARSERV_FEATURE_SERVICES,
   CARSERV_HERO_CAR,
@@ -661,11 +661,6 @@ export function CarservFooter({ tenant }: { tenant: DemoTenant }) {
               </li>
               <li>
                 <Link href={checkoutHref}>Cart & Checkout</Link>
-              </li>
-              <li>
-                <a href={adminUrl} target="_blank" rel="noreferrer">
-                  Seller Dashboard
-                </a>
               </li>
             </ul>
             {phone && (

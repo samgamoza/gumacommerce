@@ -26,7 +26,11 @@ import {
 
 import { BusinessCategoryPicker } from "@/components/business-category-picker";
 import { storefrontUrl } from "@/lib/utils";
-import { SHOP_BUSINESS_CATEGORIES } from "@guma-commerce/storefront-themes";
+import {
+  getShopTemplate,
+  isShopTemplateId,
+  SHOP_BUSINESS_CATEGORIES,
+} from "@guma-commerce/storefront-themes";
 
 
 
@@ -192,7 +196,28 @@ export function ShopSettingsPage() {
 
         </SettingsCard>
 
-
+        <SettingsCard title="Storefront template">
+          <p className="text-sm text-muted-foreground">
+            Current look:{" "}
+            <span className="font-medium text-foreground">
+              {(() => {
+                const theme = settings?.themeJson as { templateId?: string } | null | undefined;
+                const id = theme?.templateId;
+                if (id && isShopTemplateId(id)) return getShopTemplate(id).label;
+                return id || "Not set yet";
+              })()}
+            </span>
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Switch to another template (HairCut, Specialty, Electro, etc.), then re-publish.
+          </p>
+          <Link
+            href="/launch?changeTemplate=1"
+            className="mt-3 inline-flex items-center rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+          >
+            Change storefront template
+          </Link>
+        </SettingsCard>
 
         <SettingsCard title="Storefront promo banner">
 

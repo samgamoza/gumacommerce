@@ -42,6 +42,8 @@ export const TEMPLATE_PREVIEW_IMAGES: Record<ShopTemplateId, string> = {
   carserv: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=960&q=80",
   motto: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=960&q=80",
   studio: "https://images.unsplash.com/photo-1452587925148-ce544e77e382?w=960&q=80",
+  haircut: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=960&q=80",
+  specialty: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=960&q=80",
 };
 
 /** Category mood images when recommending from the Free Bundle library (not yet ported). */
@@ -58,6 +60,12 @@ export const CATEGORY_PREVIEW_IMAGES: Record<string, string> = {
     "https://images.unsplash.com/photo-1631545806609-c2b666c4a6f4?w=960&q=80",
   "Photography & Creative":
     "https://images.unsplash.com/photo-1452587925148-ce544e77e382?w=960&q=80",
+  "Barber & Hair Salons":
+    "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=960&q=80",
+  "Beauty Salons & Spas":
+    "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=960&q=80",
+  "Appliance & Device Repair":
+    "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=960&q=80",
   "Home Services & Trades":
     "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=960&q=80",
   "Automotive Parts & Accessories":

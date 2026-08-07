@@ -406,7 +406,7 @@ export function AdminShell({
           </div>
         ) : null}
 
-        <div className="flex-1 px-4 py-6 lg:px-8">
+        <main className="guma-console-main flex-1 px-4 py-6 lg:px-8">
           <div className="mb-6">
             <h1 className="font-display text-2xl font-bold tracking-tight text-white">{title}</h1>
             {description ? (
@@ -414,7 +414,7 @@ export function AdminShell({
             ) : null}
           </div>
           {children}
-        </div>
+        </main>
       </div>
     </div>
   );

@@ -32,7 +32,7 @@ import {
 import { notifyHelpdeskAgentReply } from "@guma-commerce/services";
 import {
   defaultLiveTemplateForCategory,
-  deriveStoreLook,
+  deriveStockSkin,
   isShopTemplateId,
   previewImageForCategory,
 } from "@guma-commerce/storefront-themes";
@@ -310,6 +310,7 @@ export async function updateSupportTicketAction(
 export async function upsertShopCategoryAction(input: {
   id?: string;
   label: string;
+  parentId?: string | null;
   status?: ShopCategoryStatus;
   sortOrder?: number;
   minVariants?: number;
@@ -326,11 +327,16 @@ export async function upsertShopCategoryAction(input: {
       entityType: "shop_business_category",
       entityId: row.id,
       entityLabel: row.label,
+      metadata: { parentId: row.parentId ?? null },
     });
     await recordTemplateIntelligenceEvent({
       eventType: input.id ? "category_updated" : "category_created",
       categoryLabel: row.label,
-      payload: { minVariants: row.minVariants, targetVariants: row.targetVariants },
+      payload: {
+        minVariants: row.minVariants,
+        targetVariants: row.targetVariants,
+        parentId: row.parentId ?? null,
+      },
     });
     revalidatePath("/templates");
     return { ok: true };
@@ -382,7 +388,7 @@ export async function createTemplateStockAction(input: {
       input.stockKey?.trim() ||
       `${slugifyShopCategory(input.categoryLabel)}-${slugifyShopCategory(input.label)}`;
     const stockKey = baseKey.slice(0, 80);
-    const storeLook = deriveStoreLook(hashString(`stock::${stockKey}`));
+    const storeLook = deriveStockSkin(hashString(`stock::${stockKey}`));
     const row = await createTemplateStock({
       stockKey,
       label: input.label.trim(),
@@ -469,7 +475,7 @@ async function seedVariantsForCategory(input: {
   for (let i = 1; created < want && i <= want + 20; i += 1) {
     const stockKey = `${slug}-v${String(i).padStart(2, "0")}`;
     if (activeKeys.has(stockKey)) continue;
-    const storeLook = deriveStoreLook(hashString(`stock::${stockKey}`));
+    const storeLook = deriveStockSkin(hashString(`stock::${stockKey}`));
     await createTemplateStock({
       stockKey,
       label: `${cat.label} Look ${i}`,

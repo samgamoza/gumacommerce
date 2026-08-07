@@ -49,6 +49,7 @@ export {
   syncMissingShopCategories,
   listShopBusinessCategories,
   listOnboardingCategoryLabels,
+  listOnboardingCategoryGroups,
   upsertShopBusinessCategory,
   setShopCategoryStatus,
   listTemplateStock,
@@ -64,6 +65,7 @@ export {
   type ShopCategoryStatus,
   type TemplateStockStatus,
   type TemplateStockSource,
+  type OnboardingCategoryGroup,
 } from "./queries/template-intelligence";
 export {
   createSupportTicket,
@@ -387,4 +389,10 @@ export {
   type KycIdPath,
   type KycDocType,
 } from "./queries/kyc";
+export {
+  countPhLocations,
+  searchPhLocations,
+  type PhLocationKind,
+  type PhLocationSuggestion,
+} from "./queries/ph-locations";
 export * from "./schema/index";

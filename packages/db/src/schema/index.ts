@@ -11,6 +11,7 @@ import {
   pgEnum,
   index,
   uniqueIndex,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -150,7 +151,7 @@ export const tenants = pgTable(
     themeJson: jsonb("theme_json").$type<{
       templateId?: string;
       /** Paired storefront + seller-dashboard pattern (e.g. simply-sweet). */
-      patternId?: "classic" | "simply-sweet" | "bloom" | "sarab" | "furnish" | "zay" | "electro" | "kaira" | "foodmart" | "stylish" | "mellow" | "organic" | "waggy" | "fruitables" | "ministore" | "aircon" | "carserv" | "motto" | "studio";
+      patternId?: "classic" | "simply-sweet" | "bloom" | "sarab" | "furnish" | "zay" | "electro" | "kaira" | "foodmart" | "stylish" | "mellow" | "organic" | "waggy" | "fruitables" | "ministore" | "aircon" | "carserv" | "motto" | "studio" | "haircut" | "specialty";
       primaryColor?: string;
       accentColor?: string;
       fontFamily?: string;
@@ -385,6 +386,41 @@ export const addresses = pgTable("addresses", {
   isDefault: boolean("is_default").default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+/**
+ * PSA PSGC master list for checkout address autosuggest
+ * (province → city/municipality → barangay).
+ */
+export const phLocationKindEnum = pgEnum("ph_location_kind", [
+  "province",
+  "city",
+  "barangay",
+]);
+
+export const phLocations = pgTable(
+  "ph_locations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    psgcCode: varchar("psgc_code", { length: 20 }).notNull(),
+    kind: phLocationKindEnum("kind").notNull(),
+    name: varchar("name", { length: 255 }).notNull(),
+    nameNormalized: varchar("name_normalized", { length: 255 }).notNull(),
+    provinceCode: varchar("province_code", { length: 10 }).notNull(),
+    provinceName: varchar("province_name", { length: 255 }).notNull(),
+    cityCode: varchar("city_code", { length: 20 }),
+    cityName: varchar("city_name", { length: 255 }),
+  },
+  (table) => [
+    uniqueIndex("ph_locations_psgc_idx").on(table.psgcCode),
+    index("ph_locations_kind_name_idx").on(table.kind, table.nameNormalized),
+    index("ph_locations_province_city_idx").on(
+      table.kind,
+      table.provinceCode,
+      table.cityCode,
+      table.nameNormalized
+    ),
+  ]
+);
 
 // ─── Catalog ─────────────────────────────────────────────────────────────────
 
@@ -1154,6 +1190,10 @@ export const shopBusinessCategories = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     slug: varchar("slug", { length: 80 }).notNull(),
     label: varchar("label", { length: 120 }).notNull(),
+    /** Null = top-level vertical; set = subcategory under another category. */
+    parentId: uuid("parent_id").references((): AnyPgColumn => shopBusinessCategories.id, {
+      onDelete: "set null",
+    }),
     status: shopCategoryStatusEnum("status").default("enabled").notNull(),
     sortOrder: integer("sort_order").default(0).notNull(),
     /** Minimum distinct skins ops aims for (default 3). */
@@ -1168,6 +1208,7 @@ export const shopBusinessCategories = pgTable(
     uniqueIndex("shop_business_categories_slug_idx").on(table.slug),
     uniqueIndex("shop_business_categories_label_idx").on(table.label),
     index("shop_business_categories_status_sort_idx").on(table.status, table.sortOrder),
+    index("shop_business_categories_parent_idx").on(table.parentId),
   ]
 );
 
@@ -1198,6 +1239,12 @@ export const templateStock = pgTable(
       menuColumns?: "2" | "3";
       typeScale?: "classic" | "bold" | "soft";
       radiusTone?: "soft" | "sharp";
+      /** Visible on all renderers (seeded stock skins). */
+      primaryColor?: string;
+      accentColor?: string;
+      displayFont?: "bricolage" | "system" | "mono-accent";
+      radius?: string;
+      paletteId?: string;
     }>(),
     createdByUserId: uuid("created_by_user_id"),
     publishedAt: timestamp("published_at", { withTimezone: true }),

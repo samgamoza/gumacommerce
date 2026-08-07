@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Search, ShoppingBag, Sparkles } from "lucide-react";
+import { ShoppingBag, Sparkles } from "lucide-react";
 import { PremiumStorefrontSections } from "@/components/storefront/premium/premium-storefront-sections";
 import { ShopAssistant } from "@/components/storefront/shop-assistant";
 import { Badge } from "@/components/ui/badge";
@@ -161,20 +161,6 @@ function StoreHeaderThemed({ tenant }: { tenant: DemoTenant }) {
               <p className="truncate text-xs opacity-70">{tenant.tagline}</p>
             </div>
             <OrderButton tenant={tenant} />
-          </div>
-          <div className="relative pb-3">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50" />
-            <input
-              type="search"
-              placeholder="Search menu..."
-              className="h-10 w-full border pl-9 pr-4 text-sm outline-none"
-              style={{
-                borderRadius: theme.radius,
-                borderColor: theme.border,
-                backgroundColor: theme.mode === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.03)",
-                color: theme.foreground,
-              }}
-            />
           </div>
         </div>
       </header>

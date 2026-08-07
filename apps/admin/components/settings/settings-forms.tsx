@@ -101,9 +101,9 @@ export function SettingsActions({
 }
 
 export function inputClassName() {
-  return "h-10 w-full rounded-xl border border-border bg-card px-3 text-sm text-foreground";
+  return "guma-field h-10";
 }
 
 export function textareaClassName() {
-  return "w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground";
+  return "guma-field min-h-[5.5rem] h-auto py-2";
 }

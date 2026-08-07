@@ -2363,6 +2363,234 @@ const STUDIO_DEMO_TENANT: DemoTenant = {
   ],
 };
 
+const HAIRCUT_DEMO_TENANT: DemoTenant = {
+  slug: "haircut-demo",
+  name: "Barber Lane Manila",
+  tagline: "Sharp fades, classic cuts, and grooming — book your chair online.",
+  category: "Barber & Hair Salons",
+  location: "Makati, Metro Manila",
+  logoEmoji: "💈",
+  patternId: "haircut",
+  theme: { primaryColor: "#EB1616", accentColor: "#191C24" },
+  shopTheme: {
+    templateId: "haircut",
+    tier: "standard",
+    label: "HairCut Salon",
+    layout: "hero-stack",
+    header: "standard",
+    card: "grid",
+    hero: "photo",
+    tagline: "Sharp fades, classic cuts, and grooming — book your chair online.",
+    promoTitle: "We Will Keep You An Awesome Look",
+    promoSubtitle: "Appointments online · Walk-ins welcome · Transparent pricing",
+    primaryColor: "#EB1616",
+    accentColor: "#191C24",
+    background: "#000000",
+    foreground: "#ffffff",
+    cardBackground: "#191C24",
+    muted: "#6C7293",
+    border: "#2a2f3a",
+    mode: "dark",
+    radius: "0",
+    displayFont: "system",
+    previewGradient: "linear-gradient(160deg, #000000 0%, #EB1616 55%, #191C24 100%)",
+  },
+  codEnabled: true,
+  subscriptionPlan: "free",
+  storeSettings: {
+    ...DEFAULT_STOREFRONT_SETTINGS,
+    whatsapp: {
+      enabled: true,
+      phone: "+63 917 555 0505",
+      greeting: "Hi! I'd like to book a haircut appointment:",
+    },
+  },
+  shopCategories: [
+    { id: "cuts", name: "Cuts", slug: "cuts" },
+    { id: "grooming", name: "Grooming", slug: "grooming" },
+    { id: "color", name: "Color", slug: "color" },
+  ],
+  coverUrl: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=1600&q=80",
+  products: [
+    {
+      id: "hc-1",
+      slug: "signature-fade",
+      title: "Signature Fade",
+      shortDescription: "Clean skin or mid fade with hot towel finish.",
+      price: 350,
+      compareAtPrice: 400,
+      image: "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=800&q=80",
+      category: "Cuts",
+      categorySlug: "cuts",
+      tags: ["bestseller"],
+      isMain: true,
+      pricingMeta: { servicePriceStyle: "base_minimum" },
+    },
+    {
+      id: "hc-2",
+      slug: "classic-haircut",
+      title: "Classic Haircut",
+      shortDescription: "Scissor cut styled to your face shape.",
+      price: 300,
+      image: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=800&q=80",
+      category: "Cuts",
+      categorySlug: "cuts",
+      tags: ["popular"],
+      pricingMeta: { servicePriceStyle: "base_minimum" },
+    },
+    {
+      id: "hc-3",
+      slug: "beard-trim",
+      title: "Beard Trim",
+      shortDescription: "Shape, line-up, and balm for a sharp beard.",
+      price: 200,
+      image: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&q=80",
+      category: "Grooming",
+      categorySlug: "grooming",
+      tags: ["add-on"],
+      pricingMeta: { servicePriceStyle: "base_minimum" },
+    },
+    {
+      id: "hc-4",
+      slug: "hot-shave",
+      title: "Hot Towel Shave",
+      shortDescription: "Traditional straight-razor shave with aftershave.",
+      price: 280,
+      image: "https://images.unsplash.com/photo-1621607512214-68297480165e?w=800&q=80",
+      category: "Grooming",
+      categorySlug: "grooming",
+      tags: ["classic"],
+      pricingMeta: { servicePriceStyle: "base_minimum" },
+    },
+    {
+      id: "hc-5",
+      slug: "hair-color-refresh",
+      title: "Hair Color Refresh",
+      shortDescription: "Root touch-up or tone refresh by appointment.",
+      price: 1200,
+      compareAtPrice: 1500,
+      image: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800&q=80",
+      category: "Color",
+      categorySlug: "color",
+      tags: ["color"],
+      pricingMeta: { servicePriceStyle: "base_minimum" },
+    },
+    {
+      id: "hc-6",
+      slug: "cut-and-beard-combo",
+      title: "Cut & Beard Combo",
+      shortDescription: "Haircut plus beard trim — best value package.",
+      price: 480,
+      compareAtPrice: 550,
+      image: "https://images.unsplash.com/photo-1493256338651-d82f7acb2b38?w=800&q=80",
+      category: "Cuts",
+      categorySlug: "cuts",
+      tags: ["package", "bestseller"],
+      pricingMeta: { servicePriceStyle: "base_minimum" },
+    },
+  ],
+};
+
+const SPECIALTY_DEMO_TENANT: DemoTenant = {
+  slug: "specialty-demo",
+  name: "ScreenFix Express",
+  tagline: "Same-day phone screen repair — one clear offer, no catalog clutter.",
+  category: "Appliance & Device Repair",
+  location: "Cebu City",
+  logoEmoji: "📱",
+  patternId: "specialty",
+  theme: { primaryColor: "#0f766e", accentColor: "#134e4a" },
+  shopTheme: {
+    templateId: "specialty",
+    tier: "standard",
+    label: "Specialty",
+    layout: "hero-stack",
+    header: "minimal",
+    card: "row",
+    hero: "photo",
+    tagline: "Same-day phone screen repair — one clear offer, no catalog clutter.",
+    promoTitle: "iPhone Screen Replacement",
+    promoSubtitle: "Walk-in or book online · Most models done in 45 minutes",
+    primaryColor: "#0f766e",
+    accentColor: "#134e4a",
+    background: "#f4f7f6",
+    foreground: "#102a27",
+    cardBackground: "#ffffff",
+    muted: "#5b726e",
+    border: "#d5e0dd",
+    mode: "light",
+    radius: "0.75rem",
+    displayFont: "system",
+    previewGradient: "linear-gradient(160deg, #f4f7f6 0%, #0f766e 55%, #134e4a 100%)",
+  },
+  codEnabled: true,
+  subscriptionPlan: "free",
+  storeSettings: {
+    ...DEFAULT_STOREFRONT_SETTINGS,
+    whatsapp: {
+      enabled: true,
+      phone: "+63 917 555 0606",
+      greeting: "Hi! I need a phone repair quote:",
+    },
+  },
+  shopCategories: [
+    { id: "repairs", name: "Repairs", slug: "repairs" },
+    { id: "add-ons", name: "Add-ons", slug: "add-ons" },
+  ],
+  coverUrl: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=1600&q=80",
+  products: [
+    {
+      id: "sp-1",
+      slug: "iphone-screen-replacement",
+      title: "iPhone Screen Replacement",
+      shortDescription: "OEM-grade glass + LCD/OLED fit for popular iPhone models. Same-day turnaround.",
+      price: 2490,
+      compareAtPrice: 2990,
+      image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=1200&q=80",
+      category: "Repairs",
+      categorySlug: "repairs",
+      tags: ["bestseller", "flagship"],
+      isMain: true,
+      pricingMeta: { servicePriceStyle: "base_minimum" },
+    },
+    {
+      id: "sp-2",
+      slug: "android-screen-repair",
+      title: "Android Screen Repair",
+      shortDescription: "Samsung, Xiaomi, Oppo, and Vivo screen jobs — quote by model.",
+      price: 1890,
+      image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&q=80",
+      category: "Repairs",
+      categorySlug: "repairs",
+      tags: ["android"],
+      pricingMeta: { servicePriceStyle: "base_minimum" },
+    },
+    {
+      id: "sp-3",
+      slug: "battery-replacement",
+      title: "Battery Replacement",
+      shortDescription: "Restore all-day battery life with genuine-capacity cells.",
+      price: 1290,
+      image: "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=800&q=80",
+      category: "Repairs",
+      categorySlug: "repairs",
+      tags: ["battery"],
+      pricingMeta: { servicePriceStyle: "base_minimum" },
+    },
+    {
+      id: "sp-4",
+      slug: "tempered-glass-install",
+      title: "Tempered Glass Install",
+      shortDescription: "Premium glass + professional dust-free install after repair.",
+      price: 199,
+      image: "https://images.unsplash.com/photo-1556656793-08538906a9f8?w=800&q=80",
+      category: "Add-ons",
+      categorySlug: "add-ons",
+      tags: ["addon"],
+    },
+  ],
+};
+
 function demoShopEnabled(): boolean {
   // Demo data must never shadow a real tenant slug in production; enable it
   // explicitly with NEXT_PUBLIC_ENABLE_DEMO_SHOP=true (always on in dev).
@@ -2372,8 +2600,37 @@ function demoShopEnabled(): boolean {
   );
 }
 
-export function getTenant(slug: string): DemoTenant | null {
-  if (!demoShopEnabled()) return null;
+/** Known live-renderer → demo slug pairs (ops / Template Intel previews). */
+const LIVE_TEMPLATE_DEMO_SLUGS: Record<string, string> = {
+  bloom: "bloom-demo",
+  sarab: "sarab-demo",
+  furnish: "furnish-demo",
+  zay: "zay-demo",
+  electro: "electro-demo",
+  kaira: "kaira-demo",
+  foodmart: "foodmart-demo",
+  stylish: "stylish-demo",
+  mellow: "mellow-demo",
+  organic: "organic-demo",
+  waggy: "waggy-demo",
+  fruitables: "fruitables-demo",
+  ministore: "ministore-demo",
+  aircon: "aircon-demo",
+  carserv: "carserv-demo",
+  motto: "motto-demo",
+  studio: "studio-demo",
+  haircut: "haircut-demo",
+  specialty: "specialty-demo",
+  "simply-sweet": "demo",
+  "neon-bazaar": "demo",
+  "clean-guma": "demo",
+};
+
+export function demoSlugForLiveTemplate(liveTemplateId: string): string {
+  return LIVE_TEMPLATE_DEMO_SLUGS[liveTemplateId] ?? "demo";
+}
+
+function lookupDemoTenant(slug: string): DemoTenant | null {
   // Live demo + Halo Queen alias → same flagship as `/model` (Simply Sweet kitchen).
   if (slug === "demo" || slug === "haloqueen") {
     return getModelStoreTenant(slug);
@@ -2429,7 +2686,60 @@ export function getTenant(slug: string): DemoTenant | null {
   if (slug === "studio-demo") {
     return STUDIO_DEMO_TENANT;
   }
+  if (slug === "haircut-demo") {
+    return HAIRCUT_DEMO_TENANT;
+  }
+  if (slug === "specialty-demo") {
+    return SPECIALTY_DEMO_TENANT;
+  }
   return null;
+}
+
+export function getTenant(slug: string): DemoTenant | null {
+  if (!demoShopEnabled()) return null;
+  return lookupDemoTenant(slug);
+}
+
+/**
+ * Build a demo tenant for Template Intel stock preview (always available to ops,
+ * even when public demo shops are disabled).
+ */
+export function getOpsStockPreviewTenant(input: {
+  liveTemplateId: string;
+  label: string;
+  categoryLabel: string;
+  storeLook?: DemoTenant["shopTheme"]["storeLook"];
+  primaryColor?: string;
+  accentColor?: string;
+  displayFont?: DemoTenant["shopTheme"]["displayFont"];
+  radius?: string;
+}): DemoTenant | null {
+  const slug = demoSlugForLiveTemplate(input.liveTemplateId);
+  const base = lookupDemoTenant(slug) ?? lookupDemoTenant("demo");
+  if (!base) return null;
+  return {
+    ...base,
+    slug: `ops-preview-${input.liveTemplateId}`,
+    name: input.label,
+    category: input.categoryLabel,
+    tagline: `${input.categoryLabel} · ops stock preview`,
+    theme: {
+      primaryColor: input.primaryColor ?? base.theme.primaryColor,
+      accentColor: input.accentColor ?? base.theme.accentColor,
+    },
+    shopTheme: {
+      ...base.shopTheme,
+      templateId: input.liveTemplateId as DemoTenant["shopTheme"]["templateId"],
+      tagline: `${input.categoryLabel} · ops stock preview`,
+      promoTitle: input.label,
+      promoSubtitle: "Template Intel preview — not a live seller shop",
+      storeLook: input.storeLook ?? base.shopTheme.storeLook,
+      primaryColor: input.primaryColor ?? base.shopTheme.primaryColor,
+      accentColor: input.accentColor ?? base.shopTheme.accentColor,
+      displayFont: input.displayFont ?? base.shopTheme.displayFont,
+      radius: input.radius ?? base.shopTheme.radius,
+    },
+  };
 }
 
 export function getProduct(tenant: DemoTenant, productSlug: string): DemoProduct | undefined {
