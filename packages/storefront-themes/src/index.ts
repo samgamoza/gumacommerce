@@ -99,6 +99,7 @@ export {
 export {
   deriveStockSkin,
   hashStockKey,
+  lookIndexFromStockKey,
   resolveStockSkin,
   type StockSkin,
   type StockSkinJson,

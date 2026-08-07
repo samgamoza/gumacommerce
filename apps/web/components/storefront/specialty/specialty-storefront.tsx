@@ -14,6 +14,18 @@ import "./specialty-theme.css";
 export function SpecialtyStorefront({ tenant }: { tenant: DemoTenant }) {
   const primary = tenant.shopTheme.primaryColor;
   const accent = tenant.shopTheme.accentColor;
+  const radius = tenant.shopTheme.radius || "1rem";
+  const font = tenant.shopTheme.displayFont;
+  const headingFont =
+    font === "mono-accent"
+      ? "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+      : font === "system"
+        ? "var(--font-jakarta), system-ui, sans-serif"
+        : '"Fraunces", Georgia, serif';
+  const bodyFont =
+    font === "mono-accent"
+      ? "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+      : '"DM Sans", system-ui, sans-serif';
 
   return (
     <div
@@ -21,6 +33,11 @@ export function SpecialtyStorefront({ tenant }: { tenant: DemoTenant }) {
       style={{
         ["--sp-primary" as string]: primary,
         ["--sp-accent" as string]: accent,
+        ["--sp-radius" as string]: radius,
+        ["--sp-heading" as string]: headingFont,
+        ["--sp-body" as string]: bodyFont,
+        ["--sp-bg" as string]: `color-mix(in srgb, ${primary} 8%, #f8fafc)`,
+        ["--sp-ink" as string]: `color-mix(in srgb, ${primary} 35%, #0f172a)`,
       }}
     >
       <SpecialtyHeader tenant={tenant} />

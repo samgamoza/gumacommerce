@@ -2,19 +2,20 @@
 
 .sp-root {
   --sp-primary: #0f766e;
-  --sp-accent: #134e4a;
+  --sp-accent: #f59e0b;
   --sp-bg: #f4f7f6;
   --sp-ink: #102a27;
   --sp-muted: #5b726e;
   --sp-card: #ffffff;
   --sp-border: rgba(16, 42, 39, 0.12);
+  --sp-radius: 1rem;
   --sp-heading: "Fraunces", Georgia, serif;
   --sp-body: "DM Sans", system-ui, sans-serif;
   font-family: var(--sp-body);
   color: var(--sp-ink);
   background:
-    radial-gradient(1200px 500px at 10% -10%, color-mix(in srgb, var(--sp-primary) 18%, transparent), transparent 60%),
-    radial-gradient(900px 420px at 90% 0%, color-mix(in srgb, var(--sp-accent) 14%, transparent), transparent 55%),
+    radial-gradient(1200px 500px at 10% -10%, color-mix(in srgb, var(--sp-primary) 22%, transparent), transparent 60%),
+    radial-gradient(900px 420px at 90% 0%, color-mix(in srgb, var(--sp-accent) 20%, transparent), transparent 55%),
     var(--sp-bg);
 }
 
@@ -104,7 +105,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  color: var(--sp-primary);
+  color: var(--sp-accent);
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -140,7 +141,7 @@
   font-family: var(--sp-heading);
   font-size: 2rem;
   font-weight: 700;
-  color: var(--sp-ink);
+  color: var(--sp-primary);
 }
 
 .sp-compare {
@@ -161,6 +162,7 @@
   justify-content: center;
   gap: 0.45rem;
   border: none;
+  border-radius: var(--sp-radius);
   background: var(--sp-primary);
   color: white;
   font-weight: 700;
@@ -183,9 +185,9 @@
 }
 
 .sp-btn-ghost {
-  background: transparent;
+  background: color-mix(in srgb, var(--sp-accent) 16%, white);
   color: var(--sp-ink);
-  border: 1px solid var(--sp-border);
+  border: 2px solid var(--sp-accent);
 }
 
 .sp-meta {
@@ -199,10 +201,10 @@
 
 .sp-visual {
   position: relative;
-  border-radius: 1.5rem;
+  border-radius: var(--sp-radius);
   overflow: hidden;
   background: var(--sp-card);
-  box-shadow: 0 24px 60px rgba(16, 42, 39, 0.12);
+  box-shadow: 0 24px 60px color-mix(in srgb, var(--sp-primary) 22%, transparent);
   aspect-ratio: 1 / 1.05;
 }
 
@@ -214,13 +216,14 @@
   position: absolute;
   left: 1rem;
   top: 1rem;
-  background: rgba(255, 255, 255, 0.92);
-  color: var(--sp-ink);
+  background: var(--sp-accent);
+  color: #0f172a;
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   padding: 0.45rem 0.7rem;
+  border-radius: calc(var(--sp-radius) * 0.45);
 }
 
 .sp-section {
@@ -259,6 +262,7 @@
 .sp-card {
   background: var(--sp-card);
   border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius);
   padding: 0.85rem;
   display: flex;
   flex-direction: column;
@@ -270,7 +274,8 @@
   position: relative;
   aspect-ratio: 1;
   overflow: hidden;
-  background: #e8efed;
+  border-radius: calc(var(--sp-radius) * 0.65);
+  background: color-mix(in srgb, var(--sp-primary) 12%, #e8efed);
 }
 
 .sp-card h3 {

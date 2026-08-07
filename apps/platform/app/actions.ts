@@ -388,7 +388,7 @@ export async function createTemplateStockAction(input: {
       input.stockKey?.trim() ||
       `${slugifyShopCategory(input.categoryLabel)}-${slugifyShopCategory(input.label)}`;
     const stockKey = baseKey.slice(0, 80);
-    const storeLook = deriveStockSkin(hashString(`stock::${stockKey}`));
+    const storeLook = deriveStockSkin(hashString(`stock::${stockKey}`), stockKey);
     const row = await createTemplateStock({
       stockKey,
       label: input.label.trim(),
@@ -475,7 +475,7 @@ async function seedVariantsForCategory(input: {
   for (let i = 1; created < want && i <= want + 20; i += 1) {
     const stockKey = `${slug}-v${String(i).padStart(2, "0")}`;
     if (activeKeys.has(stockKey)) continue;
-    const storeLook = deriveStockSkin(hashString(`stock::${stockKey}`));
+    const storeLook = deriveStockSkin(hashString(`stock::${stockKey}`), stockKey);
     await createTemplateStock({
       stockKey,
       label: `${cat.label} Look ${i}`,
