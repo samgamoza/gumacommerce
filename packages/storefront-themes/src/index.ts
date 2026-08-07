@@ -40,6 +40,17 @@ export {
   type CommerceMode,
 } from "./commerce-chrome";
 export {
+  formatProductPriceLine,
+  formatProductUnitLabel,
+  productPricingKindForCategory,
+  productPricingKindForProduct,
+  resolveProductPriceDisplay,
+  type ProductPricingKind,
+  type ProductPricingMeta,
+  type ProductUnitType,
+  type ServicePriceStyle,
+} from "./product-pricing";
+export {
   SHOP_TEMPLATES,
   SHOP_TEMPLATE_MAP,
   TIER_DESCRIPTIONS,

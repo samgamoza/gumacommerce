@@ -10,7 +10,7 @@ import {
   Clock,
   Fan,
   Flame,
-  Mail,
+  Globe,
   MapPin,
   Menu,
   Phone,
@@ -24,6 +24,8 @@ import {
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import type { DemoProduct, DemoTenant } from "@/lib/demo-data";
 import { useCart } from "@/lib/cart";
+import { productCardCtaLabel, productCardPricing } from "@/lib/product-price-display";
+import { adminUrl, shopPublicUrl, shopPublicUrlLabel } from "@/lib/utils";
 import {
   AIRCON_ABOUT_IMAGES,
   AIRCON_HERO_SLIDES,
@@ -31,7 +33,6 @@ import {
   AIRCON_SERVICE_CATEGORIES,
   AIRCON_STATS,
   airconBrandName,
-  airconContactEmail,
   formatPhpPrice,
 } from "./aircon-utils";
 
@@ -52,7 +53,8 @@ export function AirconHeader({ tenant }: { tenant: DemoTenant }) {
   const homeHref = `/${tenant.slug}`;
   const checkoutHref = `/${tenant.slug}/checkout`;
   const phone = tenantPhone(tenant);
-  const email = airconContactEmail(tenant.slug);
+  const siteUrl = shopPublicUrl(tenant.slug);
+  const siteLabel = shopPublicUrlLabel(tenant.slug);
 
   const navLinks = [
     { href: homeHref, label: "Home", isLink: true },
@@ -75,8 +77,8 @@ export function AirconHeader({ tenant }: { tenant: DemoTenant }) {
               </span>
             )}
             <span>
-              <Mail className="h-3.5 w-3.5" />
-              {email}
+              <Globe className="h-3.5 w-3.5" />
+              <a href={siteUrl}>{siteLabel}</a>
             </span>
           </div>
           <div className="ac-topbar-links">
@@ -235,7 +237,8 @@ export function AirconHero({ tenant }: { tenant: DemoTenant }) {
 
 export function AirconAbout({ tenant }: { tenant: DemoTenant }) {
   const phone = tenantPhone(tenant);
-  const email = airconContactEmail(tenant.slug);
+  const siteUrl = shopPublicUrl(tenant.slug);
+  const siteLabel = shopPublicUrlLabel(tenant.slug);
 
   return (
     <>
@@ -276,9 +279,11 @@ export function AirconAbout({ tenant }: { tenant: DemoTenant }) {
                 )}
                 <div className="ac-about-contact-item">
                   <span className="ac-about-contact-icon">
-                    <Mail className="h-5 w-5" />
+                    <Globe className="h-5 w-5" />
                   </span>
-                  <a href={`mailto:${email}`}>{email}</a>
+                  <a href={siteUrl} target="_blank" rel="noreferrer">
+                    {siteLabel}
+                  </a>
                 </div>
               </div>
             </div>
@@ -391,15 +396,26 @@ export function AirconServices() {
   );
 }
 
-function AirconProductCard({ tenantSlug, product }: { tenantSlug: string; product: DemoProduct }) {
+function AirconProductCard({
+  tenantSlug,
+  product,
+  category,
+}: {
+  tenantSlug: string;
+  product: DemoProduct;
+  category?: string | null;
+}) {
   const { addItem, ready } = useCart(tenantSlug);
   const [adding, setAdding] = useState(false);
   const productHref = `/${tenantSlug}/products/${product.slug}`;
+  const pricing = productCardPricing(category, product, formatPhpPrice);
   const badge = product.tags.includes("bestseller")
     ? "Popular"
     : product.tags.includes("new")
       ? "New"
-      : null;
+      : pricing.kind === "service"
+        ? "Service"
+        : null;
 
   async function handleBook() {
     setAdding(true);
@@ -430,14 +446,17 @@ function AirconProductCard({ tenantSlug, product }: { tenantSlug: string; produc
           {product.title}
         </Link>
         <p className="ac-product-desc">{product.shortDescription}</p>
-        {product.compareAtPrice && product.compareAtPrice > product.price && (
-          <del className="ac-product-price-old">{formatPhpPrice(product.compareAtPrice)}</del>
+        {pricing.compareAtLine && (
+          <del className="ac-product-price-old">{pricing.compareAtLine}</del>
         )}
-        <span className="ac-product-price">{formatPhpPrice(product.price)}</span>
+        <span className="ac-product-price">{pricing.priceLine}</span>
+        {pricing.priceCaption && pricing.kind === "service" && (
+          <p className="ac-text-muted mt-1 text-xs">{pricing.priceCaption}</p>
+        )}
       </div>
       <div className="ac-product-footer">
         <button type="button" className="ac-btn ac-btn-sm" onClick={handleBook} disabled={!ready || adding}>
-          {adding ? "Booking…" : "Book Now"}
+          {adding ? "Booking…" : productCardCtaLabel(category)}
         </button>
         <Link href={productHref} className="ac-btn ac-btn-outline ac-btn-sm">
           Details
@@ -466,7 +485,12 @@ export function AirconProducts({ tenant }: { tenant: DemoTenant }) {
         ) : (
           <div className="ac-product-grid">
             {products.map((product) => (
-              <AirconProductCard key={product.id} tenantSlug={tenant.slug} product={product} />
+              <AirconProductCard
+                key={product.id}
+                tenantSlug={tenant.slug}
+                product={product}
+                category={tenant.category}
+              />
             ))}
           </div>
         )}
@@ -550,7 +574,8 @@ export function AirconQuote({ tenant }: { tenant: DemoTenant }) {
 
 export function AirconFooter({ tenant }: { tenant: DemoTenant }) {
   const phone = tenantPhone(tenant);
-  const email = airconContactEmail(tenant.slug);
+  const siteUrl = shopPublicUrl(tenant.slug);
+  const siteLabel = shopPublicUrlLabel(tenant.slug);
   const brand = airconBrandName(tenant.name);
   const homeHref = `/${tenant.slug}`;
 
@@ -585,8 +610,10 @@ export function AirconFooter({ tenant }: { tenant: DemoTenant }) {
                 </p>
               )}
               <p>
-                <Mail className="h-4 w-4 shrink-0 text-[var(--ac-primary)]" />
-                <a href={`mailto:${email}`}>{email}</a>
+                <Globe className="h-4 w-4 shrink-0 text-[var(--ac-primary)]" />
+                <a href={siteUrl} target="_blank" rel="noreferrer">
+                  {siteLabel}
+                </a>
               </p>
             </div>
           </div>
@@ -616,6 +643,11 @@ export function AirconFooter({ tenant }: { tenant: DemoTenant }) {
               </li>
               <li>
                 <Link href={`/${tenant.slug}/checkout`}>Checkout</Link>
+              </li>
+              <li>
+                <a href={adminUrl} target="_blank" rel="noreferrer">
+                  Seller Dashboard
+                </a>
               </li>
             </ul>
           </div>

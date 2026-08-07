@@ -1,7 +1,30 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, formatPrice } from "@guma-commerce/ui";
+import {
+  formatProductPriceLine,
+  productPricingKindForCategory,
+  type ProductPricingMeta,
+  type ProductUnitType,
+  type ServicePriceStyle,
+} from "@guma-commerce/storefront-themes";
+
+const PRODUCT_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp,image/gif,image/avif,.avif";
+const PRODUCT_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/avif",
+]);
+const PRODUCT_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+
+function isAllowedProductImage(file: File): boolean {
+  if (PRODUCT_IMAGE_TYPES.has(file.type)) return true;
+  // Some browsers omit MIME for AVIF — allow by extension.
+  return /\.avif$/i.test(file.name);
+}
 
 interface ProductRow {
   id: string;
@@ -14,6 +37,8 @@ interface ProductRow {
   stockQty: number;
   aiGenerated: boolean;
   imageUrl: string | null;
+  isMain?: boolean;
+  metadataJson?: ProductPricingMeta | null;
 }
 
 interface ProductDraft {
@@ -28,6 +53,10 @@ interface ProductDraft {
   tags: string[];
   photoShotList: string[];
   imageUrl: string;
+  isMain: boolean;
+  unitType: ProductUnitType;
+  unitCustom: string;
+  servicePriceStyle: ServicePriceStyle;
 }
 
 interface ShopContext {
@@ -47,6 +76,10 @@ const EMPTY_DRAFT: ProductDraft = {
   tags: [],
   photoShotList: [],
   imageUrl: "",
+  isMain: false,
+  unitType: "pc",
+  unitCustom: "",
+  servicePriceStyle: "base_minimum",
 };
 
 const STOREFRONT_URL =
@@ -94,6 +127,7 @@ export function ProductsManager() {
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<ProductDraft | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [dragOverPhoto, setDragOverPhoto] = useState(false);
   const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
   const [enhancing, setEnhancing] = useState(false);
   const [enhancingDescription, setEnhancingDescription] = useState(false);
@@ -128,10 +162,40 @@ export function ProductsManager() {
     load();
   }, [load]);
 
+  const pricingKind = useMemo(
+    () => productPricingKindForCategory(shop?.category),
+    [shop?.category]
+  );
+
+  function buildPricingMeta(d: ProductDraft): ProductPricingMeta | null {
+    if (pricingKind === "food") {
+      return {
+        unitType: d.unitType,
+        ...(d.unitType === "other" && d.unitCustom.trim()
+          ? { unitCustom: d.unitCustom.trim() }
+          : {}),
+      };
+    }
+    if (pricingKind === "service") {
+      return { servicePriceStyle: d.servicePriceStyle };
+    }
+    return null;
+  }
+
+  function priceLineForProduct(product: ProductRow): string {
+    return formatProductPriceLine({
+      category: shop?.category,
+      basePrice: Number(product.basePrice),
+      compareAtPrice: product.compareAtPrice ? Number(product.compareAtPrice) : null,
+      meta: product.metadataJson ?? null,
+      formatMoney: (n) => formatPrice(n),
+    });
+  }
+
   function openCreateForm() {
     setShowForm(true);
     setError(null);
-    setDraft({ ...EMPTY_DRAFT });
+    setDraft({ ...EMPTY_DRAFT, isMain: products.length === 0 });
     setEditingId(null);
     setNotice(null);
     setChangeRequestId(null);
@@ -178,7 +242,29 @@ export function ProductsManager() {
       tags: [],
       photoShotList: [],
       imageUrl: product.imageUrl ?? "",
+      isMain: Boolean(product.isMain),
+      unitType: product.metadataJson?.unitType ?? "pc",
+      unitCustom: product.metadataJson?.unitCustom ?? "",
+      servicePriceStyle: product.metadataJson?.servicePriceStyle ?? "base_minimum",
     });
+  }
+
+  async function setAsMainProduct(product: ProductRow) {
+    if (product.isMain) return;
+    setError(null);
+    setNotice(null);
+    const res = await fetch(`/api/products/${product.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isMain: true }),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      setError(data.error ?? "Could not set main product.");
+      return;
+    }
+    setNotice(`“${product.title}” is now your main / identity product.`);
+    await load();
   }
 
   async function handleDelete(product: ProductRow) {
@@ -208,9 +294,15 @@ export function ProductsManager() {
     }
   }
 
-  async function handleImageSelect(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  async function uploadProductImage(file: File) {
+    if (!isAllowedProductImage(file)) {
+      setError("Use a JPG, PNG, WebP, GIF, or AVIF image.");
+      return;
+    }
+    if (file.size > PRODUCT_IMAGE_MAX_BYTES) {
+      setError("Image must be 5 MB or smaller.");
+      return;
+    }
 
     setError(null);
     setUploadingImage(true);
@@ -218,23 +310,60 @@ export function ProductsManager() {
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await fetch("/api/products/upload", {
-      method: "POST",
-      body: formData,
-    });
-    const data = await res.json();
-    setUploadingImage(false);
-    event.target.value = "";
+    try {
+      const res = await fetch("/api/products/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        setError(data.error ?? "Could not upload image.");
+        return;
+      }
 
-    if (!data.ok) {
-      setError(data.error ?? "Could not upload image.");
-      return;
+      setDraft((current) =>
+        current ? { ...current, imageUrl: data.url } : { ...EMPTY_DRAFT, imageUrl: data.url }
+      );
+      setOriginalImageUrl(data.url);
+    } catch {
+      setError("Could not upload image.");
+    } finally {
+      setUploadingImage(false);
+      setDragOverPhoto(false);
     }
+  }
 
-    setDraft((current) =>
-      current ? { ...current, imageUrl: data.url } : { ...EMPTY_DRAFT, imageUrl: data.url }
-    );
-    setOriginalImageUrl(data.url);
+  async function handleImageSelect(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    await uploadProductImage(file);
+  }
+
+  function handlePhotoDragOver(event: React.DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (uploadingImage) return;
+    event.dataTransfer.dropEffect = "copy";
+    setDragOverPhoto(true);
+  }
+
+  function handlePhotoDragLeave(event: React.DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    const next = event.relatedTarget as Node | null;
+    if (next && event.currentTarget.contains(next)) return;
+    setDragOverPhoto(false);
+  }
+
+  async function handlePhotoDrop(event: React.DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    setDragOverPhoto(false);
+    if (uploadingImage) return;
+    const file = event.dataTransfer.files?.[0];
+    if (!file) return;
+    await uploadProductImage(file);
   }
 
   async function handleEnhancePhoto() {
@@ -381,6 +510,32 @@ export function ProductsManager() {
     }
 
     const compareAt = draft.compareAtPrice ? Number(draft.compareAtPrice) : null;
+    if (
+      pricingKind === "service" &&
+      draft.servicePriceStyle === "value_range" &&
+      (!compareAt || compareAt < price)
+    ) {
+      setError("Enter a max service value that is at least the base / minimum.");
+      setSaving(false);
+      return;
+    }
+    if (pricingKind === "food" && draft.unitType === "other" && !draft.unitCustom.trim()) {
+      setError("Specify the unit type (e.g. per tray, per kilo).");
+      setSaving(false);
+      return;
+    }
+
+    const metadataJson = buildPricingMeta(draft);
+    const stockQty =
+      pricingKind === "service" ? Math.max(Number(draft.stockQty) || 999, 1) : Number(draft.stockQty) || 0;
+    const comparePayload =
+      pricingKind === "service"
+        ? draft.servicePriceStyle === "value_range" && compareAt && compareAt >= price
+          ? compareAt
+          : null
+        : compareAt && compareAt > price
+          ? compareAt
+          : null;
 
     const res = editingId
       ? await fetch(`/api/products/${editingId}`, {
@@ -391,10 +546,12 @@ export function ProductsManager() {
             descriptionHtml:
               draft.descriptionHtml || `<p>${draft.shortDescription || draft.title}</p>`,
             basePrice: price,
-            compareAtPrice: compareAt && compareAt > price ? compareAt : null,
+            compareAtPrice: comparePayload,
             status: draft.status,
-            stockQty: Number(draft.stockQty) || 0,
+            stockQty,
             imageUrl: draft.imageUrl || null,
+            isMain: draft.isMain,
+            metadataJson,
             changeRequestId: changeRequestId ?? undefined,
           }),
         })
@@ -407,11 +564,13 @@ export function ProductsManager() {
             descriptionHtml:
               draft.descriptionHtml || `<p>${draft.shortDescription || draft.title}</p>`,
             basePrice: price,
-            compareAtPrice: compareAt && compareAt > price ? compareAt : undefined,
+            compareAtPrice: comparePayload ?? undefined,
             status: draft.status,
-            stockQty: Number(draft.stockQty) || 0,
+            stockQty,
             aiGenerated: false,
             imageUrl: draft.imageUrl || undefined,
+            isMain: draft.isMain || products.length === 0,
+            metadataJson,
             changeRequestId: changeRequestId ?? undefined,
           }),
         });
@@ -473,7 +632,15 @@ export function ProductsManager() {
             <div className="rounded-xl border border-border bg-card p-4">
               <span className="mb-2 block text-sm font-medium text-foreground">Product photo</span>
               {draft.imageUrl ? (
-                <div className="space-y-4">
+                <div
+                  className={`space-y-4 rounded-xl ${
+                    dragOverPhoto ? "ring-2 ring-emerald-500/50 ring-offset-2 ring-offset-card" : ""
+                  }`}
+                  onDragEnter={handlePhotoDragOver}
+                  onDragOver={handlePhotoDragOver}
+                  onDragLeave={handlePhotoDragLeave}
+                  onDrop={(e) => void handlePhotoDrop(e)}
+                >
                   <div className="flex flex-wrap items-start gap-4">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -482,17 +649,19 @@ export function ProductsManager() {
                       className="h-36 w-36 rounded-xl border border-border object-cover bg-muted"
                     />
                     <div className="space-y-2">
-                      <p className="text-sm text-muted-foreground">
-                        {originalImageUrl && draft.imageUrl !== originalImageUrl
-                          ? "Background removed — clean photo selected for your shop."
-                          : "Photo ready — remove the background for a cleaner storefront look."}
+                      <p className="text-sm text-slate-300">
+                        {dragOverPhoto
+                          ? "Drop to replace this photo."
+                          : originalImageUrl && draft.imageUrl !== originalImageUrl
+                            ? "Background removed — clean photo selected for your shop."
+                            : "Photo ready — drag a new file here to replace, or remove the background."}
                       </p>
                       <div className="flex flex-wrap gap-2">
                         <label className="inline-flex cursor-pointer items-center rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium text-foreground hover:bg-muted">
                           Replace photo
                           <input
                             type="file"
-                            accept="image/jpeg,image/png,image/webp,image/gif"
+                            accept={PRODUCT_IMAGE_ACCEPT}
                             className="hidden"
                             onChange={handleImageSelect}
                             disabled={uploadingImage}
@@ -537,19 +706,33 @@ export function ProductsManager() {
                   </div>
                 </div>
               ) : (
-                <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-white/15 bg-white/[0.02] px-6 py-10 text-center transition hover:border-white/25 hover:bg-white/[0.04]">
+                <label
+                  className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed px-6 py-10 text-center transition ${
+                    dragOverPhoto
+                      ? "border-emerald-400 bg-emerald-500/10"
+                      : "border-white/15 bg-white/[0.02] hover:border-white/25 hover:bg-white/[0.04]"
+                  } ${uploadingImage ? "pointer-events-none opacity-70" : ""}`}
+                  onDragEnter={handlePhotoDragOver}
+                  onDragOver={handlePhotoDragOver}
+                  onDragLeave={handlePhotoDragLeave}
+                  onDrop={(e) => void handlePhotoDrop(e)}
+                >
                   <input
                     type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    accept={PRODUCT_IMAGE_ACCEPT}
                     className="hidden"
                     onChange={handleImageSelect}
                     disabled={uploadingImage}
                   />
-                  <span className="text-sm font-medium text-slate-300">
-                    {uploadingImage ? "Uploading…" : "Click to upload a product photo"}
+                  <span className="text-sm font-medium text-slate-200">
+                    {uploadingImage
+                      ? "Uploading…"
+                      : dragOverPhoto
+                        ? "Drop photo to upload"
+                        : "Drag & drop or click to upload"}
                   </span>
-                  <span className="mt-1 text-xs text-slate-500">
-                    JPG, PNG, WebP, or GIF · up to 5 MB
+                  <span className="mt-1 text-xs text-slate-400">
+                    JPG, PNG, WebP, GIF, or AVIF · up to 5 MB
                   </span>
                 </label>
               )}
@@ -609,9 +792,102 @@ export function ProductsManager() {
               )}
             </label>
 
-            <div className="grid gap-3 sm:grid-cols-3">
+            {pricingKind === "food" && (
+              <div className="space-y-2 rounded-xl border border-border bg-card p-4">
+                <p className="text-sm font-semibold text-foreground">Sold as</p>
+                <p className="text-xs text-slate-400">How customers buy this food item.</p>
+                <div className="flex flex-wrap gap-2">
+                  {(
+                    [
+                      ["pc", "Per pc"],
+                      ["box", "Per box"],
+                      ["other", "Other — specify"],
+                    ] as const
+                  ).map(([id, label]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setDraft((d) => (d ? { ...d, unitType: id } : d))}
+                      className={`rounded-full border px-3 py-1.5 text-sm font-medium ${
+                        draft.unitType === id
+                          ? "border-emerald-500 bg-emerald-600 text-white"
+                          : "border-border bg-secondary text-foreground"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                {draft.unitType === "other" && (
+                  <input
+                    value={draft.unitCustom}
+                    onChange={(e) =>
+                      setDraft((d) => (d ? { ...d, unitCustom: e.target.value } : d))
+                    }
+                    placeholder="e.g. per tray, per kilo, per dozen"
+                    className="mt-1 h-11 w-full max-w-md rounded-xl border border-border bg-background px-3 text-sm text-foreground placeholder:text-slate-500"
+                  />
+                )}
+              </div>
+            )}
+
+            {pricingKind === "service" && (
+              <div className="space-y-2 rounded-xl border border-border bg-card p-4">
+                <p className="text-sm font-semibold text-foreground">Service pricing</p>
+                <p className="text-xs text-slate-400">
+                  Services use a base / minimum or a value range — not retail stock pricing.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {(
+                    [
+                      ["base_minimum", "Base / minimum"],
+                      ["value_range", "Service value range"],
+                    ] as const
+                  ).map(([id, label]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() =>
+                        setDraft((d) => (d ? { ...d, servicePriceStyle: id } : d))
+                      }
+                      className={`rounded-full border px-3 py-1.5 text-sm font-medium ${
+                        draft.servicePriceStyle === id
+                          ? "border-emerald-500 bg-emerald-600 text-white"
+                          : "border-border bg-secondary text-foreground"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div
+              className={`grid gap-3 ${
+                pricingKind === "service" && draft.servicePriceStyle === "base_minimum"
+                  ? "sm:grid-cols-1 sm:max-w-xs"
+                  : "sm:grid-cols-2 lg:grid-cols-3"
+              }`}
+            >
               <label className="block">
-                <span className="mb-1 block text-sm font-medium text-foreground">Price (PHP)</span>
+                <span className="mb-1 block text-sm font-medium text-foreground">
+                  {pricingKind === "service"
+                    ? draft.servicePriceStyle === "value_range"
+                      ? "Minimum (PHP)"
+                      : "Base / minimum (PHP)"
+                    : pricingKind === "food"
+                      ? `Price (PHP)${
+                          draft.unitType === "pc"
+                            ? " · per pc"
+                            : draft.unitType === "box"
+                              ? " · per box"
+                              : draft.unitCustom.trim()
+                                ? ` · per ${draft.unitCustom.trim()}`
+                                : ""
+                        }`
+                      : "Price (PHP)"}
+                </span>
                 <input
                   required
                   type="number"
@@ -623,52 +899,77 @@ export function ProductsManager() {
                   className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm"
                 />
               </label>
-              <label className="block">
-                <span className="mb-1 block text-sm font-medium text-foreground">
-                  Compare-at (optional)
-                </span>
-                <input
-                  type="number"
-                  min="1"
-                  value={draft.compareAtPrice}
-                  onChange={(e) =>
-                    setDraft((d) => (d ? { ...d, compareAtPrice: e.target.value } : d))
-                  }
-                  placeholder="499"
-                  className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-sm font-medium text-foreground">Stock</span>
-                <input
-                  type="number"
-                  min="0"
-                  value={draft.stockQty}
-                  onChange={(e) =>
-                    setDraft((d) => (d ? { ...d, stockQty: e.target.value } : d))
-                  }
-                  className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm"
-                />
-              </label>
-            </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={suggestingPrice || !draft.title.trim()}
-                onClick={() => void handleSuggestPrice()}
-              >
-                {suggestingPrice ? "Checking nearby prices…" : "Suggest nearby price"}
-              </Button>
-              {pricingNote ? (
-                <p className="max-w-xl text-sm text-slate-400">{pricingNote}</p>
-              ) : (
-                <p className="text-sm text-slate-500">
-                  AI estimates a competitive price for similar products nearby.
-                </p>
+              {pricingKind === "service" && draft.servicePriceStyle === "value_range" ? (
+                <label className="block">
+                  <span className="mb-1 block text-sm font-medium text-foreground">
+                    Maximum (PHP)
+                  </span>
+                  <input
+                    required
+                    type="number"
+                    min="1"
+                    value={draft.compareAtPrice}
+                    onChange={(e) =>
+                      setDraft((d) => (d ? { ...d, compareAtPrice: e.target.value } : d))
+                    }
+                    placeholder="Upper end of typical jobs"
+                    className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm"
+                  />
+                </label>
+              ) : pricingKind !== "service" ? (
+                <label className="block">
+                  <span className="mb-1 block text-sm font-medium text-foreground">
+                    Compare-at (optional)
+                  </span>
+                  <input
+                    type="number"
+                    min="1"
+                    value={draft.compareAtPrice}
+                    onChange={(e) =>
+                      setDraft((d) => (d ? { ...d, compareAtPrice: e.target.value } : d))
+                    }
+                    placeholder="499"
+                    className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm"
+                  />
+                </label>
+              ) : null}
+
+              {pricingKind !== "service" && (
+                <label className="block">
+                  <span className="mb-1 block text-sm font-medium text-foreground">Stock</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={draft.stockQty}
+                    onChange={(e) =>
+                      setDraft((d) => (d ? { ...d, stockQty: e.target.value } : d))
+                    }
+                    className="h-11 w-full rounded-xl border border-border bg-card px-3 text-sm"
+                  />
+                </label>
               )}
             </div>
+
+            {pricingKind !== "service" && (
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={suggestingPrice || !draft.title.trim()}
+                  onClick={() => void handleSuggestPrice()}
+                >
+                  {suggestingPrice ? "Checking nearby prices…" : "Suggest nearby price"}
+                </Button>
+                {pricingNote ? (
+                  <p className="max-w-xl text-sm text-slate-400">{pricingNote}</p>
+                ) : (
+                  <p className="text-sm text-slate-400">
+                    AI estimates a competitive price for similar products nearby.
+                  </p>
+                )}
+              </div>
+            )}
 
             <label className="block sm:max-w-xs">
               <span className="mb-1 block text-sm font-medium text-foreground">Status</span>
@@ -684,6 +985,26 @@ export function ProductsManager() {
                 <option value="active">Active (visible on storefront)</option>
                 <option value="draft">Draft (hidden)</option>
               </select>
+            </label>
+
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-card px-4 py-3">
+              <input
+                type="checkbox"
+                checked={draft.isMain || (!editingId && products.length === 0)}
+                onChange={(e) =>
+                  setDraft((d) => (d ? { ...d, isMain: e.target.checked } : d))
+                }
+                className="mt-1 h-4 w-4 rounded border-border"
+              />
+              <span>
+                <span className="block text-sm font-semibold text-foreground">
+                  Main / identity product
+                </span>
+                <span className="mt-0.5 block text-xs text-slate-400">
+                  Your shop&apos;s signature offering — featured first on the storefront. Only one
+                  product can be main.
+                </span>
+              </span>
             </label>
 
             <div className="flex flex-wrap gap-2 pt-1">
@@ -712,66 +1033,167 @@ export function ProductsManager() {
         <Card className="border-dashed border-white/15 bg-white/[0.02]">
           <p className="font-medium text-slate-100">No products yet</p>
           <p className="mt-1 text-sm text-slate-400">
-            Add your first product with a name, price, and photo. AI can help polish the
-            description or suggest a nearby price afterward.
+            Add your main identity product first — name, price, and photo. That becomes the face
+            of your shop.
           </p>
           <Button type="button" className="mt-4" onClick={openCreateForm}>
-            + Add product
+            + Add main product
           </Button>
         </Card>
       ) : products.length > 0 ? (
-        <div className="grid gap-3">
-          {products.map((product) => (
-            <Card key={product.id} className="flex items-center justify-between gap-4">
-              {product.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={productImageSrc(product.imageUrl)}
-                  alt={product.title}
-                  className="h-16 w-16 shrink-0 rounded-xl border border-border object-cover"
-                />
-              ) : (
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-xs text-slate-500">
-                  No photo
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-semibold text-slate-100">{product.title}</h3>
-                  <Badge
-                    className={
-                      product.status === "active"
-                        ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-200"
-                        : "border-white/10 bg-white/[0.04] text-slate-400"
-                    }
-                  >
-                    {product.status}
-                  </Badge>
-                </div>
-                <p className="mt-1 text-sm text-slate-500">
-                  {formatPrice(Number(product.basePrice))} · Stock: {product.stockQty} · /
-                  {product.slug}
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => startEdit(product)}
-                  className="rounded-xl border border-white/10 px-3 py-1.5 text-sm text-slate-300 transition hover:bg-white/[0.05]"
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(product)}
-                  disabled={deletingId === product.id}
-                  className="rounded-xl px-3 py-1.5 text-sm text-red-400 transition hover:bg-red-500/10 disabled:opacity-50"
-                >
-                  {deletingId === product.id ? "Deleting…" : "Delete"}
-                </button>
-              </div>
-            </Card>
-          ))}
+        <div className="space-y-6">
+          {(() => {
+            const main = products.find((p) => p.isMain) ?? null;
+            const catalog = products.filter((p) => !p.isMain);
+            return (
+              <>
+                <section className="space-y-3">
+                  <div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-emerald-300">
+                      Main product
+                    </h3>
+                    <p className="mt-0.5 text-sm text-slate-400">
+                      Your shop&apos;s identity offering — featured first on the storefront.
+                    </p>
+                  </div>
+                  {main ? (
+                    <Card className="border-emerald-500/30 bg-emerald-500/5">
+                      <div className="flex items-center justify-between gap-4">
+                        {main.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={productImageSrc(main.imageUrl)}
+                            alt={main.title}
+                            className="h-20 w-20 shrink-0 rounded-xl border border-border object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-xs text-slate-500">
+                            No photo
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="font-semibold text-slate-100">{main.title}</h3>
+                            <Badge className="border-emerald-400/30 bg-emerald-400/15 text-emerald-200">
+                              Main
+                            </Badge>
+                            <Badge
+                              className={
+                                main.status === "active"
+                                  ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-200"
+                                  : "border-white/10 bg-white/[0.04] text-slate-400"
+                              }
+                            >
+                              {main.status}
+                            </Badge>
+                          </div>
+                          <p className="mt-1 text-sm text-slate-400">
+                            {priceLineForProduct(main)}
+                            {pricingKind !== "service" ? ` · Stock: ${main.stockQty}` : ""}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => startEdit(main)}
+                          className="shrink-0 rounded-xl border border-white/10 px-3 py-1.5 text-sm text-slate-300 transition hover:bg-white/[0.05]"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    </Card>
+                  ) : (
+                    <Card className="border-dashed border-amber-400/25 bg-amber-400/5">
+                      <p className="font-medium text-amber-100">No main product yet</p>
+                      <p className="mt-1 text-sm text-slate-400">
+                        Pick one from your catalog below, or mark a product as main when you save
+                        it.
+                      </p>
+                    </Card>
+                  )}
+                </section>
+
+                <section className="space-y-3">
+                  <div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">
+                      Catalog
+                    </h3>
+                    <p className="mt-0.5 text-sm text-slate-400">
+                      Other products in your shop.
+                    </p>
+                  </div>
+                  {catalog.length === 0 ? (
+                    <Card className="border-dashed border-white/10 bg-white/[0.02]">
+                      <p className="text-sm text-slate-400">
+                        No other products yet. Add more anytime — only one stays main.
+                      </p>
+                    </Card>
+                  ) : (
+                    <div className="grid gap-3">
+                      {catalog.map((product) => (
+                        <Card key={product.id} className="flex items-center justify-between gap-4">
+                          {product.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={productImageSrc(product.imageUrl)}
+                              alt={product.title}
+                              className="h-16 w-16 shrink-0 rounded-xl border border-border object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-xs text-slate-500">
+                              No photo
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 className="font-semibold text-slate-100">{product.title}</h3>
+                              <Badge
+                                className={
+                                  product.status === "active"
+                                    ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-200"
+                                    : "border-white/10 bg-white/[0.04] text-slate-400"
+                                }
+                              >
+                                {product.status}
+                              </Badge>
+                            </div>
+                            <p className="mt-1 text-sm text-slate-500">
+                              {priceLineForProduct(product)}
+                              {pricingKind !== "service" ? ` · Stock: ${product.stockQty}` : ""} · /
+                              {product.slug}
+                            </p>
+                          </div>
+                          <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => void setAsMainProduct(product)}
+                              className="rounded-xl border border-emerald-500/30 px-3 py-1.5 text-sm text-emerald-300 transition hover:bg-emerald-500/10"
+                            >
+                              Set as main
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => startEdit(product)}
+                              className="rounded-xl border border-white/10 px-3 py-1.5 text-sm text-slate-300 transition hover:bg-white/[0.05]"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(product)}
+                              disabled={deletingId === product.id}
+                              className="rounded-xl px-3 py-1.5 text-sm text-red-400 transition hover:bg-red-500/10 disabled:opacity-50"
+                            >
+                              {deletingId === product.id ? "Deleting…" : "Delete"}
+                            </button>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </>
+            );
+          })()}
         </div>
       ) : null}
     </div>

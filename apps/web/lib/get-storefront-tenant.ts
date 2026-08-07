@@ -30,8 +30,17 @@ function mapDbTenantToDemo(
       image: product.imageUrl ?? "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&q=80",
       category: product.categoryName ?? tenant.category ?? "Products",
       categorySlug: product.categorySlug ?? undefined,
-      tags: [],
-    }));
+      isMain: Boolean(product.isMain),
+      tags: product.isMain ? ["featured", "bestseller"] : [],
+      pricingMeta: product.metadataJson
+        ? {
+            unitType: product.metadataJson.unitType,
+            unitCustom: product.metadataJson.unitCustom,
+            servicePriceStyle: product.metadataJson.servicePriceStyle,
+          }
+        : undefined,
+    }))
+    .sort((a, b) => Number(Boolean(b.isMain)) - Number(Boolean(a.isMain)));
 
   const shopTheme = resolveShopThemeForPlan(
     tenant.themeJson,

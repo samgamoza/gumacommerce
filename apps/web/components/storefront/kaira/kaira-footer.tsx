@@ -1,12 +1,14 @@
 import Link from "next/link";
 import type { DemoTenant } from "@/lib/demo-data";
+import { adminUrl, shopPublicUrl, shopPublicUrlLabel } from "@/lib/utils";
 
 export function KairaFooter({ tenant }: { tenant: DemoTenant }) {
   const phone =
     tenant.storeSettings.whatsapp.enabled && tenant.storeSettings.whatsapp.phone
       ? tenant.storeSettings.whatsapp.phone
       : null;
-  const email = `${tenant.slug.replace(/-/g, "")}@gumacommerce.app`;
+  const siteUrl = shopPublicUrl(tenant.slug);
+  const siteLabel = shopPublicUrlLabel(tenant.slug);
 
   return (
     <footer className="kaira-footer" id="footer">
@@ -28,13 +30,20 @@ export function KairaFooter({ tenant }: { tenant: DemoTenant }) {
               <li>
                 <Link href={`/${tenant.slug}/checkout`}>Cart</Link>
               </li>
+              <li>
+                <a href={adminUrl} target="_blank" rel="noreferrer">
+                  Seller Dashboard
+                </a>
+              </li>
             </ul>
           </div>
           <div>
             <h5>Contact Us</h5>
             <ul className="kaira-footer-links">
               <li>
-                <a href={`mailto:${email}`}>{email}</a>
+                <a href={siteUrl} target="_blank" rel="noreferrer">
+                  {siteLabel}
+                </a>
               </li>
               {phone && (
                 <li>

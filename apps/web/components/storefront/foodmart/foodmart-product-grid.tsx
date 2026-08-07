@@ -6,17 +6,36 @@ import { ShoppingCart } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { DemoProduct, DemoTenant } from "@/lib/demo-data";
 import { useCart } from "@/lib/cart";
+import { productCardCtaLabel, productCardPricing } from "@/lib/product-price-display";
 import {
   foodmartDiscount,
   foodmartStarRating,
   formatFoodmartPrice,
 } from "./foodmart-utils";
 
-function FoodmartProductCard({ tenantSlug, product }: { tenantSlug: string; product: DemoProduct }) {
+function FoodmartProductCard({
+  tenantSlug,
+  product,
+  category,
+}: {
+  tenantSlug: string;
+  product: DemoProduct;
+  category?: string | null;
+}) {
   const { addItem, ready } = useCart(tenantSlug);
   const [adding, setAdding] = useState(false);
   const productHref = `/${tenantSlug}/products/${product.slug}`;
-  const badge = foodmartDiscount(product.price, product.compareAtPrice);
+  const pricing = productCardPricing(category, product, formatFoodmartPrice);
+  const badge =
+    pricing.kind === "retail" ? foodmartDiscount(product.price, product.compareAtPrice) : null;
+  const unitLabel =
+    pricing.kind === "food"
+      ? product.pricingMeta?.unitType === "box"
+        ? "per box"
+        : product.pricingMeta?.unitType === "other"
+          ? product.pricingMeta.unitCustom?.trim() || "custom unit"
+          : "per pc"
+      : "1 unit";
 
   async function handleAdd() {
     setAdding(true);
@@ -41,18 +60,16 @@ function FoodmartProductCard({ tenantSlug, product }: { tenantSlug: string; prod
         <Link href={productHref}>{product.title}</Link>
       </h3>
       <div className="foodmart-product-meta">
-        <span>1 unit</span>
+        <span>{unitLabel}</span>
         <span>★ {foodmartStarRating(product.id)}</span>
       </div>
       <p className="foodmart-product-price">
-        {product.compareAtPrice && product.compareAtPrice > product.price && (
-          <del>{formatFoodmartPrice(product.compareAtPrice)}</del>
-        )}
-        {formatFoodmartPrice(product.price)}
+        {pricing.compareAtLine && <del>{pricing.compareAtLine}</del>}
+        {pricing.priceLine}
       </p>
       <button type="button" className="foodmart-btn foodmart-add-btn" onClick={handleAdd} disabled={!ready || adding}>
         <ShoppingCart className="h-4 w-4" />
-        {adding ? "Adding…" : "Add to Cart"}
+        {adding ? "Adding…" : productCardCtaLabel(category)}
       </button>
     </article>
   );
@@ -115,7 +132,12 @@ export function FoodmartProductGrid({ tenant }: { tenant: DemoTenant }) {
         ) : (
           <div className="foodmart-product-grid">
             {display.map((product) => (
-              <FoodmartProductCard key={product.id} tenantSlug={tenant.slug} product={product} />
+              <FoodmartProductCard
+                key={product.id}
+                tenantSlug={tenant.slug}
+                product={product}
+                category={tenant.category}
+              />
             ))}
           </div>
         )}

@@ -13,6 +13,7 @@ import {
 import { useMemo, useState } from "react";
 import type { DemoProduct, DemoTenant } from "@/lib/demo-data";
 import { useCart } from "@/lib/cart";
+import { adminUrl, shopPublicUrl, shopPublicUrlLabel } from "@/lib/utils";
 import {
   MOTTO_FEATURE_STRIP,
   MOTTO_HERO_IMAGES,
@@ -318,7 +319,8 @@ export function MottoFooter({ tenant }: { tenant: DemoTenant }) {
     tenant.storeSettings.whatsapp.enabled && tenant.storeSettings.whatsapp.phone
       ? tenant.storeSettings.whatsapp.phone
       : null;
-  const email = `${tenant.slug.replace(/-/g, "")}@gumacommerce.app`;
+  const siteUrl = shopPublicUrl(tenant.slug);
+  const siteLabel = shopPublicUrlLabel(tenant.slug);
   const categories = tenant.shopCategories.length
     ? tenant.shopCategories
     : [...new Set(tenant.products.map((p) => p.category))].slice(0, 6).map((name, i) => ({
@@ -344,7 +346,9 @@ export function MottoFooter({ tenant }: { tenant: DemoTenant }) {
                 </li>
               )}
               <li>
-                <a href={`mailto:${email}`}>{email}</a>
+                <a href={siteUrl} target="_blank" rel="noreferrer">
+                  {siteLabel}
+                </a>
               </li>
             </ul>
           </div>
@@ -369,6 +373,11 @@ export function MottoFooter({ tenant }: { tenant: DemoTenant }) {
               </li>
               <li>
                 <Link href={`/${tenant.slug}/checkout`}>Checkout</Link>
+              </li>
+              <li>
+                <a href={adminUrl} target="_blank" rel="noreferrer">
+                  Seller Dashboard
+                </a>
               </li>
             </ul>
           </div>

@@ -11,6 +11,15 @@ const patchSchema = z.object({
   status: z.enum(["draft", "active", "archived"]).optional(),
   stockQty: z.number().int().min(0).max(99999).optional(),
   imageUrl: z.string().max(2048).nullable().optional(),
+  isMain: z.boolean().optional(),
+  metadataJson: z
+    .object({
+      unitType: z.enum(["pc", "box", "other"]).optional(),
+      unitCustom: z.string().max(40).optional(),
+      servicePriceStyle: z.enum(["base_minimum", "value_range"]).optional(),
+    })
+    .nullable()
+    .optional(),
   changeRequestId: z.string().uuid().optional(),
 });
 
@@ -39,6 +48,8 @@ export async function PATCH(
       status: body.status,
       stockQty: body.stockQty,
       imageUrl: body.imageUrl,
+      isMain: body.isMain,
+      metadataJson: body.metadataJson,
     });
 
     if (!updated) {

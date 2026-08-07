@@ -26,6 +26,8 @@ import {
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { DemoProduct, DemoTenant } from "@/lib/demo-data";
 import { useCart } from "@/lib/cart";
+import { productCardCtaLabel, productCardPricing } from "@/lib/product-price-display";
+import { adminUrl, shopPublicUrl, shopPublicUrlLabel } from "@/lib/utils";
 import {
   CARSERV_FEATURE_SERVICES,
   CARSERV_HERO_CAR,
@@ -72,18 +74,23 @@ function serviceTabIcon(id: string) {
 function CarservProductCard({
   tenantSlug,
   product,
+  category,
 }: {
   tenantSlug: string;
   product: DemoProduct;
+  category?: string | null;
 }) {
   const { addItem, ready } = useCart(tenantSlug);
   const [adding, setAdding] = useState(false);
   const productHref = `/${tenantSlug}/products/${product.slug}`;
+  const pricing = productCardPricing(category, product, formatCarservPrice);
   const badge = product.tags.includes("new")
     ? "New"
     : product.tags.includes("bestseller")
       ? "Popular"
-      : null;
+      : pricing.kind === "service"
+        ? "Service"
+        : null;
 
   async function handleAdd() {
     setAdding(true);
@@ -113,15 +120,16 @@ function CarservProductCard({
         </Link>
         <p className="cs-product-desc">{product.shortDescription}</p>
         <div className="cs-product-price">
-          {product.compareAtPrice && product.compareAtPrice > product.price && (
-            <del>{formatCarservPrice(product.compareAtPrice)}</del>
-          )}
-          {formatCarservPrice(product.price)}
+          {pricing.compareAtLine && <del>{pricing.compareAtLine}</del>}
+          {pricing.priceLine}
         </div>
+        {pricing.priceCaption && pricing.kind === "service" && (
+          <p className="mt-1 text-xs opacity-70">{pricing.priceCaption}</p>
+        )}
       </div>
       <div className="cs-product-footer">
         <button type="button" className="cs-btn" onClick={handleAdd} disabled={!ready || adding}>
-          {adding ? "Adding…" : "Add To Cart"}
+          {adding ? "Adding…" : productCardCtaLabel(category)}
         </button>
       </div>
     </article>
@@ -487,7 +495,12 @@ export function CarservProducts({ tenant }: { tenant: DemoTenant }) {
         ) : (
           <div className="cs-product-grid">
             {display.map((product) => (
-              <CarservProductCard key={product.id} tenantSlug={tenant.slug} product={product} />
+              <CarservProductCard
+                key={product.id}
+                tenantSlug={tenant.slug}
+                product={product}
+                category={tenant.category}
+              />
             ))}
           </div>
         )}
@@ -563,7 +576,8 @@ export function CarservBooking({ tenant }: { tenant: DemoTenant }) {
 export function CarservFooter({ tenant }: { tenant: DemoTenant }) {
   const brand = carservBrandName(tenant.name);
   const phone = carservPhone(tenant);
-  const email = `${tenant.slug.replace(/-/g, "")}@gumacommerce.app`;
+  const siteUrl = shopPublicUrl(tenant.slug);
+  const siteLabel = shopPublicUrlLabel(tenant.slug);
   const homeHref = `/${tenant.slug}`;
   const checkoutHref = `/${tenant.slug}/checkout`;
 
@@ -588,9 +602,11 @@ export function CarservFooter({ tenant }: { tenant: DemoTenant }) {
               </div>
             )}
             <div className="cs-footer-item">
-              <Mail className="h-4 w-4" />
+              <Globe className="h-4 w-4" />
               <p>
-                <a href={`mailto:${email}`}>{email}</a>
+                <a href={siteUrl} target="_blank" rel="noreferrer">
+                  {siteLabel}
+                </a>
               </p>
             </div>
             <div className="cs-footer-social">
@@ -645,6 +661,11 @@ export function CarservFooter({ tenant }: { tenant: DemoTenant }) {
               </li>
               <li>
                 <Link href={checkoutHref}>Cart & Checkout</Link>
+              </li>
+              <li>
+                <a href={adminUrl} target="_blank" rel="noreferrer">
+                  Seller Dashboard
+                </a>
               </li>
             </ul>
             {phone && (

@@ -1,5 +1,6 @@
 import { DEFAULT_STOREFRONT_SETTINGS } from "./storefront-settings";
 import type { StorePatternId } from "@guma-commerce/storefront-themes";
+import { getModelStoreTenant } from "./model-store-tenant";
 
 export interface DemoProduct {
   id: string;
@@ -12,6 +13,14 @@ export interface DemoProduct {
   category: string;
   categorySlug?: string;
   tags: string[];
+  /** Seller identity product — featured first on storefront. */
+  isMain?: boolean;
+  /** Food unit or service pricing chrome from seller catalog. */
+  pricingMeta?: {
+    unitType?: "pc" | "box" | "other";
+    unitCustom?: string;
+    servicePriceStyle?: "base_minimum" | "value_range";
+  };
 }
 
 export interface DemoTenant {
@@ -2365,8 +2374,9 @@ function demoShopEnabled(): boolean {
 
 export function getTenant(slug: string): DemoTenant | null {
   if (!demoShopEnabled()) return null;
+  // Live demo + Halo Queen alias → same flagship as `/model` (Simply Sweet kitchen).
   if (slug === "demo" || slug === "haloqueen") {
-    return { ...DEMO_TENANT, slug };
+    return getModelStoreTenant(slug);
   }
   if (slug === "bloom-demo") {
     return BLOOM_DEMO_TENANT;

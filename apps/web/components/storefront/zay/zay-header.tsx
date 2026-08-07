@@ -2,10 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Mail, Menu, Phone, Search, ShoppingCart, X } from "lucide-react";
+import { Globe, Menu, Phone, Search, ShoppingCart, X } from "lucide-react";
 import { useState } from "react";
 import type { DemoTenant } from "@/lib/demo-data";
 import { useCart } from "@/lib/cart";
+import { shopPublicUrl, shopPublicUrlLabel } from "@/lib/utils";
 import { zayBrandMark } from "./zay-utils";
 
 export function ZayHeader({ tenant }: { tenant: DemoTenant }) {
@@ -19,7 +20,8 @@ export function ZayHeader({ tenant }: { tenant: DemoTenant }) {
     tenant.storeSettings.whatsapp.enabled && tenant.storeSettings.whatsapp.phone
       ? tenant.storeSettings.whatsapp.phone
       : null;
-  const email = `${tenant.slug.replace(/-/g, "")}@gumacommerce.app`;
+  const siteUrl = shopPublicUrl(tenant.slug);
+  const siteLabel = shopPublicUrlLabel(tenant.slug);
 
   return (
     <>
@@ -28,8 +30,8 @@ export function ZayHeader({ tenant }: { tenant: DemoTenant }) {
           <div className="zay-topbar-inner">
             <div className="flex flex-wrap items-center gap-3">
               <span className="inline-flex items-center gap-1">
-                <Mail className="h-3.5 w-3.5" />
-                <a href={`mailto:${email}`}>{email}</a>
+                <Globe className="h-3.5 w-3.5" />
+                <a href={siteUrl}>{siteLabel}</a>
               </span>
               {phone && (
                 <span className="inline-flex items-center gap-1">

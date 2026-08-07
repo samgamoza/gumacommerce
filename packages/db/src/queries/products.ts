@@ -1,6 +1,14 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, ne, sql } from "drizzle-orm";
 import { getDb } from "../client";
 import { orderItems, productImages, productVariants, products } from "../schema/index";
+
+export type ProductMetadataJson = {
+  prepTimeMinutes?: number;
+  allergens?: string[];
+  unitType?: "pc" | "box" | "other";
+  unitCustom?: string;
+  servicePriceStyle?: "base_minimum" | "value_range";
+};
 
 export interface ProductListItem {
   id: string;
@@ -13,6 +21,8 @@ export interface ProductListItem {
   stockQty: number;
   aiGenerated: boolean;
   imageUrl: string | null;
+  isMain: boolean;
+  metadataJson: ProductMetadataJson | null;
   createdAt: Date;
 }
 
@@ -26,6 +36,8 @@ export interface CreateProductInput {
   stockQty?: number;
   aiGenerated?: boolean;
   imageUrl?: string;
+  isMain?: boolean;
+  metadataJson?: ProductMetadataJson | null;
 }
 
 function normalizeProductSlug(input: string): string {
@@ -41,6 +53,24 @@ export function slugFromProductTitle(title: string): string {
   return normalizeProductSlug(title);
 }
 
+async function clearOtherMainProducts(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tx: { update: (...args: any[]) => any },
+  tenantId: string,
+  keepProductId: string
+): Promise<void> {
+  await tx
+    .update(products)
+    .set({ isMain: false, updatedAt: new Date() })
+    .where(
+      and(
+        eq(products.tenantId, tenantId),
+        eq(products.isMain, true),
+        ne(products.id, keepProductId)
+      )
+    );
+}
+
 export async function listProductsForTenant(tenantId: string): Promise<ProductListItem[]> {
   const db = getDb();
   const rows = await db
@@ -53,6 +83,8 @@ export async function listProductsForTenant(tenantId: string): Promise<ProductLi
       descriptionHtml: products.descriptionHtml,
       status: products.status,
       aiGenerated: products.aiGenerated,
+      isMain: products.isMain,
+      metadataJson: products.metadataJson,
       createdAt: products.createdAt,
       stockQty: productVariants.stockQty,
       imageUrl: productVariants.imageUrl,
@@ -60,7 +92,7 @@ export async function listProductsForTenant(tenantId: string): Promise<ProductLi
     .from(products)
     .leftJoin(productVariants, eq(productVariants.productId, products.id))
     .where(eq(products.tenantId, tenantId))
-    .orderBy(desc(products.createdAt));
+    .orderBy(desc(products.isMain), desc(products.createdAt));
 
   // The variant left join can produce one row per variant; keep the first.
   const seen = new Set<string>();
@@ -79,6 +111,8 @@ export async function listProductsForTenant(tenantId: string): Promise<ProductLi
       stockQty: row.stockQty ?? 0,
       aiGenerated: row.aiGenerated ?? false,
       imageUrl: row.imageUrl ?? null,
+      isMain: Boolean(row.isMain),
+      metadataJson: (row.metadataJson as ProductMetadataJson | null) ?? null,
       createdAt: row.createdAt,
     });
   }
@@ -108,46 +142,64 @@ export async function createProductForTenant(
   const status = input.status ?? "active";
   const stockQty = input.stockQty ?? 10;
 
-  const [product] = await db
-    .insert(products)
-    .values({
-      tenantId,
-      title: input.title.trim(),
-      slug,
-      descriptionHtml: input.descriptionHtml?.trim() || `<p>${input.title.trim()}</p>`,
-      status,
-      basePrice: input.basePrice,
-      compareAtPrice: input.compareAtPrice,
-      aiGenerated: input.aiGenerated ?? false,
-    })
-    .returning();
+  const [{ count: existingCount }] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(products)
+    .where(eq(products.tenantId, tenantId));
 
-  if (!product) throw new Error("Failed to create product");
+  // First product becomes the identity product unless seller opts out.
+  const isMain = input.isMain ?? existingCount === 0;
 
-  const [variant] = await db
-    .insert(productVariants)
-    .values({
-      productId: product.id,
-      sku: `${slug}-default`,
-      title: "Default",
-      price: input.basePrice,
-      stockQty,
-      optionsJson: { variant: "Default" },
-      imageUrl: input.imageUrl,
-    })
-    .returning();
+  const product = await db.transaction(async (tx) => {
+    const [created] = await tx
+      .insert(products)
+      .values({
+        tenantId,
+        title: input.title.trim(),
+        slug,
+        descriptionHtml: input.descriptionHtml?.trim() || `<p>${input.title.trim()}</p>`,
+        status,
+        basePrice: input.basePrice,
+        compareAtPrice: input.compareAtPrice,
+        aiGenerated: input.aiGenerated ?? false,
+        isMain,
+        metadataJson: input.metadataJson ?? null,
+      })
+      .returning();
 
-  if (!variant) throw new Error("Failed to create product variant");
+    if (!created) throw new Error("Failed to create product");
 
-  if (input.imageUrl) {
-    await db.insert(productImages).values({
-      productId: product.id,
-      variantId: variant.id,
-      url: input.imageUrl,
-      alt: product.title,
-      sortOrder: 0,
-    });
-  }
+    if (isMain) {
+      await clearOtherMainProducts(tx, tenantId, created.id);
+    }
+
+    const [variant] = await tx
+      .insert(productVariants)
+      .values({
+        productId: created.id,
+        sku: `${slug}-default`,
+        title: "Default",
+        price: input.basePrice,
+        stockQty,
+        optionsJson: { variant: "Default" },
+        imageUrl: input.imageUrl,
+      })
+      .returning();
+
+    if (!variant) throw new Error("Failed to create product variant");
+
+    if (input.imageUrl) {
+      await tx.insert(productImages).values({
+        productId: created.id,
+        variantId: variant.id,
+        url: input.imageUrl,
+        alt: created.title,
+        sortOrder: 0,
+      });
+    }
+
+    return created;
+  });
 
   if (status === "active") {
     const { tryAutoActivateTenant } = await import("./tenant-dashboard");
@@ -165,6 +217,8 @@ export async function createProductForTenant(
     stockQty,
     aiGenerated: product.aiGenerated ?? false,
     imageUrl: input.imageUrl ?? null,
+    isMain: Boolean(product.isMain),
+    metadataJson: (product.metadataJson as ProductMetadataJson | null) ?? null,
     createdAt: product.createdAt,
   };
 }
@@ -177,6 +231,8 @@ export interface UpdateProductInput {
   status?: "draft" | "active" | "archived";
   stockQty?: number;
   imageUrl?: string | null;
+  isMain?: boolean;
+  metadataJson?: ProductMetadataJson | null;
 }
 
 export async function updateProductForTenant(
@@ -186,79 +242,86 @@ export async function updateProductForTenant(
 ): Promise<boolean> {
   const db = getDb();
 
-  return db.transaction(async (tx) => {
-    const [product] = await tx
-      .select({ id: products.id })
-      .from(products)
-      .where(and(eq(products.id, productId), eq(products.tenantId, tenantId)))
-      .limit(1);
-    if (!product) return false;
-
-    await tx
-      .update(products)
-      .set({
-        ...(input.title !== undefined ? { title: input.title.trim() } : {}),
-        ...(input.descriptionHtml !== undefined
-          ? { descriptionHtml: input.descriptionHtml }
-          : {}),
-        ...(input.basePrice !== undefined ? { basePrice: input.basePrice } : {}),
-        ...(input.compareAtPrice !== undefined
-          ? { compareAtPrice: input.compareAtPrice }
-          : {}),
-        ...(input.status !== undefined ? { status: input.status } : {}),
-        updatedAt: new Date(),
-      })
-      .where(eq(products.id, productId));
-
-    // Keep the default (first) variant in sync for price/stock/image.
-    const [variant] = await tx
-      .select({ id: productVariants.id })
-      .from(productVariants)
-      .where(eq(productVariants.productId, productId))
-      .limit(1);
-
-    if (variant) {
-      await tx
-        .update(productVariants)
-        .set({
-          ...(input.basePrice !== undefined ? { price: input.basePrice } : {}),
-          ...(input.stockQty !== undefined ? { stockQty: input.stockQty } : {}),
-          ...(input.imageUrl !== undefined ? { imageUrl: input.imageUrl } : {}),
-        })
-        .where(eq(productVariants.id, variant.id));
-    }
-
-    if (input.imageUrl) {
-      const [image] = await tx
-        .select({ id: productImages.id })
-        .from(productImages)
-        .where(eq(productImages.productId, productId))
+  return db
+    .transaction(async (tx) => {
+      const [product] = await tx
+        .select({ id: products.id })
+        .from(products)
+        .where(and(eq(products.id, productId), eq(products.tenantId, tenantId)))
         .limit(1);
-      if (image) {
-        await tx
-          .update(productImages)
-          .set({ url: input.imageUrl })
-          .where(eq(productImages.id, image.id));
-      } else {
-        await tx.insert(productImages).values({
-          productId,
-          variantId: variant?.id,
-          url: input.imageUrl,
-          sortOrder: 0,
-        });
-      }
-    }
+      if (!product) return false;
 
-    return true;
-  }).then(async (ok) => {
-    if (!ok) return false;
-    if (input.status === "active" || input.status === undefined) {
-      // Re-check after any save that may leave an active listing on a pending shop
-      const { tryAutoActivateTenant } = await import("./tenant-dashboard");
-      await tryAutoActivateTenant(tenantId);
-    }
-    return true;
-  });
+      if (input.isMain === true) {
+        await clearOtherMainProducts(tx, tenantId, productId);
+      }
+
+      await tx
+        .update(products)
+        .set({
+          ...(input.title !== undefined ? { title: input.title.trim() } : {}),
+          ...(input.descriptionHtml !== undefined
+            ? { descriptionHtml: input.descriptionHtml }
+            : {}),
+          ...(input.basePrice !== undefined ? { basePrice: input.basePrice } : {}),
+          ...(input.compareAtPrice !== undefined
+            ? { compareAtPrice: input.compareAtPrice }
+            : {}),
+          ...(input.status !== undefined ? { status: input.status } : {}),
+          ...(input.isMain !== undefined ? { isMain: input.isMain } : {}),
+          ...(input.metadataJson !== undefined ? { metadataJson: input.metadataJson } : {}),
+          updatedAt: new Date(),
+        })
+        .where(eq(products.id, productId));
+
+      // Keep the default (first) variant in sync for price/stock/image.
+      const [variant] = await tx
+        .select({ id: productVariants.id })
+        .from(productVariants)
+        .where(eq(productVariants.productId, productId))
+        .limit(1);
+
+      if (variant) {
+        await tx
+          .update(productVariants)
+          .set({
+            ...(input.basePrice !== undefined ? { price: input.basePrice } : {}),
+            ...(input.stockQty !== undefined ? { stockQty: input.stockQty } : {}),
+            ...(input.imageUrl !== undefined ? { imageUrl: input.imageUrl } : {}),
+          })
+          .where(eq(productVariants.id, variant.id));
+      }
+
+      if (input.imageUrl) {
+        const [image] = await tx
+          .select({ id: productImages.id })
+          .from(productImages)
+          .where(eq(productImages.productId, productId))
+          .limit(1);
+        if (image) {
+          await tx
+            .update(productImages)
+            .set({ url: input.imageUrl })
+            .where(eq(productImages.id, image.id));
+        } else {
+          await tx.insert(productImages).values({
+            productId,
+            variantId: variant?.id,
+            url: input.imageUrl,
+            sortOrder: 0,
+          });
+        }
+      }
+
+      return true;
+    })
+    .then(async (ok) => {
+      if (!ok) return false;
+      if (input.status === "active" || input.status === undefined) {
+        const { tryAutoActivateTenant } = await import("./tenant-dashboard");
+        await tryAutoActivateTenant(tenantId);
+      }
+      return true;
+    });
 }
 
 export type DeleteProductResult = "deleted" | "archived" | "not_found";
@@ -276,7 +339,7 @@ export async function deleteProductForTenant(
 
   return db.transaction(async (tx) => {
     const [product] = await tx
-      .select({ id: products.id })
+      .select({ id: products.id, isMain: products.isMain })
       .from(products)
       .where(and(eq(products.id, productId), eq(products.tenantId, tenantId)))
       .limit(1);
@@ -291,7 +354,7 @@ export async function deleteProductForTenant(
     if (referenced) {
       await tx
         .update(products)
-        .set({ status: "archived", updatedAt: new Date() })
+        .set({ status: "archived", isMain: false, updatedAt: new Date() })
         .where(eq(products.id, productId));
       return "archived";
     }

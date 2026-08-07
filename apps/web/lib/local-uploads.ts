@@ -26,6 +26,7 @@ export const UPLOAD_MIME_BY_EXT: Record<string, string> = {
   png: "image/png",
   webp: "image/webp",
   gif: "image/gif",
+  avif: "image/avif",
 };
 
 /** Reject path traversal and empty segments. */

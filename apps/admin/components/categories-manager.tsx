@@ -70,10 +70,12 @@ export function CategoriesManager() {
 
   return (
     <div className="space-y-6">
-      <Card className="border-emerald-100 bg-gradient-to-br from-emerald-50/80 to-white p-5">
+      <Card className="border-emerald-500/25 bg-emerald-500/10 p-5">
         <div className="flex items-center gap-2">
-          <span className="text-xl">🏷️</span>
-          <h2 className="text-lg font-semibold">Product categories</h2>
+          <span className="text-xl" aria-hidden>
+            🏷️
+          </span>
+          <h2 className="text-lg font-semibold text-foreground">Product categories</h2>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
           Organize your catalog like a real Shopify store. Categories appear in your shop menu and
@@ -81,7 +83,7 @@ export function CategoriesManager() {
         </p>
       </Card>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-400">{error}</p>}
 
       <Card className="p-5">
         <h3 className="font-medium text-foreground">Add category</h3>
@@ -90,7 +92,7 @@ export function CategoriesManager() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Cakes, Best Sellers, Custom Prints"
-            className="h-10 min-w-[240px] flex-1 rounded-xl border border-border px-3 text-sm"
+            className="h-10 min-w-[240px] flex-1 rounded-xl border border-border bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground"
           />
           <Button type="submit" disabled={saving}>
             {saving ? "Adding…" : "Add category"}

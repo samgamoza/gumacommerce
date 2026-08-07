@@ -11,10 +11,6 @@ export function airconBrandName(name: string): string {
   return first || name;
 }
 
-export function airconContactEmail(slug: string): string {
-  return `${slug.replace(/-/g, "")}@gumacommerce.app`;
-}
-
 export const AIRCON_DEFAULT_PRIMARY = "#FF800F";
 export const AIRCON_DEFAULT_ACCENT = "#0D1B2A";
 

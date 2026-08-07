@@ -11,7 +11,24 @@ const MIME_TO_EXT: Record<string, string> = {
   "image/png": "png",
   "image/webp": "webp",
   "image/gif": "gif",
+  "image/avif": "avif",
 };
+
+const EXT_TO_MIME: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  gif: "image/gif",
+  avif: "image/avif",
+};
+
+function resolveImageMime(file: File): string | null {
+  if (MIME_TO_EXT[file.type]) return file.type;
+  // Some browsers leave type empty for AVIF — fall back to extension.
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  return EXT_TO_MIME[ext] ?? null;
+}
 
 /**
  * Object storage (Vercel Blob) is used whenever BLOB_READ_WRITE_TOKEN is set.
@@ -76,18 +93,19 @@ export async function saveProductImage(
   tenantId: string,
   file: File
 ): Promise<{ url: string; filename: string }> {
-  if (!MIME_TO_EXT[file.type]) {
-    throw new Error("Use a JPG, PNG, WebP, or GIF image.");
+  const mime = resolveImageMime(file);
+  if (!mime || !MIME_TO_EXT[mime]) {
+    throw new Error("Use a JPG, PNG, WebP, GIF, or AVIF image.");
   }
 
   if (file.size > MAX_BYTES) {
     throw new Error("Image must be 5 MB or smaller.");
   }
 
-  const ext = MIME_TO_EXT[file.type];
+  const ext = MIME_TO_EXT[mime]!;
   const filename = `${randomUUID()}.${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
-  return storeBuffer(tenantId, filename, buffer, file.type);
+  return storeBuffer(tenantId, filename, buffer, mime);
 }
 
 function assertTenantOwnsImage(tenantId: string, imageUrl: string): void {

@@ -29,6 +29,15 @@ const createSchema = z.object({
   stockQty: z.number().int().min(0).max(99999).optional(),
   aiGenerated: z.boolean().optional(),
   imageUrl: z.string().max(2048).optional(),
+  isMain: z.boolean().optional(),
+  metadataJson: z
+    .object({
+      unitType: z.enum(["pc", "box", "other"]).optional(),
+      unitCustom: z.string().max(40).optional(),
+      servicePriceStyle: z.enum(["base_minimum", "value_range"]).optional(),
+    })
+    .nullable()
+    .optional(),
   changeRequestId: z.string().uuid().optional(),
 });
 
@@ -47,6 +56,8 @@ export async function POST(request: Request) {
       stockQty: body.stockQty,
       aiGenerated: body.aiGenerated ?? false,
       imageUrl: body.imageUrl,
+      isMain: body.isMain,
+      metadataJson: body.metadataJson ?? null,
     });
 
     if (body.changeRequestId) {

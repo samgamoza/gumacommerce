@@ -1,14 +1,14 @@
 import Link from "next/link";
 import type { DemoTenant } from "@/lib/demo-data";
+import { adminUrl, shopPublicUrl, shopPublicUrlLabel } from "@/lib/utils";
 import { furnishBrandLines } from "./furnish-utils";
 
 export function FurnishFooter({ tenant }: { tenant: DemoTenant }) {
   const brand = furnishBrandLines(tenant.name, tenant.tagline);
   const homeHref = `/${tenant.slug}`;
   const checkoutHref = `/${tenant.slug}/checkout`;
-  const email = tenant.storeSettings.whatsapp.enabled
-    ? `${tenant.slug.replace(/-/g, "")}@gumacommerce.app`
-    : "hello@example.com";
+  const siteUrl = shopPublicUrl(tenant.slug);
+  const siteLabel = shopPublicUrlLabel(tenant.slug);
 
   return (
     <footer className="furnish-footer">
@@ -33,6 +33,11 @@ export function FurnishFooter({ tenant }: { tenant: DemoTenant }) {
             <li>
               <Link href={checkoutHref}>Cart</Link>
             </li>
+            <li>
+              <a href={adminUrl} target="_blank" rel="noreferrer">
+                Seller Dashboard
+              </a>
+            </li>
           </ul>
         </div>
 
@@ -40,8 +45,12 @@ export function FurnishFooter({ tenant }: { tenant: DemoTenant }) {
 
         <div className="mt-8 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div>
-            <span className="text-sm uppercase tracking-wider">Email</span>
-            <p className="mt-1 text-2xl font-light text-white">{email}</p>
+            <span className="text-sm uppercase tracking-wider">Shop</span>
+            <p className="mt-1 text-2xl font-light text-white">
+              <a href={siteUrl} target="_blank" rel="noreferrer">
+                {siteLabel}
+              </a>
+            </p>
           </div>
           <a href="#newsletter" className="furnish-btn furnish-btn-outline inline-flex w-fit border-white text-white hover:opacity-90">
             Contact us

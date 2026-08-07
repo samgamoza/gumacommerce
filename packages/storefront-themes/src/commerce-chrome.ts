@@ -65,6 +65,9 @@ export function isServiceBusinessCategory(category: string): boolean {
     c.includes("trades") ||
     c.includes("appliance") ||
     c.includes("device repair") ||
+    c.includes("repair") ||
+    c.includes("cellphone") ||
+    c.includes("phone repair") ||
     c.includes("house painting") ||
     c.includes("decorating") ||
     c.includes("pest control") ||

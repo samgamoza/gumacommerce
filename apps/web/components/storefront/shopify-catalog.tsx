@@ -1,14 +1,7 @@
 import Link from "next/link";
 import type { DemoProduct, DemoTenant } from "@/lib/demo-data";
 import { StorefrontProductImage } from "@/components/storefront/storefront-product-image";
-
-function formatPrice(amount: number): string {
-  return new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
-    minimumFractionDigits: 0,
-  }).format(amount);
-}
+import { formatPhpMoney, productCardPricing } from "@/lib/product-price-display";
 
 export function ShopifyCatalog({
   tenant,
@@ -115,6 +108,8 @@ function ShopifyProductTile({
   tenant: DemoTenant;
   product: DemoProduct;
 }) {
+  const pricing = productCardPricing(tenant.category, product, formatPhpMoney);
+
   return (
     <Link href={`/${tenant.slug}/products/${product.slug}`} className="group block">
       <article>
@@ -126,14 +121,30 @@ function ShopifyProductTile({
             className="object-cover transition duration-500 group-hover:scale-[1.03]"
             sizes="(max-width: 768px) 50vw, 33vw"
           />
+          {(product.isMain || pricing.kind === "service" || pricing.kind === "food") && (
+            <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-neutral-800 shadow-sm">
+              {product.isMain ? "Main" : pricing.kind === "service" ? "Service" : "Food"}
+            </span>
+          )}
         </div>
         <div className="mt-4 space-y-1">
           <h2 className="text-sm font-medium leading-snug text-neutral-900 md:text-base">
             {product.title}
           </h2>
-          <p className="text-sm font-semibold text-neutral-900 md:text-base">
-            {formatPrice(product.price)}
-          </p>
+          {product.shortDescription ? (
+            <p className="line-clamp-2 text-xs text-neutral-500">{product.shortDescription}</p>
+          ) : null}
+          <div className="flex flex-wrap items-baseline gap-2">
+            {pricing.compareAtLine && (
+              <span className="text-xs text-neutral-400 line-through md:text-sm">
+                {pricing.compareAtLine}
+              </span>
+            )}
+            <p className="text-sm font-semibold text-neutral-900 md:text-base">{pricing.priceLine}</p>
+          </div>
+          {pricing.priceCaption && pricing.kind === "service" && (
+            <p className="text-[11px] text-neutral-500">{pricing.priceCaption}</p>
+          )}
         </div>
       </article>
     </Link>

@@ -3,19 +3,25 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { BusinessCategoryPicker } from "@/components/business-category-picker";
 import { PatternAdminShell } from "@/components/pattern-admin-shell";
 import { Button, Card } from "@guma-commerce/ui";
 import {
   BRAND_PALETTES,
+  emojiForGuideCategory,
+  guideEntryOrFallback,
   hintBrandGuardCopy,
-  SHOP_BUSINESS_CATEGORIES,
-  SHOP_VIBES,
   type ProductCountHint,
   type RankedTemplate,
   type StoreGoal,
   type SellingChannel,
 } from "@guma-commerce/storefront-themes";
+
+/** Dark-console chips — selected stays vivid; idle stays readable. */
+const chipIdle =
+  "rounded-full border border-border bg-secondary px-3 py-1.5 text-sm font-medium text-foreground hover:border-emerald-500/50";
+const chipActive = "rounded-full border border-emerald-500 bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white";
+const fieldHint = "text-sm text-slate-300";
+const sectionLabel = "text-sm font-semibold text-foreground";
 
 type Step = "dna" | "templates" | "personalize" | "preview" | "done";
 
@@ -76,8 +82,7 @@ export function LaunchWizard() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [selectedCatalogLabel, setSelectedCatalogLabel] = useState<string | null>(null);
 
-  const [categories, setCategories] = useState<string[]>([...SHOP_BUSINESS_CATEGORIES]);
-  const [category, setCategory] = useState<string>(SHOP_BUSINESS_CATEGORIES[0] ?? "General");
+  const [category, setCategory] = useState("General");
   const [vibe, setVibe] = useState("fresh");
   const [productCountHint, setProductCountHint] = useState<ProductCountHint>("1-10");
   const [goals, setGoals] = useState<StoreGoal[]>(["launch_fast"]);
@@ -108,13 +113,10 @@ export function LaunchWizard() {
       setRecommendations(data.recommendations ?? []);
       setCuratedTemplates(data.curatedTemplates ?? []);
       setLibraryMatches(data.libraryMatches ?? []);
-      if (Array.isArray(data.onboardingCategories) && data.onboardingCategories.length > 0) {
-        setCategories(data.onboardingCategories);
-      }
 
       const dna = data.dna;
+      setCategory(dna?.category || data.state?.category || "General");
       if (dna) {
-        setCategory(dna.category || category);
         setVibe(String(dna.vibe || "fresh"));
         if (dna.productCountHint) setProductCountHint(dna.productCountHint);
         if (dna.goals?.length) setGoals(dna.goals);
@@ -268,13 +270,12 @@ export function LaunchWizard() {
     <PatternAdminShell title="GUMA Launch">
       <div className="mx-auto max-w-3xl space-y-6">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-400">
             Freemium · Zero AI cost
           </p>
           <h1 className="mt-1 text-2xl font-bold text-foreground">Launch {shopName}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Confirm your Store DNA, pick one of three recommended templates, personalize, then
-            publish. You stay in control — AI does not generate layouts.
+          <p className="mt-1 text-sm text-slate-300">
+            Confirm a few details, pick a look for your category, personalize, then publish.
           </p>
         </div>
 
@@ -293,7 +294,7 @@ export function LaunchWizard() {
               className={`rounded-full px-3 py-1 ${
                 step === id
                   ? "bg-emerald-600 text-white"
-                  : "bg-muted text-muted-foreground"
+                  : "border border-border bg-secondary text-slate-300"
               }`}
             >
               {label}
@@ -301,57 +302,56 @@ export function LaunchWizard() {
           ))}
         </ol>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-red-400">{error}</p>}
 
         {step === "dna" && (
-          <Card className="space-y-4 p-5">
-            <h2 className="font-semibold text-foreground">Store DNA</h2>
-            <p className="text-sm text-muted-foreground">
-              Confirm your category from signup — we use it to load the right shop looks next.
-            </p>
-
-            <BusinessCategoryPicker
-              value={category}
-              onChange={setCategory}
-              allowedCategories={categories}
-            />
-
+          <Card className="space-y-5 p-5">
             <div>
-              <p className="text-sm font-medium text-foreground">Vibe</p>
-              <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                {SHOP_VIBES.map((v) => (
-                  <button
-                    key={v.id}
-                    type="button"
-                    onClick={() => setVibe(v.id)}
-                    className={`rounded-xl border p-3 text-left text-sm ${
-                      vibe === v.id
-                        ? "border-emerald-500 bg-emerald-50"
-                        : "border-border bg-card"
-                    }`}
-                  >
-                    <span className="font-medium">
-                      {v.emoji} {v.label}
-                    </span>
-                    <span className="mt-0.5 block text-xs text-muted-foreground">{v.description}</span>
-                  </button>
-                ))}
-              </div>
+              <h2 className="text-lg font-semibold text-foreground">Store DNA</h2>
+              <p className={`mt-1 ${fieldHint}`}>
+                Finish a few details so we can rank the right looks. Your business type is already set
+                from signup.
+              </p>
+            </div>
+
+            {/* Read-only guide — category was chosen at signup / shop setup */}
+            <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-300">
+                From your signup
+              </p>
+              <p className="mt-1 text-base font-semibold text-foreground">{shopName || "Your shop"}</p>
+              <p className="mt-2 flex items-start gap-2 text-sm text-foreground">
+                <span className="text-lg leading-none" aria-hidden>
+                  {emojiForGuideCategory(category)}
+                </span>
+                <span>
+                  <span className="font-semibold">{category}</span>
+                  <span className="mt-0.5 block text-sm text-slate-300">
+                    {guideEntryOrFallback(category).plain}
+                  </span>
+                </span>
+              </p>
+              <p className="mt-2 text-xs text-slate-400">
+                Wrong category?{" "}
+                <Link
+                  href="/settings/shop"
+                  className="font-medium text-emerald-300 underline-offset-2 hover:underline"
+                >
+                  Update in Shop settings
+                </Link>
+              </p>
             </div>
 
             <div>
-              <p className="text-sm font-medium text-foreground">Product count</p>
+              <p className={sectionLabel}>Product count</p>
+              <p className={`mt-0.5 text-xs text-slate-400`}>About how many items will you list?</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {PRODUCT_HINTS.map((h) => (
                   <button
                     key={h.id}
                     type="button"
                     onClick={() => setProductCountHint(h.id)}
-                    className={`rounded-full px-3 py-1.5 text-sm ${
-                      productCountHint === h.id
-                        ? "bg-emerald-600 text-white"
-                        : "bg-muted text-foreground"
-                    }`}
+                    className={productCountHint === h.id ? chipActive : chipIdle}
                   >
                     {h.label}
                   </button>
@@ -360,18 +360,15 @@ export function LaunchWizard() {
             </div>
 
             <div>
-              <p className="text-sm font-medium text-foreground">Goals</p>
+              <p className={sectionLabel}>Goals</p>
+              <p className="mt-0.5 text-xs text-slate-400">What matters most for this launch?</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {GOALS.map((g) => (
                   <button
                     key={g.id}
                     type="button"
                     onClick={() => toggleGoal(g.id)}
-                    className={`rounded-full px-3 py-1.5 text-sm ${
-                      goals.includes(g.id)
-                        ? "bg-emerald-600 text-white"
-                        : "bg-muted text-foreground"
-                    }`}
+                    className={goals.includes(g.id) ? chipActive : chipIdle}
                   >
                     {g.label}
                   </button>
@@ -380,18 +377,15 @@ export function LaunchWizard() {
             </div>
 
             <div>
-              <p className="text-sm font-medium text-foreground">Selling channels</p>
+              <p className={sectionLabel}>Selling channels</p>
+              <p className="mt-0.5 text-xs text-slate-400">Where do customers find you today?</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {CHANNELS.map((c) => (
                   <button
                     key={c.id}
                     type="button"
                     onClick={() => toggleChannel(c.id)}
-                    className={`rounded-full px-3 py-1.5 text-sm ${
-                      sellingChannels.includes(c.id)
-                        ? "bg-emerald-600 text-white"
-                        : "bg-muted text-foreground"
-                    }`}
+                    className={sellingChannels.includes(c.id) ? chipActive : chipIdle}
                   >
                     {c.label}
                   </button>
@@ -399,10 +393,11 @@ export function LaunchWizard() {
               </div>
             </div>
 
-            <label className="block text-sm">
-              <span className="font-medium text-foreground">Audience (optional)</span>
+            <label className="block">
+              <span className={sectionLabel}>Audience (optional)</span>
+              <p className="mt-0.5 text-xs text-slate-400">Who do you mainly sell to?</p>
               <input
-                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
+                className="mt-2 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-slate-500 outline-none ring-emerald-500/30 focus:border-emerald-500 focus:ring-2"
                 value={audience}
                 onChange={(e) => setAudience(e.target.value)}
                 placeholder="e.g. Busy moms in Metro Manila"
@@ -421,15 +416,16 @@ export function LaunchWizard() {
               <h2 className="font-semibold text-foreground">
                 Pick a look for {category}
               </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Based on the category you chose — only looks that fit that shop type.
+              <p className="mt-1 text-sm text-slate-300">
+                Based on <span className="font-medium text-foreground">{category}</span> from your
+                signup — only looks that fit that shop type.
               </p>
             </div>
 
             {recommendations.length > 0 && (
               <div>
                 <h3 className="text-sm font-semibold text-foreground">Best fits</h3>
-                <p className="mt-0.5 text-xs text-muted-foreground">
+                <p className="mt-0.5 text-xs text-slate-400">
                   Top matches for {category}. Tap one to continue.
                 </p>
                 <div className="mt-3 grid gap-3 sm:grid-cols-3">

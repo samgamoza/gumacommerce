@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import type { DemoTenant } from "@/lib/demo-data";
+import { adminUrl, shopPublicUrl, shopPublicUrlLabel } from "@/lib/utils";
 import { zayBrandMark } from "./zay-utils";
 
 function slugify(value: string): string {
@@ -34,7 +35,8 @@ export function ZayFooter({ tenant }: { tenant: DemoTenant }) {
     tenant.storeSettings.whatsapp.enabled && tenant.storeSettings.whatsapp.phone
       ? tenant.storeSettings.whatsapp.phone
       : null;
-  const contactEmail = `${tenant.slug.replace(/-/g, "")}@gumacommerce.app`;
+  const siteUrl = shopPublicUrl(tenant.slug);
+  const siteLabel = shopPublicUrlLabel(tenant.slug);
   const categories = tenant.shopCategories.length
     ? dedupeCategories(tenant.shopCategories)
     : [...new Set(tenant.products.map((p) => p.category).filter(Boolean))].slice(0, 6).map((name, i) => ({
@@ -65,7 +67,9 @@ export function ZayFooter({ tenant }: { tenant: DemoTenant }) {
                 </li>
               )}
               <li>
-                <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
+                <a href={siteUrl} target="_blank" rel="noreferrer">
+                  {siteLabel}
+                </a>
               </li>
             </ul>
           </div>
@@ -93,6 +97,11 @@ export function ZayFooter({ tenant }: { tenant: DemoTenant }) {
               </li>
               <li>
                 <a href="#footer">Contact</a>
+              </li>
+              <li>
+                <a href={adminUrl} target="_blank" rel="noreferrer">
+                  Seller Dashboard
+                </a>
               </li>
             </ul>
           </div>

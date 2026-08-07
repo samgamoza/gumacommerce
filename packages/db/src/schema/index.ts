@@ -420,9 +420,16 @@ export const products = pgTable(
     compareAtPrice: decimal("compare_at_price", { precision: 12, scale: 2 }),
     trackInventory: boolean("track_inventory").default(true),
     allowCustomization: boolean("allow_customization").default(false),
+    /** Seller identity product — one per tenant; featured on storefront. */
+    isMain: boolean("is_main").default(false).notNull(),
     metadataJson: jsonb("metadata_json").$type<{
       prepTimeMinutes?: number;
       allergens?: string[];
+      /** Food sell unit — pc / box / custom. */
+      unitType?: "pc" | "box" | "other";
+      unitCustom?: string;
+      /** Service pricing chrome: base/minimum vs value range (max in compareAt). */
+      servicePriceStyle?: "base_minimum" | "value_range";
     }>(),
     aiGenerated: boolean("ai_generated").default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -431,6 +438,7 @@ export const products = pgTable(
   (table) => [
     index("products_tenant_status_idx").on(table.tenantId, table.status),
     uniqueIndex("products_tenant_slug_idx").on(table.tenantId, table.slug),
+    index("products_tenant_main_idx").on(table.tenantId, table.isMain),
   ]
 );
 

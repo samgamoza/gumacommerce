@@ -57,7 +57,12 @@ export function ElectroProductGrid({ tenant }: { tenant: DemoTenant }) {
         ) : (
           <div className="electro-product-grid">
             {display.map((product) => (
-              <ElectroProductCard key={product.id} tenantSlug={tenant.slug} product={product} />
+              <ElectroProductCard
+                key={product.id}
+                tenantSlug={tenant.slug}
+                product={product}
+                category={tenant.category}
+              />
             ))}
           </div>
         )}

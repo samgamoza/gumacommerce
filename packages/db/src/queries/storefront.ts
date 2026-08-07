@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { getDb } from "../client";
 import { categories, productVariants, products, tenants } from "../schema/index";
 
@@ -32,9 +32,15 @@ export interface StorefrontTenantRecord {
     basePrice: string;
     compareAtPrice: string | null;
     status: string;
+    isMain: boolean;
     imageUrl: string | null;
     categoryName: string | null;
     categorySlug: string | null;
+    metadataJson: {
+      unitType?: "pc" | "box" | "other";
+      unitCustom?: string;
+      servicePriceStyle?: "base_minimum" | "value_range";
+    } | null;
   }>;
   shopCategories: Array<{
     id: string;
@@ -112,7 +118,7 @@ async function mapStorefrontTenant(
   options?: { preferDraft?: boolean }
 ): Promise<StorefrontTenantRecord> {
   const db = getDb();
-  const catalog = await db
+  const catalogRows = await db
     .select({
       id: products.id,
       slug: products.slug,
@@ -121,6 +127,8 @@ async function mapStorefrontTenant(
       basePrice: products.basePrice,
       compareAtPrice: products.compareAtPrice,
       status: products.status,
+      isMain: products.isMain,
+      metadataJson: products.metadataJson,
       imageUrl: productVariants.imageUrl,
       categoryName: categories.name,
       categorySlug: categories.slug,
@@ -128,7 +136,16 @@ async function mapStorefrontTenant(
     .from(products)
     .leftJoin(productVariants, eq(productVariants.productId, products.id))
     .leftJoin(categories, eq(products.categoryId, categories.id))
-    .where(eq(products.tenantId, tenant.id));
+    .where(eq(products.tenantId, tenant.id))
+    .orderBy(desc(products.isMain), desc(products.createdAt));
+
+  // Variant join can duplicate rows — keep first (main-sorted) per product.
+  const seen = new Set<string>();
+  const catalog = catalogRows.filter((row) => {
+    if (seen.has(row.id)) return false;
+    seen.add(row.id);
+    return true;
+  });
 
   const shopCategories = await db
     .select({
@@ -157,7 +174,11 @@ async function mapStorefrontTenant(
     seoPublishedJson: tenant.seoPublishedJson ?? null,
     checkoutPublishedJson: tenant.checkoutPublishedJson ?? null,
     shippingPublishedJson: tenant.shippingPublishedJson ?? null,
-    products: catalog,
+    products: catalog.map((p) => ({
+      ...p,
+      isMain: Boolean(p.isMain),
+      metadataJson: p.metadataJson ?? null,
+    })),
     shopCategories,
   };
 }
