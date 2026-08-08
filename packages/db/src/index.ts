@@ -69,6 +69,8 @@ export {
   getTemplateStockByKey,
   createTemplateStock,
   setTemplateStockStatus,
+  updateTemplateStockLabel,
+  renameGenericLookStockLabels,
   countPublishedStockByCategory,
   recordTemplateIntelligenceEvent,
   listRecentTemplateIntelligenceEvents,

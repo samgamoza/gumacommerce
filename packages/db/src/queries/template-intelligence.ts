@@ -391,6 +391,41 @@ export async function setTemplateStockStatus(
   return updated;
 }
 
+export async function updateTemplateStockLabel(
+  id: string,
+  label: string
+): Promise<TemplateStockRow> {
+  const db = getDb();
+  const trimmed = label.trim();
+  if (!trimmed) throw new Error("Label is required.");
+  const [updated] = await db
+    .update(templateStock)
+    .set({ label: trimmed.slice(0, 120), updatedAt: new Date() })
+    .where(eq(templateStock.id, id))
+    .returning();
+  if (!updated) throw new Error("Template stock not found.");
+  return updated;
+}
+
+/**
+ * Rewrite stock rows still named "… Look N" using the provided label mapper.
+ * Idempotent — skips rows that already have seller-friendly names.
+ */
+export async function renameGenericLookStockLabels(
+  nextLabel: (row: TemplateStockRow) => string | null
+): Promise<number> {
+  const rows = await listTemplateStock();
+  let count = 0;
+  for (const row of rows) {
+    if (row.status === "archived") continue;
+    const next = nextLabel(row);
+    if (!next || next === row.label.trim()) continue;
+    await updateTemplateStockLabel(row.id, next);
+    count += 1;
+  }
+  return count;
+}
+
 export async function countPublishedStockByCategory(): Promise<Map<string, number>> {
   const db = getDb();
   const rows = await db

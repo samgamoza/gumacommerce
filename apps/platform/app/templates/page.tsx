@@ -4,6 +4,7 @@ import {
   listRecentTemplateIntelligenceEvents,
   listShopBusinessCategories,
   listTemplateStock,
+  renameGenericLookStockLabels,
 } from "@guma-commerce/db";
 import {
   BUNDLE_2023_LICENSE,
@@ -13,7 +14,9 @@ import {
   SHOP_TEMPLATES,
   countBundleSellerReadyByCategory,
   defaultLiveTemplateForCategory,
+  isGenericLookNumberLabel,
   listCatalogByCategory,
+  sellerFacingStockLabel,
 } from "@guma-commerce/storefront-themes";
 import { requireSuperAdmin } from "@/lib/session";
 import { PlatformShell } from "@/components/platform-shell";
@@ -29,6 +32,15 @@ export const dynamic = "force-dynamic";
 export default async function TemplatesCatalogPage() {
   const session = await requireSuperAdmin();
   await ensureShopCategoriesSeeded(SHOP_BUSINESS_CATEGORIES);
+  // Idempotent: strip seller-facing "Look 1 / Look 2" names left by older seeds.
+  await renameGenericLookStockLabels((row) => {
+    if (!isGenericLookNumberLabel(row.label)) return null;
+    return sellerFacingStockLabel({
+      label: row.label,
+      stockKey: row.stockKey,
+      storeLookJson: row.storeLookJson,
+    });
+  });
 
   const categories = await listShopBusinessCategories();
   const stock = await listTemplateStock();

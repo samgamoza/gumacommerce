@@ -5,6 +5,7 @@ import {
   previewImageForCategory,
   previewImageForTemplate,
   resolveStockSkin,
+  sellerFacingStockLabel,
   type CatalogInstallResolution,
   type CuratedTemplateCard,
   type ShopTemplateId,
@@ -28,9 +29,14 @@ export function stockRowToCuratedCard(
   if (!isShopTemplateId(row.liveTemplateId)) return null;
   const live = row.liveTemplateId as ShopTemplateId;
   const skin = resolveStockSkin(row.storeLookJson, row.stockKey);
+  const label = sellerFacingStockLabel({
+    label: row.label,
+    stockKey: row.stockKey,
+    storeLookJson: row.storeLookJson,
+  });
   return {
     proposedId: row.stockKey,
-    label: row.label,
+    label,
     shopCategory: row.categoryLabel,
     status: row.source === "ai_curated" ? "queued-storefront" : "variant-of-integrated",
     notes:
@@ -59,7 +65,11 @@ export function resolveStockInstall(
     liveTemplateId,
     catalogEntry: null,
     catalogId: row.stockKey,
-    catalogLabel: row.label,
+    catalogLabel: sellerFacingStockLabel({
+      label: row.label,
+      stockKey: row.stockKey,
+      storeLookJson: row.storeLookJson,
+    }),
     storeLook,
     stockSkin,
     previewImageUrl:

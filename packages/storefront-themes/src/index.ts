@@ -99,8 +99,11 @@ export {
 export {
   deriveStockSkin,
   hashStockKey,
+  isGenericLookNumberLabel,
   lookIndexFromStockKey,
   resolveStockSkin,
+  sellerFacingStockLabel,
+  sellerLabelForStockKey,
   type StockSkin,
   type StockSkinJson,
 } from "./stock-skin";

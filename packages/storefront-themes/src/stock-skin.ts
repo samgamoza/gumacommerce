@@ -141,3 +141,55 @@ export function hashStockKey(stockKey: string): number {
   }
   return hash >>> 0;
 }
+
+/** Ops seed used to name skins "Haircut Look 1" — hide that from sellers. */
+export function isGenericLookNumberLabel(label: string | null | undefined): boolean {
+  return /\b(?:AI\s+)?Look\s*\d+\s*$/i.test((label ?? "").trim());
+}
+
+function paletteLabelForId(paletteId: string | undefined): string | null {
+  if (!paletteId) return null;
+  const fromVisible = STOCK_VISIBLE_PALETTES.find((p) => p.id === paletteId);
+  if (fromVisible) return fromVisible.label;
+  return BRAND_PALETTES.find((p) => p.id === paletteId)?.label ?? null;
+}
+
+/**
+ * Seller-facing skin name from stock key / palette (never "Look 1").
+ * Example: "Manila Sunset Soft", "Midnight Neon Bold".
+ */
+export function sellerLabelForStockKey(
+  stockKey: string,
+  options?: { paletteId?: string | null; storeLook?: StockSkinJson | null }
+): string {
+  const skin = resolveStockSkin(options?.storeLook, stockKey);
+  const paletteId = options?.paletteId || skin.paletteId;
+  const base =
+    paletteLabelForId(paletteId) ??
+    paletteLabelForId(skin.paletteId) ??
+    "Shop Skin";
+  const mood =
+    skin.typeScale === "bold"
+      ? "Bold"
+      : skin.typeScale === "soft"
+        ? "Soft"
+        : skin.heroLayout === "split"
+          ? "Split"
+          : skin.heroLayout === "stack"
+            ? "Stack"
+            : "";
+  return mood ? `${base} ${mood}` : base;
+}
+
+/** Prefer a human label; rewrite generic "… Look N" names. */
+export function sellerFacingStockLabel(input: {
+  label: string;
+  stockKey: string;
+  storeLookJson?: StockSkinJson | null;
+}): string {
+  if (!isGenericLookNumberLabel(input.label)) return input.label.trim();
+  return sellerLabelForStockKey(input.stockKey, {
+    storeLook: input.storeLookJson,
+    paletteId: input.storeLookJson?.paletteId,
+  });
+}

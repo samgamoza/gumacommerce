@@ -44,6 +44,8 @@ import {
   isShopTemplateId,
   normalizeStoreLook,
   previewImageForCategory,
+  sellerFacingStockLabel,
+  sellerLabelForStockKey,
 } from "@guma-commerce/storefront-themes";
 import { requireSuperAdminApi } from "@/lib/api-auth";
 
@@ -609,7 +611,7 @@ async function seedVariantsForCategory(input: {
     const storeLook = deriveStockSkin(hashString(`stock::${stockKey}`), stockKey);
     await createTemplateStock({
       stockKey,
-      label: `${cat.label} Look ${i}`,
+      label: sellerLabelForStockKey(stockKey, { storeLook }),
       categoryId: cat.id,
       categoryLabel: cat.label,
       liveTemplateId,
@@ -790,7 +792,11 @@ export async function generateAiStockSkinsAction(
 
       await createTemplateStock({
         stockKey,
-        label: draft.label,
+        label: sellerFacingStockLabel({
+          label: draft.label,
+          stockKey,
+          storeLookJson: storeLook,
+        }),
         categoryId: cat.id,
         categoryLabel: cat.label,
         liveTemplateId,

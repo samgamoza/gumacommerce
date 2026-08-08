@@ -29,7 +29,7 @@ describe("template-skins", () => {
     assert.equal(skins[1]!.paletteId, "midnight-neon");
   });
 
-  it("fallback skins are distinct palettes", () => {
+  it("fallback skins are distinct palettes without Look N labels", () => {
     const skins = fallbackTemplateSkins({
       categoryLabel: "Pest Control",
       liveTemplateId: "specialty",
@@ -37,5 +37,8 @@ describe("template-skins", () => {
     });
     const ids = new Set(skins.map((s) => s.paletteId));
     assert.equal(ids.size, 3);
+    for (const skin of skins) {
+      assert.equal(/\bLook\s*\d+\b/i.test(skin.label), false);
+    }
   });
 });

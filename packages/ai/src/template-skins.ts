@@ -75,9 +75,13 @@ export function fallbackTemplateSkins(input: CurateTemplateSkinsInput): AiCurate
   const count = Math.max(1, Math.min(10, input.count));
   const out: AiCuratedSkinDraft[] = [];
   for (let i = 0; i < count; i += 1) {
+    const paletteId = pick(AI_SKIN_PALETTE_IDS, i);
     out.push({
-      label: `${input.categoryLabel} AI Look ${i + 1}`,
-      paletteId: pick(AI_SKIN_PALETTE_IDS, i),
+      label: paletteId
+        .split("-")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" "),
+      paletteId,
       displayFont: pick(FONTS, i),
       radius: pick(RADII, i),
       heroLayout: pick(LOOK_HEROS, i),
