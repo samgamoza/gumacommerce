@@ -311,6 +311,11 @@ export function WorkspaceCheckout() {
         <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Payment adapters
         </h3>
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
+          PayMongo activation (on/off for your shop) is controlled by Guma Platform ops — not here.
+          These checkboxes only prefer methods <em>after</em> Platform enables PayMongo. Manage
+          receiving numbers under Settings → Payments.
+        </p>
         {(
           [
             ["gcash", "GCash (PayMongo)"],

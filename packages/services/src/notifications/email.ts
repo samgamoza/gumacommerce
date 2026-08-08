@@ -41,8 +41,9 @@ export function isEmailConfigured(): boolean {
   return Boolean(resendApiKey());
 }
 
-export function helpdeskNotifyEmail(): string | null {
+export function helpdeskNotifyEmail(override?: string | null): string | null {
   const value =
+    override?.trim() ||
     process.env.HELPDESK_NOTIFY_EMAIL?.trim() ||
     process.env.SUPPORT_INBOX_EMAIL?.trim() ||
     "";
@@ -132,8 +133,10 @@ export async function notifyHelpdeskTicketCreated(input: {
   requesterEmail?: string | null;
   channel: string;
   body: string;
+  /** Ops Settings override; falls back to HELPDESK_NOTIFY_EMAIL env. */
+  notifyEmail?: string | null;
 }): Promise<SendEmailResult> {
-  const inbox = helpdeskNotifyEmail();
+  const inbox = helpdeskNotifyEmail(input.notifyEmail);
   if (!inbox) {
     log.warn("HELPDESK_NOTIFY_EMAIL not set — helpdesk create notification skipped", {
       ticketNumber: input.ticketNumber,

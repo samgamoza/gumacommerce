@@ -2,6 +2,8 @@ export {
   AUTH_COOKIE_NAME,
   SESSION_MAX_AGE_SECONDS,
   EMAIL_VERIFY_MAX_AGE_SECONDS,
+  SUPPORT_ACCESS_GRANT_MAX_AGE_SECONDS,
+  SUPPORT_ACCESS_SESSION_MAX_AGE_SECONDS,
   type SessionUser,
   type SessionPayload,
   type RegisterSellerInput,
@@ -14,6 +16,8 @@ export {
 export {
   createSessionToken,
   createEmailVerificationToken,
+  createSupportAccessGrantToken,
+  verifySupportAccessGrantToken,
   verifySessionToken,
   verifyEmailToken,
   getSessionFromRequest,
@@ -21,6 +25,7 @@ export {
   sessionCookieHeader,
   clearSessionCookieHeader,
   getSessionCookieOptions,
+  type SupportAccessGrant,
 } from "./session";
 
 export {

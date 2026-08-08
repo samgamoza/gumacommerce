@@ -5,6 +5,8 @@ import {
   orders,
   platformAuditLog,
   products,
+  supportTickets,
+  templateStock,
   tenants,
   users,
 } from "../schema/index";
@@ -262,6 +264,8 @@ export interface TenantDetail extends TenantListItem {
   currency: string;
   timezone: string;
   activeProductCount: number;
+  /** Explicit shop override; null = inherit platform/env default. */
+  paymentsMode: "manual_ewallet" | "paymongo" | "both" | null;
   staff: { id: string; email: string | null; name: string | null; role: string; status: string }[];
   recentOrders: {
     id: string;
@@ -318,6 +322,12 @@ export async function getTenantDetail(id: string): Promise<TenantDetail | null> 
   ]);
 
   const owner = staff.find((s) => s.role === "seller_owner");
+  const payments = (tenant.settingsJson as { payments?: { mode?: string } } | null)?.payments;
+  const modeRaw = payments?.mode;
+  const paymentsMode =
+    modeRaw === "manual_ewallet" || modeRaw === "paymongo" || modeRaw === "both"
+      ? modeRaw
+      : null;
 
   return {
     id: tenant.id,
@@ -337,6 +347,7 @@ export async function getTenantDetail(id: string): Promise<TenantDetail | null> 
     activeProductCount: toNumber(productCounts[0]?.active),
     orderCount: toNumber(orderStat[0]?.n),
     gmv: toNumber(orderStat[0]?.gmv),
+    paymentsMode,
     staff: staff.map((s) => ({
       id: s.id,
       email: s.email,
@@ -531,6 +542,57 @@ export async function getModerationCounts(): Promise<{
     total: toNumber(row?.total),
     flagged: toNumber(row?.flagged),
     pending: toNumber(row?.pending),
+  };
+}
+
+/** Ops dashboard “needs attention” counters — cross-tenant intervention cues. */
+export type PlatformAttention = {
+  openTickets: number;
+  breachedTickets: number;
+  pendingTenants: number;
+  suspendedTenants: number;
+  moderationPending: number;
+  moderationFlagged: number;
+  stockDrafts: number;
+};
+
+export async function getPlatformAttention(): Promise<PlatformAttention> {
+  const db = getDb();
+  const [ticketRow, tenantRow, mod, stockRow] = await Promise.all([
+    db
+      .select({
+        open: sql<number>`count(*) filter (where ${supportTickets.status} in ('open', 'pending', 'in_progress'))::int`,
+        breached: sql<number>`count(*) filter (
+          where ${supportTickets.status} not in ('resolved', 'closed')
+          and (
+            (${supportTickets.firstResponseAt} is null and ${supportTickets.slaFirstResponseDueAt} < now())
+            or (${supportTickets.resolvedAt} is null and ${supportTickets.slaResolveDueAt} < now())
+          )
+        )::int`,
+      })
+      .from(supportTickets),
+    db
+      .select({
+        pending: sql<number>`count(*) filter (where ${tenants.status} = 'pending')::int`,
+        suspended: sql<number>`count(*) filter (where ${tenants.status} = 'suspended')::int`,
+      })
+      .from(tenants),
+    getModerationCounts(),
+    db
+      .select({
+        drafts: sql<number>`count(*) filter (where ${templateStock.status} in ('draft', 'approved'))::int`,
+      })
+      .from(templateStock),
+  ]);
+
+  return {
+    openTickets: toNumber(ticketRow[0]?.open),
+    breachedTickets: toNumber(ticketRow[0]?.breached),
+    pendingTenants: toNumber(tenantRow[0]?.pending),
+    suspendedTenants: toNumber(tenantRow[0]?.suspended),
+    moderationPending: mod.pending,
+    moderationFlagged: mod.flagged,
+    stockDrafts: toNumber(stockRow[0]?.drafts),
   };
 }
 

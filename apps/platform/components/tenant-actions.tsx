@@ -1,9 +1,16 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Ban, Check, CircleSlash, ExternalLink, Loader2 } from "lucide-react";
+import { Ban, Check, CircleSlash, ExternalLink, Headphones, Loader2 } from "lucide-react";
 import { CLIENT_PLANS } from "@/lib/plans";
-import { updateTenantPlanAction, updateTenantStatusAction } from "@/app/actions";
+import {
+  setTenantPaymentsModeAction,
+  startSupportAccessAction,
+  updateTenantPlanAction,
+  updateTenantStatusAction,
+} from "@/app/actions";
+
+type PaymentsMode = "manual_ewallet" | "paymongo" | "both" | "";
 
 export function TenantActions({
   tenantId,
@@ -11,15 +18,21 @@ export function TenantActions({
   status,
   plan,
   shopUrl,
+  paymentsMode,
 }: {
   tenantId: string;
   name: string;
   status: string;
   plan: string;
   shopUrl: string;
+  /** null/empty = inherit platform default */
+  paymentsMode?: "manual_ewallet" | "paymongo" | "both" | null;
 }) {
   const [pending, startTransition] = useTransition();
   const [selectedPlan, setSelectedPlan] = useState(plan);
+  const [selectedPaymentsMode, setSelectedPaymentsMode] = useState<PaymentsMode>(
+    paymentsMode ?? ""
+  );
   const [message, setMessage] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
 
   function run(fn: () => Promise<{ ok: boolean; error?: string }>, success: string) {
@@ -28,6 +41,22 @@ export function TenantActions({
       const res = await fn();
       if (res.ok) setMessage({ tone: "ok", text: success });
       else setMessage({ tone: "err", text: res.error ?? "Action failed." });
+    });
+  }
+
+  function openSupportAccess() {
+    setMessage(null);
+    startTransition(async () => {
+      const res = await startSupportAccessAction(tenantId);
+      if (!res.ok || !res.url) {
+        setMessage({
+          tone: "err",
+          text: (!res.ok && res.error) || "Could not start Support access.",
+        });
+        return;
+      }
+      window.open(res.url, "_blank", "noopener,noreferrer");
+      setMessage({ tone: "ok", text: "Opened seller admin in a new tab (Support access)." });
     });
   }
 
@@ -135,15 +164,66 @@ export function TenantActions({
         </div>
       </div>
 
-      <a
-        href={shopUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold transition hover:bg-muted"
-      >
-        <ExternalLink className="h-4 w-4" />
-        View storefront
-      </a>
+      {/* PayMongo / checkout mode — Platform-only activation */}
+      <div>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Checkout payments mode
+        </p>
+        <p className="mb-2 text-xs text-muted-foreground">
+          Sellers cannot activate PayMongo. Empty = inherit Platform Settings / env default.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={selectedPaymentsMode}
+            onChange={(e) => setSelectedPaymentsMode(e.target.value as PaymentsMode)}
+            className="h-10 max-w-full rounded-xl border border-border bg-card px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+          >
+            <option value="">Inherit platform default</option>
+            <option value="manual_ewallet">Direct e-wallet only</option>
+            <option value="both">Both (PayMongo when configured)</option>
+            <option value="paymongo">PayMongo only</option>
+          </select>
+          <button
+            type="button"
+            disabled={pending || selectedPaymentsMode === (paymentsMode ?? "")}
+            onClick={() =>
+              run(
+                () => setTenantPaymentsModeAction(tenantId, selectedPaymentsMode, name),
+                "Checkout payments mode updated."
+              )
+            }
+            className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:opacity-50"
+          >
+            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Save payments mode
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={openSupportAccess}
+          className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:opacity-60"
+        >
+          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Headphones className="h-4 w-4" />}
+          Open as Support
+        </button>
+        <a
+          href={shopUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold transition hover:bg-muted"
+        >
+          <ExternalLink className="h-4 w-4" />
+          View storefront
+        </a>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Support access opens seller admin for this shop (audited, 2h). Your Platform session stays
+        signed in on ops.
+      </p>
     </div>
   );
 }

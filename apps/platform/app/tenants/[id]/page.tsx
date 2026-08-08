@@ -163,6 +163,7 @@ export default async function TenantDetailPage({ params }: PageProps) {
                 status={tenant.status}
                 plan={tenant.plan}
                 shopUrl={shopUrl}
+                paymentsMode={tenant.paymentsMode}
               />
             </Panel>
           </div>

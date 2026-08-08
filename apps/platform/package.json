@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@guma-commerce/ai": "workspace:*",
     "@guma-commerce/auth": "workspace:*",
     "@guma-commerce/db": "workspace:*",
     "@guma-commerce/plans": "workspace:*",

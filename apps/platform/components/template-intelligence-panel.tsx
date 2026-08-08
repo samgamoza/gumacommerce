@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import {
   createTemplateStockAction,
   fillCoverageGapsAction,
+  generateAiStockSkinsAction,
   seedCategoryVariantsAction,
   setShopCategoryStatusAction,
   setTemplateStockStatusAction,
@@ -90,6 +91,8 @@ export function TemplateIntelligencePanel({
       count?: number;
       variantsCreated?: number;
       categoriesTouched?: number;
+      model?: string;
+      fallback?: boolean;
     }>,
     options?: { goToStock?: boolean }
   ) {
@@ -112,12 +115,18 @@ export function TemplateIntelligencePanel({
           setMessage(
             `${label}: nothing new created (drafts may already exist). Open Stock → Publish to raise Coverage.`
           );
+        } else if (result.model) {
+          setMessage(
+            `${label}: created ${result.count} AI draft skin(s) via ${result.model}${
+              result.fallback ? " (deterministic fallback — set GEMINI_API_KEY for live AI)" : ""
+            }. Preview → Publish in Stock.`
+          );
         } else {
           setMessage(
             `${label}: created ${result.count} draft skin(s). They do not raise Coverage until you Publish them in Stock.`
           );
         }
-        if (options?.goToStock !== false && (result.count > 0 || label.toLowerCase().includes("seed"))) {
+        if (options?.goToStock !== false && (result.count > 0 || label.toLowerCase().includes("seed") || label.toLowerCase().includes("ai"))) {
           setTab("stock");
         }
       } else {
@@ -218,25 +227,44 @@ export function TemplateIntelligencePanel({
                       }
                       if (need <= 0) return null;
                       return (
-                        <button
-                          type="button"
-                          disabled={pending}
-                          onClick={() =>
-                            run(
-                              `Seed ${v.category}`,
-                              () =>
-                                seedCategoryVariantsAction(v.categoryId!, {
-                                  count: need,
-                                  publish: false,
-                                  source: "ops_manual",
-                                }),
-                              { goToStock: true }
-                            )
-                          }
-                          className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
-                        >
-                          Seed {need} draft{need === 1 ? "" : "s"}
-                        </button>
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <button
+                            type="button"
+                            disabled={pending}
+                            onClick={() =>
+                              run(
+                                `Seed ${v.category}`,
+                                () =>
+                                  seedCategoryVariantsAction(v.categoryId!, {
+                                    count: need,
+                                    publish: false,
+                                    source: "ops_manual",
+                                  }),
+                                { goToStock: true }
+                              )
+                            }
+                            className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+                          >
+                            Seed {need} draft{need === 1 ? "" : "s"}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={pending}
+                            onClick={() =>
+                              run(
+                                `AI skins ${v.category}`,
+                                () =>
+                                  generateAiStockSkinsAction(v.categoryId!, {
+                                    count: Math.max(3, need),
+                                  }),
+                                { goToStock: true }
+                              )
+                            }
+                            className="rounded-lg border border-violet-300 bg-violet-50 px-3 py-1.5 text-sm font-medium text-violet-900 disabled:opacity-50"
+                          >
+                            Generate with AI
+                          </button>
+                        </div>
                       );
                     })()}
                   </div>
@@ -319,24 +347,43 @@ export function TemplateIntelligencePanel({
                     </td>
                     <td className="px-3 py-2.5 text-right">
                       {seedGap(row) > 0 ? (
-                        <button
-                          type="button"
-                          disabled={pending}
-                          onClick={() =>
-                            run(
-                              `Seed ${row.label}`,
-                              () =>
-                                seedCategoryVariantsAction(row.id, {
-                                  count: seedGap(row),
-                                  publish: false,
-                                }),
-                              { goToStock: true }
-                            )
-                          }
-                          className="rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white disabled:opacity-50"
-                        >
-                          Seed {seedGap(row)} draft{seedGap(row) === 1 ? "" : "s"}
-                        </button>
+                        <div className="flex flex-wrap items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            disabled={pending}
+                            onClick={() =>
+                              run(
+                                `Seed ${row.label}`,
+                                () =>
+                                  seedCategoryVariantsAction(row.id, {
+                                    count: seedGap(row),
+                                    publish: false,
+                                  }),
+                                { goToStock: true }
+                              )
+                            }
+                            className="rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white disabled:opacity-50"
+                          >
+                            Seed {seedGap(row)}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={pending}
+                            onClick={() =>
+                              run(
+                                `AI skins ${row.label}`,
+                                () =>
+                                  generateAiStockSkinsAction(row.id, {
+                                    count: Math.max(3, seedGap(row)),
+                                  }),
+                                { goToStock: true }
+                              )
+                            }
+                            className="rounded-md border border-violet-300 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-900 disabled:opacity-50"
+                          >
+                            AI
+                          </button>
+                        </div>
                       ) : row.gapToMin > 0 && row.stockDraft > 0 ? (
                         <button
                           type="button"
@@ -353,9 +400,11 @@ export function TemplateIntelligencePanel({
             </table>
           </div>
           <p className="text-xs text-muted-foreground">
-            Seed creates <strong className="font-medium text-foreground">draft</strong> skins in Stock.
-            Coverage only rises after you <strong className="font-medium text-foreground">Publish</strong>{" "}
-            them (sellers then see them in Launch).
+            Seed / AI create <strong className="font-medium text-foreground">draft</strong> skins in
+            Stock. Coverage only rises after you{" "}
+            <strong className="font-medium text-foreground">Publish</strong> them (sellers then see
+            them in Launch). AI uses Gemini Flash when <code>GEMINI_API_KEY</code> is set; otherwise
+            deterministic fallback skins.
           </p>
         </div>
       )}
@@ -395,7 +444,13 @@ function CategoriesTab({
   pending: boolean;
   run: (
     label: string,
-    fn: () => Promise<{ ok: boolean; error?: string; count?: number }>,
+    fn: () => Promise<{
+      ok: boolean;
+      error?: string;
+      count?: number;
+      model?: string;
+      fallback?: boolean;
+    }>,
     options?: { goToStock?: boolean }
   ) => void;
   seedGap: (row: CoverageRow) => number;
@@ -596,24 +651,43 @@ function CategoriesTab({
                 <td className="px-3 py-2.5 text-right">
                   <div className="flex flex-wrap items-center justify-end gap-2">
                     {needSeed > 0 && (
-                      <button
-                        type="button"
-                        disabled={pending}
-                        onClick={() =>
-                          run(
-                            `Seed ${row.label}`,
-                            () =>
-                              seedCategoryVariantsAction(row.id, {
-                                count: needSeed,
-                                publish: false,
-                              }),
-                            { goToStock: true }
-                          )
-                        }
-                        className="rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white disabled:opacity-50"
-                      >
-                        Seed {needSeed}
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          disabled={pending}
+                          onClick={() =>
+                            run(
+                              `Seed ${row.label}`,
+                              () =>
+                                seedCategoryVariantsAction(row.id, {
+                                  count: needSeed,
+                                  publish: false,
+                                }),
+                              { goToStock: true }
+                            )
+                          }
+                          className="rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white disabled:opacity-50"
+                        >
+                          Seed {needSeed}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={pending}
+                          onClick={() =>
+                            run(
+                              `AI skins ${row.label}`,
+                              () =>
+                                generateAiStockSkinsAction(row.id, {
+                                  count: Math.max(3, needSeed),
+                                }),
+                              { goToStock: true }
+                            )
+                          }
+                          className="rounded-md border border-violet-300 bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-900 disabled:opacity-50"
+                        >
+                          AI
+                        </button>
+                      </>
                     )}
                     {needSeed === 0 && row.gapToMin > 0 && row.stockDraft > 0 && (
                       <button
@@ -659,9 +733,10 @@ function CategoriesTab({
         </table>
       </div>
       <p className="text-xs text-muted-foreground">
-        Rows at 0 show <strong className="font-medium text-foreground">Seed</strong> — that creates
-        draft skins, then jump to Stock and Publish so Coverage (and Launch) update. Categories can
-        also nest under a parent (one level).
+        Rows at 0 show <strong className="font-medium text-foreground">Seed</strong> (deterministic)
+        or <strong className="font-medium text-foreground">AI</strong> (cheap model skins). Both create
+        drafts — Publish in Stock so Coverage and Launch update. Categories can nest under a parent
+        (one level).
       </p>
     </div>
   );
@@ -680,7 +755,17 @@ function StockTab({
   liveTemplateIds: string[];
   storefrontBaseUrl: string;
   pending: boolean;
-  run: (label: string, fn: () => Promise<{ ok: boolean; error?: string }>) => void;
+  run: (
+    label: string,
+    fn: () => Promise<{
+      ok: boolean;
+      error?: string;
+      count?: number;
+      model?: string;
+      fallback?: boolean;
+    }>,
+    options?: { goToStock?: boolean }
+  ) => void;
 }) {
   const [label, setLabel] = useState("");
   const [categoryLabel, setCategoryLabel] = useState(coverage[0]?.label ?? "");
@@ -768,7 +853,7 @@ function StockTab({
             ))}
           </select>
         </label>
-        <div className="flex items-end gap-3">
+        <div className="flex flex-wrap items-end gap-3 sm:col-span-2">
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
@@ -777,13 +862,31 @@ function StockTab({
             />
             Publish immediately to Launch
           </label>
-          <button
-            type="submit"
-            disabled={pending || !label.trim()}
-            className="ml-auto rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-          >
-            Add skin
-          </button>
+          <div className="ml-auto flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={pending || !categoryLabel}
+              onClick={() => {
+                const row = coverage.find((c) => c.label === categoryLabel);
+                if (!row) return;
+                run(
+                  `AI skins ${row.label}`,
+                  () => generateAiStockSkinsAction(row.id, { count: 3 }),
+                  { goToStock: true }
+                );
+              }}
+              className="rounded-lg border border-violet-300 bg-violet-50 px-3 py-2 text-sm font-medium text-violet-900 disabled:opacity-50"
+            >
+              Generate 3 with AI
+            </button>
+            <button
+              type="submit"
+              disabled={pending || !label.trim()}
+              className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+            >
+              Add skin
+            </button>
+          </div>
         </div>
       </form>
 

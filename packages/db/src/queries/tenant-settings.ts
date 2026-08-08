@@ -60,6 +60,38 @@ export async function getTenantSettings(tenantId: string): Promise<TenantSetting
   };
 }
 
+/**
+ * Platform-only: set or clear this shop's checkout payments mode.
+ * `null` removes the override so the shop inherits platform Settings / env.
+ */
+export async function setTenantPaymentsMode(
+  tenantId: string,
+  mode: "manual_ewallet" | "paymongo" | "both" | null
+): Promise<TenantSettingsRecord | null> {
+  const db = getDb();
+  const [existing] = await db.select().from(tenants).where(eq(tenants.id, tenantId)).limit(1);
+  if (!existing) return null;
+
+  const current = (existing.settingsJson ?? {}) as TenantSettingsJson;
+  const payments = { ...(current.payments ?? {}) };
+  if (mode === null) {
+    delete payments.mode;
+  } else {
+    payments.mode = mode;
+  }
+  const nextSettings: TenantSettingsJson = {
+    ...current,
+    payments: Object.keys(payments).length > 0 ? payments : undefined,
+  };
+
+  await db
+    .update(tenants)
+    .set({ settingsJson: nextSettings, updatedAt: new Date() })
+    .where(eq(tenants.id, tenantId));
+
+  return getTenantSettings(tenantId);
+}
+
 export async function updateTenantSettings(
   tenantId: string,
   input: UpdateTenantSettingsInput

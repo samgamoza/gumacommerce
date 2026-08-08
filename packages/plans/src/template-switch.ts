@@ -10,10 +10,18 @@ import { normalizePlanId, planAtLeast, type SubscriptionPlanId } from "./catalog
  * Override: `GUMA_FREE_TEMPLATE_SWITCH=true` forces free even in production.
  * Hard gate early: `GUMA_TEMPLATE_SWITCH_REQUIRES_UPGRADE=true` forces Growth+ always.
  *
- * Client-safe (env + plan only — no Node-only deps).
+ * Ops Settings can force true/false via platform_settings; pass those as `overrides`.
+ * Client-safe when called without DB (env + plan only).
  */
 
 export const TEMPLATE_SWITCH_REQUIRED_PLAN: Exclude<SubscriptionPlanId, "free"> = "growth";
+
+/** null / undefined = inherit env. */
+export type SoftLaunchOverrides = {
+  softLaunch?: boolean | null;
+  freeTemplateSwitch?: boolean | null;
+  requiresUpgrade?: boolean | null;
+};
 
 function isProductionLikeRuntime(): boolean {
   if (process.env.VERCEL_ENV === "production") return true;
@@ -21,14 +29,34 @@ function isProductionLikeRuntime(): boolean {
   return false;
 }
 
-export function isSoftLaunchRuntime(): boolean {
-  return process.env.GUMA_SOFT_LAUNCH === "true";
+function resolveFlag(override: boolean | null | undefined, envTrue: boolean): boolean {
+  if (override === true) return true;
+  if (override === false) return false;
+  return envTrue;
 }
 
-export function allowFreePostPublishTemplateSwitch(): boolean {
-  if (process.env.GUMA_TEMPLATE_SWITCH_REQUIRES_UPGRADE === "true") return false;
-  if (process.env.GUMA_FREE_TEMPLATE_SWITCH === "true") return true;
-  if (isSoftLaunchRuntime()) return true;
+export function isSoftLaunchRuntime(overrides?: SoftLaunchOverrides): boolean {
+  return resolveFlag(overrides?.softLaunch, process.env.GUMA_SOFT_LAUNCH === "true");
+}
+
+export function allowFreePostPublishTemplateSwitch(overrides?: SoftLaunchOverrides): boolean {
+  if (
+    resolveFlag(
+      overrides?.requiresUpgrade,
+      process.env.GUMA_TEMPLATE_SWITCH_REQUIRES_UPGRADE === "true"
+    )
+  ) {
+    return false;
+  }
+  if (
+    resolveFlag(
+      overrides?.freeTemplateSwitch,
+      process.env.GUMA_FREE_TEMPLATE_SWITCH === "true"
+    )
+  ) {
+    return true;
+  }
+  if (isSoftLaunchRuntime(overrides)) return true;
   return !isProductionLikeRuntime();
 }
 
@@ -44,10 +72,11 @@ export interface TemplateSwitchEntitlement {
 }
 
 export function canChangeStorefrontTemplateAfterPublish(
-  subscriptionPlan: string | null | undefined
+  subscriptionPlan: string | null | undefined,
+  overrides?: SoftLaunchOverrides
 ): TemplateSwitchEntitlement {
   const requiredPlan = TEMPLATE_SWITCH_REQUIRED_PLAN;
-  if (allowFreePostPublishTemplateSwitch()) {
+  if (allowFreePostPublishTemplateSwitch(overrides)) {
     return {
       allowed: true,
       requiredPlan,

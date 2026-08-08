@@ -59,4 +59,20 @@ describe("template switch entitlement", () => {
     assert.equal(allowFreePostPublishTemplateSwitch(), false);
     assert.equal(canChangeStorefrontTemplateAfterPublish("free").allowed, false);
   });
+
+  it("honors ops SoftLaunchOverrides over env", () => {
+    process.env.NODE_ENV = "production";
+    process.env.GUMA_SOFT_LAUNCH = "false";
+    assert.equal(
+      allowFreePostPublishTemplateSwitch({ softLaunch: true }),
+      true
+    );
+    assert.equal(
+      allowFreePostPublishTemplateSwitch({
+        softLaunch: true,
+        requiresUpgrade: true,
+      }),
+      false
+    );
+  });
 });

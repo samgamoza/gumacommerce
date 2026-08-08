@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getTenantSettings, updateTenantSettings } from "@guma-commerce/db";
+import {
+  getPlatformSetting,
+  getTenantSettings,
+  PAYMENTS_MODE_KEY,
+  resolveTenantPaymentsSettings,
+  updateTenantSettings,
+} from "@guma-commerce/db";
+import { resolvePaymentsMode } from "@guma-commerce/services";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 const patchSchema = z.object({
@@ -81,7 +88,7 @@ const patchSchema = z.object({
         .optional(),
       payments: z
         .object({
-          mode: z.enum(["manual_ewallet", "paymongo", "both"]).optional(),
+          // mode is Platform-only (PayMongo activation). Sellers may only edit receiving accounts.
           receiving: z
             .object({
               gcashNumber: z.string().max(32).optional(),
@@ -115,7 +122,21 @@ export async function GET() {
     if (!settings) {
       return NextResponse.json({ ok: false, error: "Shop not found." }, { status: 404 });
     }
-    return NextResponse.json({ ok: true, settings });
+    const payments = resolveTenantPaymentsSettings(
+      settings.settings as Record<string, unknown>
+    );
+    const platformMode = await getPlatformSetting(PAYMENTS_MODE_KEY);
+    const effectivePaymentsMode = resolvePaymentsMode({
+      settingsMode: payments.mode,
+      envMode: platformMode,
+    });
+    return NextResponse.json({
+      ok: true,
+      settings,
+      effectivePaymentsMode,
+      /** True when this shop has an explicit Platform override (not just env/global). */
+      paymentsModeSetByPlatform: Boolean(payments.mode),
+    });
   } catch (error) {
     if (error instanceof ApiAuthError) {
       return NextResponse.json({ ok: false, error: error.message }, { status: error.status });
@@ -128,7 +149,20 @@ export async function GET() {
 export async function PATCH(request: Request) {
   try {
     const session = await requireTenantSession();
-    const body = patchSchema.parse(await request.json());
+    const raw = await request.json();
+    // Reject attempts to self-activate PayMongo via raw JSON even if schema drifts.
+    if (raw?.settings?.payments?.mode !== undefined) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "Checkout payments mode (including PayMongo) is managed by Guma Platform ops. You can only update receiving accounts.",
+          code: "PAYMENTS_MODE_PLATFORM_ONLY",
+        },
+        { status: 403 }
+      );
+    }
+    const body = patchSchema.parse(raw);
     const updated = await updateTenantSettings(session.tenantId, body);
     if (!updated) {
       return NextResponse.json({ ok: false, error: "Shop not found." }, { status: 404 });

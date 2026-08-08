@@ -22,6 +22,7 @@ import { DASHBOARD_NAV, type DashboardNavItem } from "@/lib/dashboard-nav";
 import { SETTINGS_SECTIONS } from "@/lib/settings-nav";
 import { planAtLeast, upgradeHref, type SubscriptionPlan } from "@/lib/plan-access";
 import { SuspendedShopNotice } from "@/components/suspended-shop-notice";
+import { SupportAccessBanner } from "@/components/support-access-banner";
 import { storefrontBaseUrl } from "@/lib/utils";
 
 interface SessionUser {
@@ -31,6 +32,7 @@ interface SessionUser {
   email: string;
   emailVerified: boolean;
   tenantStatus?: string;
+  supportAccess?: boolean;
 }
 
 interface GateTarget {
@@ -81,6 +83,7 @@ export function AdminShell({
         setUser({
           ...sessionData.user,
           tenantStatus: shopData?.ok ? shopData.shop.tenant.status : tenant?.status,
+          supportAccess: Boolean(sessionData.supportAccess),
         });
       }
     });
@@ -122,8 +125,9 @@ export function AdminShell({
   const showUpgrade = plan !== "pro";
   const tenantStatus = user?.tenantStatus ?? tenant?.status;
   const isSuspended = tenantStatus === "suspended";
+  const supportAccess = Boolean(user?.supportAccess);
 
-  if (isSuspended) {
+  if (isSuspended && !supportAccess) {
     return (
       <SuspendedShopNotice
         tenantName={user?.tenantName ?? tenant?.name}
@@ -134,7 +138,14 @@ export function AdminShell({
   }
 
   return (
-    <div className="relative min-h-screen bg-guma-navy text-slate-200 lg:flex">
+    <div className="relative min-h-screen bg-guma-navy text-slate-200">
+      {supportAccess && (
+        <SupportAccessBanner
+          tenantName={user?.tenantName ?? tenant?.name}
+          tenantSlug={slug}
+        />
+      )}
+      <div className="relative flex min-h-screen lg:flex">
       {/* Soft ambient — keep noise low so content stays readable */}
       <div className="pointer-events-none fixed inset-0 grid-bg grid-bg-fade opacity-25" />
       <div className="pointer-events-none fixed -top-48 left-0 h-[360px] w-[360px] rounded-full bg-guma-purple/[0.06] blur-[100px]" />
@@ -415,6 +426,7 @@ export function AdminShell({
           </div>
           {children}
         </main>
+      </div>
       </div>
     </div>
   );

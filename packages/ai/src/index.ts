@@ -16,6 +16,15 @@ export {
   type SubscriptionPlan,
 } from "./plan-limits";
 export {
+  AI_SKIN_PALETTE_IDS,
+  curateTemplateSkins,
+  fallbackTemplateSkins,
+  parseAiSkinBatch,
+  type AiCuratedSkinDraft,
+  type CurateTemplateSkinsInput,
+  type CurateTemplateSkinsResult,
+} from "./template-skins";
+export {
   SCOPE_MATRIX,
   resolveApprovalLevel,
   isAdminOnly,
@@ -23,9 +32,11 @@ export {
   type AiScope,
   type ApprovalLevel,
 } from "./permissions";
-export type {  AiTone,
+export type {
+  AiTone,
   GenerateInput,
   GenerateResult,
   SellerContext,
   TemplateKey,
 } from "./types";
+export { callLlm, resolveEffectiveModel } from "./providers/llm";

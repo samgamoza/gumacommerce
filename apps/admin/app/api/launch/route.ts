@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
   getLaunchTenantState,
+  getPlatformOpsSettings,
   getTemplateStockByKey,
   listOnboardingCategoryLabels,
   listRecentTemplateIdsByCategory,
   listTemplateStock,
   recordTemplateIntelligenceEvent,
+  triFlagToBoolOverride,
   updateStoreDna,
   saveThemeDraft,
 } from "@guma-commerce/db";
@@ -27,6 +29,15 @@ import {
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 import { mergeCuratedWithStock, resolveStockInstall } from "@/lib/template-stock-launch";
 import { canChangeStorefrontTemplateAfterPublish } from "@guma-commerce/plans";
+
+async function templateSwitchOverrides() {
+  const ops = await getPlatformOpsSettings();
+  return {
+    softLaunch: triFlagToBoolOverride(ops.softLaunch),
+    freeTemplateSwitch: triFlagToBoolOverride(ops.freeTemplateSwitch),
+    requiresUpgrade: triFlagToBoolOverride(ops.templateSwitchRequiresUpgrade),
+  };
+}
 
 async function curatedForDna(
   dna: Parameters<typeof listCuratedTemplatesForDna>[0],
@@ -75,7 +86,10 @@ export async function GET() {
     const storefrontUrl = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3010";
     const published = Boolean(state.themePublishedJson?.templateId);
     const launchDone = dna.launchStep === "done" || published;
-    const templateSwitch = canChangeStorefrontTemplateAfterPublish(state.subscriptionPlan);
+    const templateSwitch = canChangeStorefrontTemplateAfterPublish(
+      state.subscriptionPlan,
+      await templateSwitchOverrides()
+    );
 
     return NextResponse.json({
       ok: true,
@@ -193,7 +207,10 @@ export async function POST(request: Request) {
     if (body.action === "select_template") {
       const alreadyPublished = Boolean(state.themePublishedJson?.templateId);
       if (alreadyPublished) {
-        const entitlement = canChangeStorefrontTemplateAfterPublish(state.subscriptionPlan);
+        const entitlement = canChangeStorefrontTemplateAfterPublish(
+          state.subscriptionPlan,
+          await templateSwitchOverrides()
+        );
         if (!entitlement.allowed) {
           return NextResponse.json(
             {

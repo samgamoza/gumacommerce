@@ -12,6 +12,9 @@ const PUBLIC_API_PREFIXES = [
   "/api/auth/google",
   "/api/auth/google/callback",
   "/api/auth/session",
+  // Platform → admin Support access grant exchange (sets admin-host cookie).
+  "/api/auth/support-access",
+  "/api/auth/exit-support",
   // Mobile KYC flow uses a signed session token instead of a login cookie.
   "/api/kyc/session",
   "/api/kyc/upload",

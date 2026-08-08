@@ -99,6 +99,9 @@ importers:
 
   apps/platform:
     dependencies:
+      '@guma-commerce/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@guma-commerce/auth':
         specifier: workspace:*
         version: link:../../packages/auth

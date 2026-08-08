@@ -13,6 +13,8 @@ import {
   recordDeliveryQuote,
   recordManualPaymentIntent,
   recordPaymentIntent,
+  getPlatformSetting,
+  PAYMENTS_MODE_KEY,
   resolveTenantPaymentsSettings,
   upsertCheckoutSession,
 } from "@guma-commerce/db";
@@ -341,7 +343,10 @@ export async function POST(request: Request) {
     const paymentsSettings = resolveTenantPaymentsSettings(
       tenant.settingsJson as Record<string, unknown>
     );
-    const paymentsMode = resolvePaymentsMode({ settingsMode: paymentsSettings.mode });
+    const platformPaymentsMode = await getPlatformSetting(PAYMENTS_MODE_KEY);
+    const paymentsMode = resolvePaymentsMode({
+      settingsMode: paymentsSettings.mode || platformPaymentsMode,
+    });
     const adapter = resolvePaymentAdapterId(
       body.paymentMethod as CheckoutPaymentMethod,
       paymentsMode

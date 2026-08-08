@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import {
   createSupportTicket,
+  getPlatformSetting,
   getSupportTicketById,
+  HELPDESK_NOTIFY_EMAIL_KEY,
   listSupportTickets,
   addSupportTicketMessage,
 } from "@guma-commerce/db";
@@ -73,6 +75,7 @@ export async function POST(request: Request) {
       body: body.body,
     });
 
+    const notifyEmail = await getPlatformSetting(HELPDESK_NOTIFY_EMAIL_KEY);
     const notify = await notifyHelpdeskTicketCreated({
       ticketNumber: ticket.ticketNumber,
       ticketId: ticket.id,
@@ -81,6 +84,7 @@ export async function POST(request: Request) {
       requesterEmail: session.email,
       channel: "seller_admin",
       body: body.body,
+      notifyEmail,
     });
     if (!notify.sent) {
       console.warn("[support] Helpdesk create email not delivered", {

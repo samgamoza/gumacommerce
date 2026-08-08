@@ -14,12 +14,21 @@ type Receiving = {
   bankAccountNumber: string;
 };
 
+type PaymentsMode = "manual_ewallet" | "paymongo" | "both";
+
+const MODE_LABELS: Record<PaymentsMode, string> = {
+  manual_ewallet: "Direct e-wallet (GCash / Maya / bank)",
+  both: "Direct e-wallet + PayMongo",
+  paymongo: "PayMongo only",
+};
+
 export function PaymentsSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [mode, setMode] = useState<"manual_ewallet" | "paymongo" | "both">("manual_ewallet");
+  const [effectiveMode, setEffectiveMode] = useState<PaymentsMode>("manual_ewallet");
+  const [modeSetByPlatform, setModeSetByPlatform] = useState(false);
   const [receiving, setReceiving] = useState<Receiving>({
     gcashNumber: "",
     gcashName: "",
@@ -40,7 +49,10 @@ export function PaymentsSettingsPage() {
       return;
     }
     const payments = data.settings?.settings?.payments ?? {};
-    setMode(payments.mode ?? "manual_ewallet");
+    setEffectiveMode(
+      (data.effectivePaymentsMode as PaymentsMode) ?? payments.mode ?? "manual_ewallet"
+    );
+    setModeSetByPlatform(Boolean(data.paymentsModeSetByPlatform));
     setReceiving({
       gcashNumber: payments.receiving?.gcashNumber ?? "",
       gcashName: payments.receiving?.gcashName ?? "",
@@ -65,7 +77,7 @@ export function PaymentsSettingsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         settings: {
-          payments: { mode, receiving },
+          payments: { receiving },
         },
       }),
     });
@@ -82,10 +94,12 @@ export function PaymentsSettingsPage() {
     return <p className="p-6 text-sm text-muted-foreground">Loading…</p>;
   }
 
+  const paymongoLive = effectiveMode === "paymongo" || effectiveMode === "both";
+
   return (
     <SettingsPageLayout
-      title="Payments (MVP)"
-      description="Direct GCash / Maya / bank transfer until PayMongo is enabled. Buyers pay your number; you confirm in Orders."
+      title="Payments"
+      description="Set the GCash / Maya / bank details buyers see for direct transfer. PayMongo activation is controlled by Guma Platform."
     >
       {error ? (
         <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -98,24 +112,31 @@ export function PaymentsSettingsPage() {
         </p>
       ) : null}
 
-      <SettingsCard title="Mode">
-        <p className="mb-2 text-sm text-muted-foreground">
-          Beta default bypasses PayMongo.
-        </p>
-        <select
-          value={mode}
-          onChange={(e) => setMode(e.target.value as typeof mode)}
-          className="h-10 w-full max-w-md rounded-lg border px-3 text-sm"
+      <SettingsCard title="Checkout payments mode">
+        <div
+          className={`rounded-xl border px-3 py-3 text-sm ${
+            paymongoLive
+              ? "border-emerald-200 bg-emerald-50 text-emerald-950"
+              : "border-border bg-muted/40 text-foreground"
+          }`}
         >
-          <option value="manual_ewallet">Direct e-wallet (recommended for beta)</option>
-          <option value="both">Both (PayMongo when keys exist, else direct)</option>
-          <option value="paymongo">PayMongo only</option>
-        </select>
+          <p className="font-semibold">{MODE_LABELS[effectiveMode]}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {paymongoLive
+              ? "PayMongo is enabled for your shop by Platform ops."
+              : "Buyers pay your numbers directly; you confirm in Orders."}{" "}
+            {modeSetByPlatform
+              ? "This shop has a Platform override."
+              : "Using the platform-wide default."}{" "}
+            To change mode (including activating PayMongo), contact Guma support / Platform ops —
+            sellers cannot self-activate.
+          </p>
+        </div>
       </SettingsCard>
 
       <SettingsCard title="GCash receiving">
         <p className="mb-2 text-sm text-muted-foreground">
-          Shown to buyers at checkout / order tracking.
+          Shown to buyers at checkout / order tracking for direct e-wallet.
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-sm">
@@ -197,7 +218,7 @@ export function PaymentsSettingsPage() {
         disabled={saving}
         className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
       >
-        {saving ? "Saving…" : "Save payment settings"}
+        {saving ? "Saving…" : "Save receiving accounts"}
       </button>
     </SettingsPageLayout>
   );

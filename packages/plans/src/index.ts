@@ -24,6 +24,7 @@ export {
   isSoftLaunchRuntime,
   allowFreePostPublishTemplateSwitch,
   canChangeStorefrontTemplateAfterPublish,
+  type SoftLaunchOverrides,
   type TemplateSwitchEntitlement,
 } from "./template-switch";
 

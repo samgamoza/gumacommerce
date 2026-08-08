@@ -9,6 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import {
+  getPlatformAttention,
   getPlatformStats,
   getRevenueSeries,
   getSignupSeries,
@@ -17,6 +18,8 @@ import {
 } from "@guma-commerce/db";
 import { requireSuperAdmin } from "@/lib/session";
 import { PlatformShell } from "@/components/platform-shell";
+import { AttentionStrip } from "@/components/attention-strip";
+import { OwnershipNote } from "@/components/ownership-note";
 import {
   AreaChart,
   BarMeter,
@@ -37,8 +40,9 @@ const PLAN_COLORS: Record<string, string> = {
 
 export default async function DashboardPage() {
   const session = await requireSuperAdmin();
-  const [stats, revenue, signups, recentTenants, activity] = await Promise.all([
+  const [stats, attention, revenue, signups, recentTenants, activity] = await Promise.all([
     getPlatformStats(),
+    getPlatformAttention(),
     getRevenueSeries(30),
     getSignupSeries(30),
     listTenants(),
@@ -54,6 +58,9 @@ export default async function DashboardPage() {
       user={{ displayName: session.displayName, email: session.email }}
     >
       <div className="space-y-6">
+        <AttentionStrip attention={attention} />
+        <OwnershipNote />
+
         {/* KPIs */}
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard

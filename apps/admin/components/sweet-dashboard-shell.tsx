@@ -18,6 +18,7 @@ import {
 import { resolveStorePattern } from "@guma-commerce/storefront-themes";
 import type { StorePatternId } from "@guma-commerce/storefront-themes";
 import { SuspendedShopNotice } from "@/components/suspended-shop-notice";
+import { SupportAccessBanner } from "@/components/support-access-banner";
 
 const SWEET_TABS = [
   { id: "overview", label: "Overview", href: "/", icon: LayoutDashboard },
@@ -45,6 +46,7 @@ export function SweetDashboardShell({
     tenantSlug: string;
     displayName: string;
     tenantStatus?: string;
+    supportAccess?: boolean;
   } | null>(null);
   const [accent, setAccent] = useState("#FF007F");
 
@@ -57,6 +59,7 @@ export function SweetDashboardShell({
         setUser({
           ...sessionData.user,
           tenantStatus: shopData?.ok ? shopData.shop.tenant.status : undefined,
+          supportAccess: Boolean(sessionData.supportAccess),
         });
       }
       if (shopData?.ok && shopData.theme?.primaryColor) {
@@ -79,7 +82,9 @@ export function SweetDashboardShell({
   const storefrontBase = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3010";
   const slug = user?.tenantSlug;
 
-  if (user?.tenantStatus === "suspended") {
+  const supportAccess = Boolean(user?.supportAccess);
+
+  if (user?.tenantStatus === "suspended" && !supportAccess) {
     return (
       <SuspendedShopNotice
         tenantName={user.tenantName}
@@ -91,6 +96,9 @@ export function SweetDashboardShell({
 
   return (
     <div className="min-h-screen bg-[#1a1012] text-white">
+      {supportAccess && (
+        <SupportAccessBanner tenantName={user?.tenantName} tenantSlug={slug} />
+      )}
       <div className="mx-auto max-w-6xl px-6 pb-24 pt-8">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>

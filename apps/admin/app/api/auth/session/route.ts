@@ -12,6 +12,27 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, user: null }, { status: 401 });
   }
 
+  // Support access: never overwrite JWT shop context with the admin's null tenant_id.
+  if (session.supportAccess && session.role === "super_admin" && session.tenantId) {
+    return NextResponse.json({
+      ok: true,
+      user: {
+        userId: session.userId,
+        email: session.email,
+        role: session.role,
+        tenantId: session.tenantId,
+        tenantSlug: session.tenantSlug,
+        tenantName: session.tenantName,
+        displayName: session.displayName,
+        emailVerified: session.emailVerified,
+        needsShopSetup: false,
+      },
+      sellerReady: true,
+      platformAdminNoShop: false,
+      supportAccess: true,
+    });
+  }
+
   const fresh = await getUserSessionById(session.userId);
   const user = fresh ?? {
     userId: session.userId,
@@ -41,6 +62,7 @@ export async function GET(request: Request) {
     },
     sellerReady: Boolean(user.tenantId && user.tenantSlug),
     platformAdminNoShop: user.role === "super_admin" && !user.tenantId,
+    supportAccess: false,
   });
 
   // Re-issue cookie when JWT tenant state is stale (e.g. after completing shop setup).

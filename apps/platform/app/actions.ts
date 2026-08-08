@@ -5,6 +5,7 @@ import {
   addSupportTicketMessage,
   createTemplateStock,
   getSupportTicketById,
+  getTenantDetail,
   listShopBusinessCategories,
   listTemplateStock,
   moderateContentItem,
@@ -17,23 +18,31 @@ import {
   setUserRole,
   setUserStatus,
   slugifyShopCategory,
+  updatePlatformOpsSettings,
   updateSupportTicket,
+  setTenantPaymentsMode,
   upsertShopBusinessCategory,
   writeAudit,
   type ActiveLanding,
+  type PlatformPaymentsMode,
   type ShopCategoryStatus,
   type SupportTicketPriority,
   type SupportTicketStatus,
   type TemplateStockSource,
   type TemplateStockStatus,
   type TenantStatus,
+  type TriFlag,
   type UserStatus,
 } from "@guma-commerce/db";
+import { createSupportAccessGrantToken } from "@guma-commerce/auth";
+import { curateTemplateSkins } from "@guma-commerce/ai";
 import { notifyHelpdeskAgentReply } from "@guma-commerce/services";
 import {
+  BRAND_PALETTES,
   defaultLiveTemplateForCategory,
   deriveStockSkin,
   isShopTemplateId,
+  normalizeStoreLook,
   previewImageForCategory,
 } from "@guma-commerce/storefront-themes";
 import { requireSuperAdminApi } from "@/lib/api-auth";
@@ -107,6 +116,78 @@ export async function updateTenantPlanAction(
     revalidatePath("/subscriptions");
     revalidatePath("/");
     return { ok: true };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+/** Activate / override checkout payments mode for one shop (PayMongo is Platform-only). */
+export async function setTenantPaymentsModeAction(
+  tenantId: string,
+  mode: PlatformPaymentsMode | "",
+  label: string
+): Promise<ActionResult> {
+  try {
+    const session = await guard();
+    const tenant = await getTenantDetail(tenantId);
+    if (!tenant) return { ok: false, error: "Shop not found." };
+
+    const next = mode === "" ? null : mode;
+    await setTenantPaymentsMode(tenantId, next);
+
+    await writeAudit({
+      actorId: session.userId,
+      actorEmail: session.email,
+      action: "tenant_payments_mode_changed",
+      entityType: "tenant",
+      entityId: tenantId,
+      entityLabel: label,
+      metadata: { mode: next ?? "inherit" },
+    });
+    revalidatePath(`/tenants/${tenantId}`);
+    revalidatePath("/tenants");
+    return { ok: true };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+/**
+ * Open seller admin as this shop (Support access).
+ * Returns a one-time URL on admin.* that sets a host-scoped support session cookie.
+ */
+export async function startSupportAccessAction(
+  tenantId: string
+): Promise<ActionResult & { url?: string }> {
+  try {
+    const session = await guard();
+    const tenant = await getTenantDetail(tenantId);
+    if (!tenant) return { ok: false, error: "Shop not found." };
+
+    const grant = await createSupportAccessGrantToken({
+      actorUserId: session.userId,
+      actorEmail: session.email,
+      tenantId: tenant.id,
+      tenantSlug: tenant.slug,
+      tenantName: tenant.name,
+    });
+
+    const adminBase = (
+      process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3001"
+    ).replace(/\/$/, "");
+    const url = `${adminBase}/api/auth/support-access?token=${encodeURIComponent(grant)}`;
+
+    await writeAudit({
+      actorId: session.userId,
+      actorEmail: session.email,
+      action: "support_access_started",
+      entityType: "tenant",
+      entityId: tenant.id,
+      entityLabel: tenant.name,
+      metadata: { tenantSlug: tenant.slug },
+    });
+
+    return { ok: true, url };
   } catch (error) {
     return fail(error);
   }
@@ -213,6 +294,56 @@ export async function setActiveLandingAction(value: ActiveLanding): Promise<Acti
       metadata: { key: "active_landing", value },
     });
     revalidatePath("/frontends");
+    revalidatePath("/settings");
+    return { ok: true };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+export async function updatePlatformSettingsAction(input: {
+  softLaunch: TriFlag;
+  freeTemplateSwitch: TriFlag;
+  templateSwitchRequiresUpgrade: TriFlag;
+  paymentsMode: PlatformPaymentsMode | "";
+  helpdeskNotifyEmail: string;
+  supportContactEmail: string;
+}): Promise<ActionResult> {
+  try {
+    const session = await guard();
+    const emailOk = (v: string) => !v.trim() || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+    if (!emailOk(input.helpdeskNotifyEmail)) {
+      return { ok: false, error: "Helpdesk notify email looks invalid." };
+    }
+    if (!emailOk(input.supportContactEmail)) {
+      return { ok: false, error: "Support contact email looks invalid." };
+    }
+
+    const next = await updatePlatformOpsSettings({
+      softLaunch: input.softLaunch,
+      freeTemplateSwitch: input.freeTemplateSwitch,
+      templateSwitchRequiresUpgrade: input.templateSwitchRequiresUpgrade,
+      paymentsMode: input.paymentsMode,
+      helpdeskNotifyEmail: input.helpdeskNotifyEmail,
+      supportContactEmail: input.supportContactEmail,
+    });
+
+    await writeAudit({
+      actorId: session.userId,
+      actorEmail: session.email,
+      action: "platform_settings_updated",
+      entityType: "platform_setting",
+      entityLabel: "ops settings",
+      metadata: {
+        softLaunch: next.softLaunch,
+        freeTemplateSwitch: next.freeTemplateSwitch,
+        templateSwitchRequiresUpgrade: next.templateSwitchRequiresUpgrade,
+        paymentsMode: next.paymentsMode || "inherit",
+        helpdeskNotifyEmail: next.helpdeskNotifyEmail ? "(set)" : "(empty)",
+        supportContactEmail: next.supportContactEmail ? "(set)" : "(empty)",
+      },
+    });
+    revalidatePath("/settings");
     return { ok: true };
   } catch (error) {
     return fail(error);
@@ -499,7 +630,7 @@ async function seedVariantsForCategory(input: {
 /**
  * Deterministic gap-filler: seed draft variants toward minVariants.
  * Uses nearest live renderer + unique storeLook — no LLM spend.
- * Later swap source to ai_curated when paid curation is wired.
+ * For AI-curated drafts use generateAiStockSkinsAction.
  */
 export async function seedCategoryVariantsAction(
   categoryId: string,
@@ -589,6 +720,126 @@ export async function fillCoverageGapsAction(bundleCounts: Record<string, number
     });
     revalidatePath("/templates");
     return { ok: true, categoriesTouched, variantsCreated };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+/**
+ * AI-curated draft skins for a category (Gemini Flash thrifty path).
+ * Falls back to deterministic high-contrast skins when no LLM key is configured.
+ */
+export async function generateAiStockSkinsAction(
+  categoryId: string,
+  options?: { count?: number }
+): Promise<ActionResult & { count?: number; model?: string; fallback?: boolean }> {
+  try {
+    const session = await guard();
+    const categories = await listShopBusinessCategories();
+    const cat = categories.find((c) => c.id === categoryId);
+    if (!cat) return { ok: false, error: "Category not found." };
+
+    const liveTemplateId = defaultLiveTemplateForCategory(cat.label);
+    if (!isShopTemplateId(liveTemplateId)) {
+      return { ok: false, error: "No live renderer mapped for this category." };
+    }
+
+    const existing = await listTemplateStock({ categoryLabel: cat.label });
+    const activeKeys = new Set(
+      existing.filter((e) => e.status !== "archived").map((e) => e.stockKey)
+    );
+    const avoidLabels = existing
+      .filter((e) => e.status !== "archived")
+      .map((e) => e.label);
+
+    const want = Math.max(1, Math.min(5, options?.count ?? Math.max(3, cat.minVariants)));
+    const curated = await curateTemplateSkins({
+      categoryLabel: cat.label,
+      liveTemplateId,
+      count: want,
+      avoidLabels,
+    });
+
+    const slug = cat.slug || slugifyShopCategory(cat.label);
+    let created = 0;
+
+    for (let i = 0; i < curated.skins.length; i += 1) {
+      const draft = curated.skins[i]!;
+      let stockKey = `${slug}-ai-${String(i + 1).padStart(2, "0")}`;
+      let n = i + 1;
+      while (activeKeys.has(stockKey) && n < i + 30) {
+        n += 1;
+        stockKey = `${slug}-ai-${String(n).padStart(2, "0")}`;
+      }
+      if (activeKeys.has(stockKey)) continue;
+
+      const palette =
+        BRAND_PALETTES.find((p) => p.id === draft.paletteId) ??
+        BRAND_PALETTES[i % BRAND_PALETTES.length]!;
+      const look = normalizeStoreLook(draft);
+      const base = deriveStockSkin(hashString(`stock::${stockKey}`), stockKey);
+      const storeLook = {
+        ...base,
+        ...look,
+        primaryColor: palette.primary,
+        accentColor: palette.accent,
+        paletteId: palette.id,
+        displayFont: draft.displayFont ?? base.displayFont,
+        radius: draft.radius ?? base.radius,
+      };
+
+      await createTemplateStock({
+        stockKey,
+        label: draft.label,
+        categoryId: cat.id,
+        categoryLabel: cat.label,
+        liveTemplateId,
+        status: "draft",
+        source: "ai_curated",
+        notes:
+          draft.notes ??
+          `AI curated via ${curated.model}${curated.fallback ? " (fallback)" : ""}. Preview before publish.`,
+        previewImageUrl: previewImageForCategory(cat.label),
+        storeLookJson: storeLook,
+        createdByUserId: session.userId,
+      });
+      activeKeys.add(stockKey);
+      created += 1;
+    }
+
+    await writeAudit({
+      actorId: session.userId,
+      actorEmail: session.email,
+      action: "template_stock_ai_curated",
+      entityType: "shop_business_category",
+      entityId: categoryId,
+      entityLabel: cat.label,
+      metadata: {
+        created,
+        model: curated.model,
+        provider: curated.provider,
+        fallback: curated.fallback,
+        liveTemplateId,
+      },
+    });
+    await recordTemplateIntelligenceEvent({
+      eventType: "stock_ai_curated",
+      categoryLabel: cat.label,
+      payload: {
+        created,
+        model: curated.model,
+        provider: curated.provider,
+        fallback: curated.fallback,
+        liveTemplateId,
+      },
+    });
+    revalidatePath("/templates");
+    return {
+      ok: true,
+      count: created,
+      model: curated.model,
+      fallback: curated.fallback,
+    };
   } catch (error) {
     return fail(error);
   }

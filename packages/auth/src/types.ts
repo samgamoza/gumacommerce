@@ -1,6 +1,10 @@
 export const AUTH_COOKIE_NAME = "gumacommerce_session";
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
 export const EMAIL_VERIFY_MAX_AGE_SECONDS = 60 * 60 * 24; // 24 hours
+/** One-time grant exchanged on admin host for a support session. */
+export const SUPPORT_ACCESS_GRANT_MAX_AGE_SECONDS = 60 * 5;
+/** How long ops may stay in a shop via Support access. */
+export const SUPPORT_ACCESS_SESSION_MAX_AGE_SECONDS = 60 * 60 * 2;
 
 export interface SessionUser {
   userId: string;
@@ -14,6 +18,11 @@ export interface SessionUser {
   needsShopSetup: boolean;
   /** Mirrors users.session_version; tokens with an older value are revoked. */
   sessionVersion: number;
+  /**
+   * Super-admin viewing/acting as a shop (tenant fields come from JWT, not users.tenant_id).
+   * Cookie is host-scoped to admin.*; platform cookie on ops.* stays separate.
+   */
+  supportAccess?: boolean;
 }
 
 export interface SessionPayload extends SessionUser {

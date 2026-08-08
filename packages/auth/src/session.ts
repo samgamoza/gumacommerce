@@ -3,11 +3,19 @@ import {
   AUTH_COOKIE_NAME,
   EMAIL_VERIFY_MAX_AGE_SECONDS,
   SESSION_MAX_AGE_SECONDS,
+  SUPPORT_ACCESS_GRANT_MAX_AGE_SECONDS,
+  SUPPORT_ACCESS_SESSION_MAX_AGE_SECONDS,
   type SessionPayload,
   type SessionUser,
 } from "./types";
 
-export { AUTH_COOKIE_NAME, SESSION_MAX_AGE_SECONDS, EMAIL_VERIFY_MAX_AGE_SECONDS };
+export {
+  AUTH_COOKIE_NAME,
+  SESSION_MAX_AGE_SECONDS,
+  EMAIL_VERIFY_MAX_AGE_SECONDS,
+  SUPPORT_ACCESS_GRANT_MAX_AGE_SECONDS,
+  SUPPORT_ACCESS_SESSION_MAX_AGE_SECONDS,
+};
 export type { SessionPayload, SessionUser };
 
 function getAuthSecret(): Uint8Array {
@@ -24,7 +32,14 @@ function getAuthSecret(): Uint8Array {
   return new TextEncoder().encode(secret);
 }
 
-export async function createSessionToken(user: SessionUser): Promise<string> {
+export async function createSessionToken(
+  user: SessionUser,
+  maxAgeSeconds = SESSION_MAX_AGE_SECONDS
+): Promise<string> {
+  const age = user.supportAccess
+    ? Math.min(maxAgeSeconds, SUPPORT_ACCESS_SESSION_MAX_AGE_SECONDS)
+    : maxAgeSeconds;
+
   return new SignJWT({
     email: user.email,
     role: user.role,
@@ -35,11 +50,12 @@ export async function createSessionToken(user: SessionUser): Promise<string> {
     emailVerified: user.emailVerified,
     needsShopSetup: user.needsShopSetup,
     sv: user.sessionVersion,
+    ...(user.supportAccess ? { sa: true } : {}),
   })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(user.userId)
     .setIssuedAt()
-    .setExpirationTime(`${SESSION_MAX_AGE_SECONDS}s`)
+    .setExpirationTime(`${age}s`)
     .sign(getAuthSecret());
 }
 
@@ -50,6 +66,58 @@ export async function createEmailVerificationToken(userId: string, email: string
     .setIssuedAt()
     .setExpirationTime(`${EMAIL_VERIFY_MAX_AGE_SECONDS}s`)
     .sign(getAuthSecret());
+}
+
+export type SupportAccessGrant = {
+  actorUserId: string;
+  actorEmail: string;
+  tenantId: string;
+  tenantSlug: string;
+  tenantName: string;
+};
+
+/** Short-lived token — exchanged on admin.* so the cookie is set on that host. */
+export async function createSupportAccessGrantToken(
+  input: SupportAccessGrant
+): Promise<string> {
+  return new SignJWT({
+    purpose: "support_access",
+    email: input.actorEmail,
+    tenantId: input.tenantId,
+    tenantSlug: input.tenantSlug,
+    tenantName: input.tenantName,
+  })
+    .setProtectedHeader({ alg: "HS256" })
+    .setSubject(input.actorUserId)
+    .setIssuedAt()
+    .setExpirationTime(`${SUPPORT_ACCESS_GRANT_MAX_AGE_SECONDS}s`)
+    .sign(getAuthSecret());
+}
+
+export async function verifySupportAccessGrantToken(
+  token: string
+): Promise<SupportAccessGrant | null> {
+  try {
+    const { payload } = await jwtVerify(token, getAuthSecret());
+    if (payload.purpose !== "support_access") return null;
+    const actorUserId = payload.sub;
+    const actorEmail = payload.email;
+    const tenantId = payload.tenantId;
+    const tenantSlug = payload.tenantSlug;
+    const tenantName = payload.tenantName;
+    if (
+      typeof actorUserId !== "string" ||
+      typeof actorEmail !== "string" ||
+      typeof tenantId !== "string" ||
+      typeof tenantSlug !== "string" ||
+      typeof tenantName !== "string"
+    ) {
+      return null;
+    }
+    return { actorUserId, actorEmail, tenantId, tenantSlug, tenantName };
+  } catch {
+    return null;
+  }
 }
 
 export async function verifySessionToken(token: string): Promise<SessionPayload | null> {
@@ -96,6 +164,7 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
       emailVerified,
       needsShopSetup: resolvedNeedsShopSetup,
       sessionVersion: typeof payload.sv === "number" ? payload.sv : 0,
+      supportAccess: payload.sa === true,
       iat: payload.iat ?? 0,
       exp: payload.exp ?? 0,
     };

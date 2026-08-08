@@ -93,8 +93,9 @@ export function deriveStockSkin(seed: number, stockKey = ""): StockSkin {
 
 /**
  * Resolve skin for preview/Launch.
- * Colors always come from the high-contrast ladder (by Look #) so older drafts
- * that stored near-identical teals still preview as distinct.
+ * Seeded Look keys (…-v01 / …-n02) use the high-contrast ladder so older drafts
+ * with near-identical teals still preview as distinct.
+ * AI-curated keys (…-ai-01) prefer stored palette/font/radius from the curator.
  */
 export function resolveStockSkin(
   stored: StockSkinJson | null | undefined,
@@ -103,6 +104,24 @@ export function resolveStockSkin(
   const seed = hashStockKey(stockKey);
   const derived = deriveStockSkin(seed, stockKey);
   const look = normalizeStoreLook(stored);
+  const aiCurated =
+    /(?:^|[-_])ai[-_]?\d+/i.test(stockKey) &&
+    Boolean(stored?.primaryColor && stored?.accentColor);
+
+  if (aiCurated && stored) {
+    const fontOk =
+      stored.displayFont &&
+      (DISPLAY_FONTS as readonly string[]).includes(stored.displayFont);
+    return {
+      ...look,
+      primaryColor: stored.primaryColor!,
+      accentColor: stored.accentColor!,
+      paletteId: stored.paletteId ?? derived.paletteId,
+      displayFont: (fontOk ? stored.displayFont : derived.displayFont) as StockSkin["displayFont"],
+      radius: stored.radius ?? derived.radius,
+    };
+  }
+
   return {
     ...look,
     primaryColor: derived.primaryColor,
