@@ -1,0 +1,20 @@
+# Normalize line endings to LF in the repository (and on checkout by default),
+# regardless of the OS/editor a contributor uses locally. Added 2026-08-20 as
+# part of Mission 000 (Repository Preservation and Executable Baseline) — the
+# repo previously had no .gitattributes, which allowed Windows checkouts to
+# drift to CRLF and made ~99% of the working tree show as "modified" even
+# with zero real content changes. See docs/MISSION-000-EXECUTABLE-BASELINE.md.
+* text=auto eol=lf
+
+# Binary assets — never text-normalize these.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.pdf binary
