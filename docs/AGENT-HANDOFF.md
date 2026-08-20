@@ -1,6 +1,6 @@
 # Guma Commerce — Agent Handoff Document
 
-**Last updated:** 2026-08-06 (post Chief Engineer Phases 1–6 + marketing legal refresh)  
+**Last updated:** 2026-08-08 (Platform ops control-plane + Template Intel + PayMongo gate)  
 **Purpose:** Hands-off context for the next agent or developer. Read this before making changes.
 
 > **Chief Engineer review:** [`CHIEF-ENGINEER-REVIEW-SUMMARY.md`](./CHIEF-ENGINEER-REVIEW-SUMMARY.md)  
@@ -8,9 +8,85 @@
 > **Whole-repo truth:** Prefer [`COMPREHENSIVE-HANDOFF-2026-07-12.md`](./COMPREHENSIVE-HANDOFF-2026-07-12.md) for architecture, sprints, and roadmap.  
 > **This file** keeps session narratives + durable pitfalls. Where they conflict, comprehensive handoff + ADR-0001 + chief summary win.
 
-> Newest durable deltas (2026-08-06): **Phases 1–6 executed** — commit hygiene, suspend enforcement, Brand Guard A+B, helpdesk email (Resend), honest marketing, webhook/Sentry test hardening; **marketing footer + About/Privacy/Terms/Refunds/Contact UX**. Prior MVP: delivery orchestrator, helpdesk tickets, Chat MVP Beta, manual e-wallet. Detail: `DELIVERY-AND-HELPDESK.md`, `MVP-MANUAL-EWALLET-CHAT.md`, `PRIORITY-SCOPE-BRAND-GUARD.md`.
+> Newest durable deltas (2026-08-07 → 2026-08-08): **Platform ops control plane** — Settings, Support access, attention strip, PayMongo activation Platform-only; **Template Intel** — category nesting, stock skins, AI-curated drafts, stock preview, no more seller-facing “Look N” labels; marketplace checkout UX. Soft-launch CT deploy via `.\deploy.ps1` (Proxmox CT 106). Prior: Chief Engineer Phases 1–6 + marketing legal UX (2026-08-06).
 
-> **Deferred post-MVP beta:** Trust / Legal entity page (real SEC/TIN). **Do not start** Workstation / LangGraph / Meta Messenger without a new Chief Engineer directive (Phase 7).
+> **Deferred post-MVP beta:** Trust / Legal entity page (real SEC/TIN); KYC review queue + wallet/payout ops UI on Platform. **Do not start** Workstation / LangGraph / Meta Messenger without a new Chief Engineer directive (Phase 7).
+
+---
+
+## Session 2026-08-07 → 2026-08-08 — Platform ops + Template Intel + PayMongo gate
+
+**Branch:** `wip/uncommitted-work-2026-08-01` (pushed through `5989648`)  
+**Public soft-launch:** storefront `https://commerce.guma.one`, admin `https://admin.guma.one`, ops `https://ops.guma.one`  
+**Deploy:** `.\deploy.ps1` packages working tree → CT 106 (keeps CT `.env`; excludes runtime uploads). SSH to PVE may flake (`Permission denied`) — retry when host is up.
+
+### What landed
+
+1. **Marketplace checkout UX** (`apps/web/components/checkout-form.tsx`) — Shopee/Lazada-style layout: desktop 2-col + sticky summary; mobile sticky total; marketplace orange accent.
+2. **Template Intel (ops)** — `apps/platform` `/templates`  
+   - Coverage = Free Bundle seller-ready + **published** ops stock (drafts do not raise Coverage / Launch until Publish).  
+   - Categories: parent/sub (`parentId`, migration `0017_shop_category_parent.sql`); Seed / AI on gap rows.  
+   - Stock: Preview → `{STOREFRONT}/preview/stock/{stockKey}`; Publish/Archive.  
+   - High-contrast sequential skins (`packages/storefront-themes/src/stock-skin.ts`) so Look variants are visually distinct.  
+   - **AI skins** (`packages/ai/src/template-skins.ts`): thrifty model (Gemini Flash) → JSON look packs only; `source: ai_curated`; fallback skins if no key.  
+   - **Seller-facing labels:** no more “Haircut Look 1” — palette names (e.g. Manila Sunset Soft). Opening Template Intel renames leftover Look-N rows; Launch uses `sellerFacingStockLabel`.
+3. **Platform Settings** — `/settings` (grouped sidebar: Overview / Shops / Commerce / Trust / Growth / System)  
+   - Soft-launch / free template switch / upgrade gate: Force on|off|inherit (`platform_settings` overrides env).  
+   - Global payments mode default; helpdesk notify + support contact emails; AI/provider key status (configured/missing only); integrations health.  
+   - Secrets stay in `.env` — never shown.
+4. **Support access (impersonate)** — Platform Tenants → **Open as Support**  
+   - Short-lived grant JWT → `admin.*/api/auth/support-access` sets host-scoped session (`supportAccess: true` + target `tenantId`).  
+   - Ops cookie on `ops.*` stays separate. Amber banner + Exit to Platform. Audited (`support_access_started`).  
+   - `requireTenantSession` honors JWT shop context for super_admin support sessions (DB `users.tenant_id` stays null).
+5. **Attention strip** on Platform Dashboard — open/SLA tickets, pending/suspended shops, moderation backlog, stock drafts.
+6. **PayMongo activation = Platform-only**  
+   - Sellers: Settings → Payments = receiving accounts + **read-only** mode status. API **403** if they PATCH `payments.mode`.  
+   - Platform: Settings = global default; Tenants → shop → **Checkout payments mode** per-tenant override (`setTenantPaymentsMode`).  
+   - Checkout resolves: tenant override → platform setting → `PAYMENTS_MODE` env.
+7. **Ownership rule (documented in UI):** Platform oversees/intervenes; seller admin runs one shop. KYC review + payout queues still missing on Platform (seller/auto today).
+
+### Key commits (this arc)
+| Commit | Summary |
+|--------|---------|
+| `fc4bbfa` | Marketplace checkout, Template Intel ops, distinct stock skins |
+| `e944304` | High-contrast sequential Looks + specialty visibility |
+| `5c02d01` | Landing demo CTAs `/demo` → `/model` |
+| `ac1a2bb` | Ops Settings, Support access, AI skins, PayMongo gate |
+| `5989648` | Replace Look N stock labels with palette names |
+
+### Env notes (ops / soft-launch)
+```
+# Soft launch (also Forceable from Platform → Settings)
+GUMA_SOFT_LAUNCH=true
+# GUMA_FREE_TEMPLATE_SWITCH=true
+# GUMA_TEMPLATE_SWITCH_REQUIRES_UPGRADE=true
+
+PAYMENTS_MODE=manual_ewallet
+GEMINI_API_KEY=          # Template Intel AI skins (optional; fallback works)
+HELPDESK_NOTIFY_EMAIL=   # overridable from Platform Settings
+NEXT_PUBLIC_STOREFRONT_URL=https://commerce.guma.one
+NEXT_PUBLIC_ADMIN_URL=https://admin.guma.one
+NEXT_PUBLIC_PLATFORM_URL=https://ops.guma.one
+```
+
+### Pitfalls
+- Platform and admin cookies are **host-scoped** (no shared Domain) — Support access **must** exchange on `admin.*`, not set cookie from ops.
+- Coverage ignores drafts until Publish; Seed/AI always create drafts.
+- Stock keys `…-v01` still drive the contrast ladder; only the **label** is seller-facing.
+- Never let sellers self-activate PayMongo mode again.
+- Soft-launch template switch reads Platform ops overrides in Launch API (`SoftLaunchOverrides`).
+
+### Open / next
+| Priority | Item |
+|----------|------|
+| Ops | Re-run `.\deploy.ps1` if CT was behind (Look-N rename + latest Settings) |
+| Ops | Set `GEMINI_API_KEY` on CT for live AI skins |
+| Platform | KYC review queue + wallet/payout approval UI |
+| Platform | Orders detail + ops intervene (still mostly read-only) |
+| Housekeeping | `*.tsbuildinfo` / dirty `simply-sweet-source` — still uncommitted by design |
+
+### Recommended next prompt
+> Read `docs/AGENT-HANDOFF.md` (Session 2026-08-07→08). Platform has Settings, Support access, Template Intel AI skins, PayMongo Platform-only. Soft-launch on CT 106. Next: KYC/payout ops queues or order intervention — not Workstation. Constraints: never `db:push`; never `@guma-commerce/db` from `"use client"`; fail-closed integrations; ADR-0001.
 
 ---
 
@@ -105,7 +181,7 @@ pnpm --filter @guma-commerce/platform run dev
 - Production mocks refused — see `MVP-HARDENING-P1-INTEGRATION-MOCKS.md`
 
 ### Status note
-Soft-launch hygiene from the prior “recommended next” is largely **done** in the 2026-08-06 Chief Engineer session (see section above). Prefer that section for current open items.
+Superseded for “what’s current” by **Session 2026-08-07 → 2026-08-08** (Platform Settings, Support access, Template Intel, PayMongo gate). Keep this section for MVP chat/delivery/helpdesk context.
 
 ---
 
@@ -203,7 +279,7 @@ Inspect first: `apps/platform/app/actions.ts`, `packages/db/src/queries/platform
 |---------|------|------|------|
 | Storefront | `apps/web` | **3010** | Marketing + `/{tenantSlug}` shops, checkout, buyer chat, webhooks |
 | Admin | `apps/admin` | 3001 | Seller dashboard, messages, orders, Launch/Workspace, settings |
-| Platform | `apps/platform` | 3002 | Super-admin: tenants, helpdesk, frontends, moderation, audit |
+| Platform | `apps/platform` | 3002 | Super-admin ops: tenants, Settings, Template Intel, helpdesk, Support access, PayMongo mode, moderation |
 
 **Core value:** Turn social traffic into a branded mobile storefront with GCash/Maya/COD, delivery stubs, AI content, and agentic daily posting workflows.
 
@@ -216,13 +292,13 @@ Inspect first: `apps/platform/app/actions.ts`, `packages/db/src/queries/platform
 
 | Item | Status |
 |------|--------|
-| **Local folder** | `C:\Users\samga\gumacommerce` (active repo; pushes work here) |
-| **Git** | Branch `master`; latest commit `5facdd1` (landing redesign). 2026-07-05 work is **uncommitted** in the working tree |
-| **npm scope** | `@guma-commerce/*` (rebrand complete in source) |
+| **Local folder** | `D:\All Apps\gumacommerce` (active repo) |
+| **Git** | Branch `wip/uncommitted-work-2026-08-01` pushed through `5989648` (see Session 2026-08-07→08). Prefer that section over older commit refs below. |
+| **npm scope** | `@guma-commerce/*` |
 | **Root package name** | `guma-commerce` |
-| **Production deploy** | Not done — docs ready in `docs/DEPLOY-VERCEL.md` |
-| **DB (Neon)** | Migrations `0000` + `0001` applied; `pnpm db:reconcile` run once to fix partial `db:push` drift |
-| **Build** | `pnpm turbo build --filter=@guma-commerce/web --filter=@guma-commerce/admin` passes |
+| **Soft-launch deploy** | Proxmox CT 106 via `.\deploy.ps1` + Cloudflare (`commerce` / `admin` / `ops`.guma.one). Vercel path still documented in `DEPLOY-VERCEL.md`. |
+| **DB** | Neon + migrations through Template Intel / soft-launch era (incl. `0017` category parent). Never `db:push`. |
+| **Intentionally uncommitted** | `apps/*/tsconfig.tsbuildinfo`, dirty `simply-sweet-source` — ask before deciding |
 
 ---
 
@@ -436,6 +512,7 @@ Expandable sidebar under **Settings**. Stored in `tenants.settingsJson`.
 |------|------|-----|
 | Shop | `/settings/shop` | COD, min order, auto-accept |
 | Delivery | `/settings/delivery-shipping` | Lalamove/flat rate/pickup |
+| Payments | `/settings/payments` | Receiving accounts; **mode is read-only** (Platform activates PayMongo) |
 | Notifications | `/settings/notifications` | Email/SMS toggles |
 | Subscription | `/settings/subscription` | Plan switch (free/growth/pro) |
 | Tracking | `/settings/tracking` | FB Pixel, GA, TikTok Pixel |
@@ -443,7 +520,7 @@ Expandable sidebar under **Settings**. Stored in `tenants.settingsJson`.
 
 Storefront reads settings for checkout fees, promo banner, tracking pixels, WhatsApp float button.
 
-API: `GET/PATCH /api/settings`.
+API: `GET/PATCH /api/settings`. Sellers **cannot** PATCH `payments.mode` (403) — Platform Settings / tenant Admin actions only.
 
 ---
 
