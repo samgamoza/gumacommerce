@@ -1,16 +1,66 @@
 # Guma Commerce — Agent Handoff Document
 
-**Last updated:** 2026-08-08 (Platform ops control-plane + Template Intel + PayMongo gate)  
+**Last updated:** 2026-08-20 (Full re-audit against this repo + Mission 000 executable baseline)  
 **Purpose:** Hands-off context for the next agent or developer. Read this before making changes.
 
+> **Strategy re-audit (external review):** [`GUMA-SOCIAL-CHECKOUT-STRATEGY-REVIEW.md`](./GUMA-SOCIAL-CHECKOUT-STRATEGY-REVIEW.md)  
+> **Repo preservation / baseline investigation:** [`MISSION-000-EXECUTABLE-BASELINE.md`](./MISSION-000-EXECUTABLE-BASELINE.md)  
 > **Chief Engineer review:** [`CHIEF-ENGINEER-REVIEW-SUMMARY.md`](./CHIEF-ENGINEER-REVIEW-SUMMARY.md)  
 > **Execution prompt (binding for that pass):** [`CURSOR-CHIEF-ENGINEER-PROMPT-2026-08-06.md`](./CURSOR-CHIEF-ENGINEER-PROMPT-2026-08-06.md)  
 > **Whole-repo truth:** Prefer [`COMPREHENSIVE-HANDOFF-2026-07-12.md`](./COMPREHENSIVE-HANDOFF-2026-07-12.md) for architecture, sprints, and roadmap.  
 > **This file** keeps session narratives + durable pitfalls. Where they conflict, comprehensive handoff + ADR-0001 + chief summary win.
 
-> Newest durable deltas (2026-08-07 → 2026-08-08): **Platform ops control plane** — Settings, Support access, attention strip, PayMongo activation Platform-only; **Template Intel** — category nesting, stock skins, AI-curated drafts, stock preview, no more seller-facing “Look N” labels; marketplace checkout UX. Soft-launch CT deploy via `.\deploy.ps1` (Proxmox CT 106). Prior: Chief Engineer Phases 1–6 + marketing legal UX (2026-08-06).
+> Newest durable deltas (2026-08-20): **Mission 000 (repo hygiene)** — added `.gitattributes` (fixed a CRLF-drift bug that made ~99% of the tree falsely show as modified), untracked `*.tsbuildinfo` caches, committed the previously-uncommitted 2026-08-07→08 session notes below. **External strategy re-audit** delivered — flags the Checkout-First-vs-Template-Intel direction as unresolved (see Session 2026-08-20) and reconfirms the unfixed concurrent-checkout stock race at `packages/db/src/queries/orders.ts:250`. Prior: Platform ops control plane + Template Intel + PayMongo gate (2026-08-07→08); Chief Engineer Phases 1–6 + marketing legal UX (2026-08-06).
 
 > **Deferred post-MVP beta:** Trust / Legal entity page (real SEC/TIN); KYC review queue + wallet/payout ops UI on Platform. **Do not start** Workstation / LangGraph / Meta Messenger without a new Chief Engineer directive (Phase 7).
+
+---
+
+## Session 2026-08-20 — Full re-audit (correct repo) + Mission 000 executable baseline
+
+**Branch:** `wip/uncommitted-work-2026-08-01` (3 new local commits, **not yet pushed** — see below)  
+**Context:** An external review agent had audited the wrong clone (`C:\Users\samga\gumacommerce`, a stale fork of this repo missing CI/governance/event-bus/delivery-orchestrator/tests) and had to be corrected mid-session. This session is the redo against this actual repo, reframed as a compliance/gap check against our own Constitution, ADR-0001, Article VI, and `CHECKOUT-FIRST-OVERHAUL-PLAN.md` — not a green-field proposal, since most of what a naive review would "recommend" already exists here.
+
+### What landed
+
+1. **`GUMA-SOCIAL-CHECKOUT-STRATEGY-REVIEW.md`** — full re-audit. Headline finding: **the Checkout-First-vs-Template-Intel direction is still unresolved.** `CHECKOUT-FIRST-OVERHAUL-PLAN.md` Phase 0 and Phase 2 (delivery orchestrator) shipped; Phase 1 (neutral checkout-first default) and Phase 3 (re-scoped onboarding) did not — `apps/web/components/storefront/tenant-storefront-home.tsx` still dispatches to 20 named vertical renderers (lines 89–169) with `ThemedStorefrontHome` as the fallback (line 173), not a neutral checkout surface. No doc says whether that's still the plan or whether Template Intel superseded it. Also reconfirms the unfixed concurrency bug at `packages/db/src/queries/orders.ts:250` (unlocked stock read, self-acknowledged in-code: `// row locked FOR UPDATE (deferred — see review remediation).`), and clarifies that `checkout_sessions` (`0009_checkout_domain.sql`) is **abandonment-telemetry only** — its own route comment says so — not an inventory-reservation mechanism, so it does not cover the concurrency gap.
+2. **Mission 000 (Repository Preservation and Executable Baseline)** — see `MISSION-000-EXECUTABLE-BASELINE.md` for full detail:
+   - Root-caused the "571 modified files" alarm: no `.gitattributes` existed, so Windows CRLF saves made ~99% of the tree show as modified with zero real content change (`git diff --shortstat -w` → 5 files, not 572).
+   - Added `.gitattributes` (`* text=auto eol=lf`) and `*.tsbuildinfo` to `.gitignore`; untracked the 3 already-tracked build-info caches.
+   - Secret scan: clean — only `.env.example` (template) is tracked anywhere.
+   - Toolchain could **not** be run from the reviewing sandbox (npm registry blocked by proxy allowlist, corepack `EACCES` on symlink) — still needs a real `pnpm install && pnpm build/lint/test` pass on an actual dev machine before treating the baseline as green.
+   - Migration journal gap at `idx=2` reconfirmed (`0002_nosy_ikaris.sql` missing from `_journal.json`); its SQL is fully idempotent (`IF NOT EXISTS` / `duplicate_object` guards throughout), which lowers the risk of reconciling it.
+   - Fail-closed integration posture and the Lalamove optional/flat-rate-fallback design were traced directly in `packages/services/src/config/{integrations,runtime-mode}.ts` and confirmed to match what the docs claim.
+   - `simply-sweet-source` is an orphaned gitlink (mode `160000`, no `.gitmodules`) — **still needs a founder decision** (real submodule vs. subtree vs. untrack), not resolved this session.
+
+### Key commits (this session, local only — not yet pushed)
+| Commit | Summary |
+|--------|---------|
+| `eeba3ab` | `.gitattributes` + `.gitignore` tsbuildinfo ignore (Mission 000 Slice A) |
+| `ec16fe3` | Commits the 2026-08-07→08 session notes below (was sitting uncommitted) |
+| `8a4b6a3` | Adds `GUMA-SOCIAL-CHECKOUT-STRATEGY-REVIEW.md` + `MISSION-000-EXECUTABLE-BASELINE.md` |
+
+### Pitfalls
+- **⚠️ `pnpm db:migrate` CANNOT backfill a skipped migration — and it will lie to you about it.** drizzle-kit's migrator does not compare hashes to decide what to run: it takes the newest applied migration's `created_at` and applies only journal entries **newer** than that. So if any migration is missed or its objects are lost, every later `db:migrate` prints `migrations applied successfully!` while silently skipping it, forever. Deleting its row from `drizzle.__drizzle_migrations` does **not** help (tested this session — the row was deleted, migrate still skipped it, because 0013's `1784472036087` is older than 0017's `1784800000000`). The only fix is to apply that migration's SQL directly, then re-insert its ledger row.
+- **This bit us for real on 2026-08-20:** `0013_support_helpdesk` was recorded in the ledger but none of its objects existed (no `support_tickets` / `support_ticket_messages`, none of its 4 enums) — most likely dropped manually at some point without touching the ledger. Symptom: Platform dashboard 500s with `PostgresError: relation "support_tickets" does not exist` (the attention strip queries it on load). Fixed by running 0013's SQL by hand in the Neon SQL Editor + re-inserting the ledger row (`hash a799de63…`, `created_at 1784472036087`). **The `idx=2` gap in `_journal.json` (`0002_nosy_ikaris.sql` exists on disk, absent from the journal) is the same class of problem and is still latent** — worth verifying `0002`'s objects actually exist before it surfaces the same way.
+- **Where production actually lives:** Neon org **"Michael"** → project **"SariLink"** → branch `production` → db `neondb`, region **Singapore (`ap-southeast-1`)**. This is documented nowhere else and cost real time to find — there are at least two decoy Neon projects on adjacent accounts (an empty Ohio one, and a `neon-sky-car` under a Vercel-linked org holding an unrelated blog/photo app). Verify by region + table list before running anything destructive.
+- This Windows-mounted checkout leaves `.git/index.lock` / `.git/HEAD.lock` behind after **every** git write that a sandboxed/remote agent can't self-clean (`Operation not permitted` on unlink) — needed manual deletion from the Windows side after each commit in this session. If another remote agent works this repo, expect the same and budget for it.
+- Pushing to `origin` from a network-sandboxed review agent is blocked (`403` from the proxy on `github.com`) — the 3 commits above are local-only until someone runs `git push origin wip/uncommitted-work-2026-08-01` from an actual machine with GitHub access.
+
+### Open / next
+| Priority | Item |
+|----------|------|
+| Housekeeping | Push the 3 pending local commits to `origin` |
+| Housekeeping | Decide `simply-sweet-source`: real submodule / subtree / untrack, then execute |
+| Correctness | Verify `0002_nosy_ikaris.sql`'s objects actually exist in the DB (`plan_payments`, `platform_audit_log`, `push_subscriptions` + its `ALTER`s) — it's absent from `_journal.json`, same latent class as the 0013 failure above |
+| Housekeeping | `.neon` file appeared from the Neon CLI wizard — check it for credentials and `.gitignore` it if so |
+| Correctness | **Mission 001** — fix the concurrent-checkout stock race at `orders.ts:250` (atomic conditional decrement + real concurrent test against disposable Postgres) |
+| Strategic | Resolve Checkout-First vs. Template-Intel: is the neutral checkout surface still the intended default `/{slug}` experience, or has Template Intel superseded that plan? Gates a lot of future storefront work either way |
+| Verification | Run a real `pnpm install && pnpm build/lint/test` pass on an actual dev machine — could not be executed from the review sandbox |
+| Verification | Read-only check of `drizzle.__drizzle_migrations` on the live DB for whether the `0002` hash is recorded |
+
+### Recommended next prompt
+> Read `docs/AGENT-HANDOFF.md` (Session 2026-08-20) and `docs/GUMA-SOCIAL-CHECKOUT-STRATEGY-REVIEW.md`. Push the 3 pending local commits first. Then either (a) resolve the `simply-sweet-source` housekeeping decision, or (b) start Mission 001 (concurrent-checkout stock race, `orders.ts:250`) — confirm which with the founder before touching `orders.ts`. Constraints unchanged: never `db:push`; never `@guma-commerce/db` from `"use client"`; fail-closed integrations; ADR-0001.
 
 ---
 
