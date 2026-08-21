@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { getDb } from "../client";
 import {
   creditSaleForOrder,
@@ -371,14 +371,41 @@ export async function createOrderForTenant(input: CreateOrderInput): Promise<Cre
           : "Order placed, awaiting payment",
     });
 
-    // Decrement stock for tracked products.
+    // Decrement stock for tracked products — atomically and conditionally.
+    //
+    // The availability check earlier in this function (see the OUT_OF_STOCK throw
+    // above) is an unlocked read: it gives the buyer a good error message on the
+    // common path, but two concurrent checkouts can both pass it. The guarantee
+    // lives here instead. The `stockQty >= quantity` predicate is re-evaluated by
+    // Postgres as part of the UPDATE, which row-locks the variant — so a racing
+    // checkout blocks until we commit, then re-checks against the committed value.
+    // Zero rows returned means someone else took the stock first; throwing rolls
+    // back this entire transaction (order, items, status history, customer upsert,
+    // and the claimed order number).
+    //
+    // Do NOT reintroduce `greatest(stockQty - quantity, 0)` here. Flooring at zero
+    // silently absorbs an oversell — both buyers succeed, stock clamps to 0, and
+    // nothing surfaces the shortfall until someone goes to pack the order.
     for (const line of lines) {
       const row = byProduct.get(line.productId);
       if (row?.trackInventory && line.variantId) {
-        await tx
+        const decremented = await tx
           .update(productVariants)
-          .set({ stockQty: sql`greatest(${productVariants.stockQty} - ${line.quantity}, 0)` })
-          .where(eq(productVariants.id, line.variantId));
+          .set({ stockQty: sql`${productVariants.stockQty} - ${line.quantity}` })
+          .where(
+            and(
+              eq(productVariants.id, line.variantId),
+              gte(productVariants.stockQty, line.quantity)
+            )
+          )
+          .returning({ stockQty: productVariants.stockQty });
+
+        if (decremented.length === 0) {
+          throw new OrderError(
+            `Sorry — "${line.title}" just sold out while you were checking out.`,
+            "OUT_OF_STOCK"
+          );
+        }
       }
     }
 

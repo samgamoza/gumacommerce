@@ -20,7 +20,8 @@
     "seed": "tsx src/seed.ts",
     "seed:ph-locations": "tsx src/seed-ph-locations.ts",
     "seed:simply-sweet": "tsx src/seed-simply-sweet.ts",
-    "test": "tsx --test src/types/tenant-seo.test.ts src/types/tenant-checkout.test.ts src/types/tenant-shipping.test.ts src/tenant-access.test.ts src/migration-journal.test.ts"
+    "test": "tsx --test src/types/tenant-seo.test.ts src/types/tenant-checkout.test.ts src/types/tenant-shipping.test.ts src/tenant-access.test.ts src/migration-journal.test.ts",
+    "test:integration": "tsx --test src/orders-concurrency.test.ts"
   },
   "dependencies": {
     "@guma-commerce/plans": "workspace:*",
