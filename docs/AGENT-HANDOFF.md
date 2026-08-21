@@ -16,6 +16,40 @@
 
 ---
 
+## Mission 001 (2026-08-20) — Concurrent checkout stock safety + fresh-DB migration repair
+
+**Two fixes, both verified by executed tests against a disposable Postgres container (never Neon).**
+
+### 1. Oversell under concurrent checkout — FIXED
+`createOrderForTenant` checked stock with an **unlocked read** (`orders.ts:209`) and then decremented **unconditionally** (`~380`, `greatest(stockQty - qty, 0)`). Two buyers of the last unit both passed the check, both decremented, and `greatest(…, 0)` floored the result at zero — so the oversell produced **no error anywhere**; you'd discover it when packing the order.
+
+Fix: the decrement is now atomic and conditional — `UPDATE … SET stock_qty = stock_qty - qty WHERE id = ? AND stock_qty >= qty RETURNING stock_qty`. Postgres row-locks the variant, so a racing checkout blocks, then re-evaluates against the committed value. Zero rows returned ⇒ throw `OUT_OF_STOCK` ⇒ the whole transaction rolls back (order, items, status history, customer upsert, claimed order number). **Do not reintroduce `greatest(…, 0)` here** — it hides oversells rather than preventing them.
+
+Test: `packages/db/src/orders-concurrency.test.ts` — two simultaneous `createOrderForTenant` calls against `stockQty = 1`; asserts exactly one succeeds, stock lands at exactly 0, and the loser leaves no orphan order row. Real DB, no mocks; hard-refuses to run against a hosted/Neon URL.
+
+**Not fixed (deliberate):** the coupon redemption cap (`orders.ts:243–250`) remains a soft limit. Already acknowledged in code, bounded impact (a discount over-granted vs. an item sold that doesn't exist). Separate decision.
+
+### 2. `_journal.json` was missing `0002` — fresh databases could not be built AT ALL
+`0002_nosy_ikaris.sql` existed on disk but had no journal entry, so drizzle-kit silently skipped it. Existing databases were fine (0002 ran before the entry went missing), so this stayed invisible — until a clean Postgres container was migrated on 2026-08-20 and died at `0007` with `relation "platform_audit_log" does not exist` (a table 0002 creates). **Any new dev machine, staging environment, or disaster-recovery restore was broken.**
+
+Fixed by restoring the entry with 0002's original timestamp `1783249404693`, recovered from production's own `__drizzle_migrations` row so the journal and the live ledger stay in sync. Safe for production: drizzle only applies migrations newer than the newest applied one, so 0002 is skipped there — and its objects already exist.
+
+Regression guards added to `packages/db/src/migration-journal.test.ts`: every `.sql` file must have a journal entry, indices must be contiguous, timestamps must strictly increase. The previous version of that test only asserted a handful of specific tags were present, which is why a missing entry went unnoticed.
+
+### Verify locally
+```powershell
+docker run -d --name guma-test-pg -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres `
+  -e POSTGRES_DB=guma_commerce -p 5435:5432 postgres:16-alpine
+$env:DATABASE_URL="postgres://postgres:postgres@localhost:5435/guma_commerce"
+pnpm --filter @guma-commerce/db exec drizzle-kit migrate      # must apply all 18 cleanly
+pnpm --filter @guma-commerce/db exec tsx --test src/migration-journal.test.ts
+pnpm --filter @guma-commerce/db exec tsx --test src/orders-concurrency.test.ts
+docker rm -f guma-test-pg
+```
+Note: the repo's `docker-compose.yml` binds host port **5434**, which was already occupied on this machine — hence the ad-hoc container on 5435 above.
+
+---
+
 ## Session 2026-08-20 — Full re-audit (correct repo) + Mission 000 executable baseline
 
 **Branch:** `wip/uncommitted-work-2026-08-01` (3 new local commits, **not yet pushed** — see below)  
@@ -52,15 +86,16 @@
 |----------|------|
 | Housekeeping | Push the 3 pending local commits to `origin` |
 | Housekeeping | Decide `simply-sweet-source`: real submodule / subtree / untrack, then execute |
-| Correctness | Verify `0002_nosy_ikaris.sql`'s objects actually exist in the DB (`plan_payments`, `platform_audit_log`, `push_subscriptions` + its `ALTER`s) — it's absent from `_journal.json`, same latent class as the 0013 failure above |
+| ~~Correctness~~ | ~~Verify `0002_nosy_ikaris.sql`~~ **DONE 2026-08-20** — the journal entry was missing, which meant **no fresh database could be built at all**; restored + regression-guarded. See Mission 001 section |
 | Housekeeping | `.neon` file appeared from the Neon CLI wizard — check it for credentials and `.gitignore` it if so |
-| Correctness | **Mission 001** — fix the concurrent-checkout stock race at `orders.ts:250` (atomic conditional decrement + real concurrent test against disposable Postgres) |
+| ~~Correctness~~ | ~~**Mission 001** — concurrent-checkout stock race~~ **DONE 2026-08-20** — see Mission 001 section below |
+| Correctness | Coupon redemption cap is still a soft limit (`orders.ts:243–250`, acknowledged in code) — separate, lower-severity decision, deliberately left alone during Mission 001 |
 | Strategic | Resolve Checkout-First vs. Template-Intel: is the neutral checkout surface still the intended default `/{slug}` experience, or has Template Intel superseded that plan? Gates a lot of future storefront work either way |
 | Verification | Run a real `pnpm install && pnpm build/lint/test` pass on an actual dev machine — could not be executed from the review sandbox |
 | Verification | Read-only check of `drizzle.__drizzle_migrations` on the live DB for whether the `0002` hash is recorded |
 
 ### Recommended next prompt
-> Read `docs/AGENT-HANDOFF.md` (Session 2026-08-20) and `docs/GUMA-SOCIAL-CHECKOUT-STRATEGY-REVIEW.md`. Push the 3 pending local commits first. Then either (a) resolve the `simply-sweet-source` housekeeping decision, or (b) start Mission 001 (concurrent-checkout stock race, `orders.ts:250`) — confirm which with the founder before touching `orders.ts`. Constraints unchanged: never `db:push`; never `@guma-commerce/db` from `"use client"`; fail-closed integrations; ADR-0001.
+> Read `docs/AGENT-HANDOFF.md` (Session 2026-08-20) and `docs/GUMA-SOCIAL-CHECKOUT-STRATEGY-REVIEW.md`. Push the 3 pending local commits first. Then either (a) resolve the `simply-sweet-source` housekeeping decision, or (b) start Mission 001 (concurrent-checkout stock race: unlocked read `orders.ts:209` + unconditional decrement ~380) — confirm which with the founder before touching `orders.ts`. Constraints unchanged: never `db:push`; never `@guma-commerce/db` from `"use client"`; fail-closed integrations; ADR-0001.
 
 ---
 
