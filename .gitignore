@@ -14,6 +14,10 @@ out
 .env.local
 .env.*.local
 
+# Credentials (OAuth, API keys, etc. - never commit)
+client_secret*.json
+*_secret*.json
+
 # IDE
 .idea
 .vscode
