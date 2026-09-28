@@ -30,9 +30,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    # Secrets live in the GitHub environment named CLOUDFLARE_API_TOKEN
-    # (Settings -> Environments); repository-level secrets work too.
-    environment: CLOUDFLARE_API_TOKEN
     env:
       NODE_ENV: production
       NEXT_PUBLIC_STOREFRONT_URL: https://kart.guma.one
