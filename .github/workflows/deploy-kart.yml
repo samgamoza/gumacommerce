@@ -1,0 +1,72 @@
+# Deploys apps/web (storefront + /kart) to Cloudflare Workers at kart.guma.one.
+#
+# Why CI and not the PowerShell script: @opennextjs/cloudflare's build patches
+# miss the middleware-manifest require on Windows, so the Worker throws
+# "Dynamic require of /.next/server/middleware-manifest.json" on every request.
+# Building on Linux (this runner, WSL, or Claude's sandbox) produces a good bundle.
+#
+# Secrets needed on the repo (Settings -> Secrets and variables -> Actions):
+#   CLOUDFLARE_API_TOKEN   same token as scripts/deploy-kart.ps1
+#   CLOUDFLARE_ACCOUNT_ID  14e2cde158da2d561d055949bf5a3f19
+# Runtime secrets (DATABASE_URL, PayMongo, ...) live on the Worker already
+# (uploaded once by scripts/deploy-kart.ps1) and survive redeploys.
+name: Deploy Guma Kart (kart.guma.one)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master, "wip/**"]
+    paths:
+      - "apps/web/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/deploy-kart.yml"
+
+concurrency:
+  group: deploy-kart
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NODE_ENV: production
+      NEXT_PUBLIC_STOREFRONT_URL: https://kart.guma.one
+      NEXT_PUBLIC_ADMIN_URL: https://admin.guma.one
+      NEXT_PUBLIC_ROOT_DOMAIN: guma.one
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+        env:
+          NODE_ENV: development   # devDependencies (opennext, wrangler) are needed for the build
+
+      - name: Build (OpenNext for Cloudflare)
+        working-directory: apps/web
+        run: pnpm exec opennextjs-cloudflare build
+
+      - name: Deploy Worker gumakart-web
+        working-directory: apps/web
+        run: pnpm exec wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Smoke test
+        run: |
+          sleep 8
+          for p in /kart /; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "https://kart.guma.one$p")
+            echo "https://kart.guma.one$p -> $code"
+          done

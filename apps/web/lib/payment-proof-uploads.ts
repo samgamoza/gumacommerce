@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { put } from "@vercel/blob";
+import { r2Put } from "./r2-uploads";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
@@ -64,6 +65,12 @@ export async function savePaymentProofImage(input: {
       addRandomSuffix: false,
     });
     return { url: blob.url, filename };
+  }
+
+  // Cloudflare Workers (kart.guma.one): no disk — store in R2, same URL shape.
+  const key = `payment-proofs/${safeSlug}/${safeOrder}/${filename}`;
+  if (await r2Put(key, buffer, mime)) {
+    return { filename, url: `/uploads/${key}` };
   }
 
   const dir = path.join(resolveWebUploadsRoot(), safeSlug, safeOrder);

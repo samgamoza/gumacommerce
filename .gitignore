@@ -52,3 +52,7 @@ apps/admin/.data/
 # These held zips over GitHub's 100MB hard limit and blocked every push.
 reference/
 v0-import/
+
+# OpenNext / wrangler build output
+.open-next/
+.wrangler/

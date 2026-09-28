@@ -6,6 +6,7 @@ import {
   resolveWebPublicUploadsRoot,
   UPLOAD_MIME_BY_EXT,
 } from "@/lib/local-uploads";
+import { r2Get } from "@/lib/r2-uploads";
 
 /** Same disk-serve pattern as product uploads — avoid cached App Router 404s. */
 export const dynamic = "force-dynamic";
@@ -17,6 +18,18 @@ export async function GET(_request: Request, context: RouteContext) {
   const segments = (await context.params).path ?? [];
   if (segments.length === 0 || segments.length > 6 || !segments.every(isSafeUploadSegment)) {
     return new NextResponse("Not found", { status: 404 });
+  }
+
+  // Cloudflare Workers: objects live in R2 under the same path.
+  const r2 = await r2Get(["payment-proofs", ...segments].join("/"));
+  if (r2) {
+    const ext = (segments[segments.length - 1] ?? "").split(".").pop()?.toLowerCase() ?? "jpg";
+    return new NextResponse(r2.body, {
+      headers: {
+        "Content-Type": r2.contentType ?? UPLOAD_MIME_BY_EXT[ext] ?? "application/octet-stream",
+        "Cache-Control": "private, max-age=3600",
+      },
+    });
   }
 
   const proofsRoot = path.join(resolveWebPublicUploadsRoot(), "payment-proofs");

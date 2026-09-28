@@ -6,6 +6,7 @@ import {
   resolveWebPublicUploadsRoot,
   UPLOAD_MIME_BY_EXT,
 } from "@/lib/local-uploads";
+import { r2Get } from "@/lib/r2-uploads";
 
 /**
  * Serve seller product images from local disk at request time.
@@ -24,6 +25,18 @@ export async function GET(_request: Request, context: RouteContext) {
 
   if (!isSafeUploadSegment(tenantId) || !isSafeUploadSegment(filename)) {
     return new NextResponse("Not found", { status: 404 });
+  }
+
+  // Cloudflare Workers: objects live in R2 under the same path.
+  const r2 = await r2Get(`products/${tenantId}/${filename}`);
+  if (r2) {
+    const ext = filename.split(".").pop()?.toLowerCase() ?? "jpg";
+    return new NextResponse(r2.body, {
+      headers: {
+        "Content-Type": r2.contentType ?? UPLOAD_MIME_BY_EXT[ext] ?? "application/octet-stream",
+        "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+      },
+    });
   }
 
   const productsRoot = path.join(resolveWebPublicUploadsRoot(), "products");
