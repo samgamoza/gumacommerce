@@ -50,6 +50,12 @@ export interface DeliveryBookingRequest {
   senderName?: string;
   senderPhone?: string;
   remarks?: string;
+  /** Our order id — providers that support idempotent booking key on it. */
+  externalRef?: string;
+  /** The selling business, for providers that track merchants (BayanGo). */
+  merchant?: { externalId: string; name: string; phone?: string };
+  /** Cash the rider must collect, in pesos. Omit / 0 for prepaid orders. */
+  codAmount?: number;
 }
 
 export interface DeliveryBooking {

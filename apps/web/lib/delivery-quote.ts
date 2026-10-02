@@ -10,7 +10,7 @@ import type { StorefrontStoreSettings } from "./storefront-settings";
 export interface CheckoutDeliveryQuote {
   fee: number;
   etaMinutes?: number;
-  provider: "lalamove" | "grab";
+  provider: "lalamove" | "grab" | "bayango";
   quotationId: string;
   /** Opaque booking meta (e.g. Lalamove stopIds). */
   meta?: Record<string, unknown>;
@@ -19,8 +19,9 @@ export interface CheckoutDeliveryQuote {
 function preferredLiveProviders(
   preferred: StorefrontStoreSettings["delivery"]["provider"]
 ): DeliveryProviderId[] {
-  if (preferred === "grab") return ["grab", "lalamove"];
-  if (preferred === "lalamove") return ["lalamove", "grab"];
+  // BayanGo only answers when BAYANGO_ENABLED=true (the adapter gates itself).
+  if (preferred === "grab") return ["grab", "lalamove", "bayango"];
+  if (preferred === "lalamove") return ["lalamove", "grab", "bayango"];
   return [];
 }
 
@@ -62,14 +63,21 @@ export async function getCheckoutDeliveryQuote(
       .map((a) => a.quote)
       .filter((q): q is DeliveryQuote => {
         if (!q) return false;
-        return q.provider === "lalamove" || q.provider === "grab";
+        return q.provider === "lalamove" || q.provider === "grab" || q.provider === "bayango";
       });
 
     if (!quotes.length) return null;
 
+    const preferInHouse = process.env.BAYANGO_PREFERRED === "true";
+    const inHouseQuote = preferInHouse ? quotes.find((q) => q.provider === "bayango") : undefined;
     const preferredQuote = quotes.find((q) => q.provider === preferred);
-    const selected = preferredQuote ?? autoSelect(quotes);
-    if (!selected || (selected.provider !== "lalamove" && selected.provider !== "grab")) {
+    const selected = inHouseQuote ?? preferredQuote ?? autoSelect(quotes, { preferInHouse });
+    if (
+      !selected ||
+      (selected.provider !== "lalamove" &&
+        selected.provider !== "grab" &&
+        selected.provider !== "bayango")
+    ) {
       return null;
     }
 

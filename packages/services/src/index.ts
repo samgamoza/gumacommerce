@@ -30,6 +30,19 @@ export {
 } from "./delivery/grab";
 export { verifyTimestampedHmacSignature } from "./delivery/webhook-signature";
 export {
+  BayanGoClient,
+  BayanGoApiError,
+  createBayanGoClient,
+  parseBayanGoWebhook,
+  verifyBayanGoWebhook,
+  normalizeBayanGoStatus,
+  BAYANGO_STATUSES,
+  BAYANGO_STATUS_TO_ORDER,
+  BAYANGO_ATTENTION_STATUSES,
+  type BayanGoStatus,
+  type BayanGoWebhookEvent,
+} from "./delivery/bayango";
+export {
   haversineKm,
   type DeliveryProvider,
   type DeliveryProviderId,

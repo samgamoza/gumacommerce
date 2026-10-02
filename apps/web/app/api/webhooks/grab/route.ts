@@ -85,17 +85,12 @@ export async function POST(request: Request) {
         courierStatus && ["PICKING_UP", "IN_DELIVERY", "COLLECTED", "IN_PROGRESS"].includes(courierStatus)
       ),
       delivered: courierStatus === "COMPLETED" || courierStatus === "DELIVERED",
+      trackingUrl: body.trackingURL ?? body.trackingUrl,
     });
 
     if (!linked) {
       log.warn("Webhook for unknown Grab delivery", { providerOrderId });
       return NextResponse.json({ received: true });
-    }
-
-    if (body.trackingURL || body.trackingUrl) {
-      await updateDeliveryByProviderOrderId(providerOrderId, {
-        status: courierStatus,
-      });
     }
 
     const nextOrderStatus = courierStatus ? STATUS_TO_ORDER[courierStatus] : undefined;

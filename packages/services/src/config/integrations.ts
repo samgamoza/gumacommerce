@@ -17,6 +17,7 @@ export type IntegrationId =
   | "paymongo_webhook"
   | "lalamove"
   | "grab"
+  | "bayango"
   | "semaphore"
   | "google_oauth"
   | "ai"
@@ -109,6 +110,9 @@ export function getIntegrationChecks(): IntegrationCheck[] {
     present(process.env.LALAMOVE_API_KEY) && present(process.env.LALAMOVE_API_SECRET);
   const grabConfigured =
     present(process.env.GRAB_CLIENT_ID) && present(process.env.GRAB_CLIENT_SECRET);
+  const bayangoEnabled = process.env.BAYANGO_ENABLED === "true";
+  const bayangoConfigured =
+    present(process.env.BAYANGO_API_BASE_URL) && present(process.env.BAYANGO_API_KEY);
   const semaphoreConfigured = present(process.env.SEMAPHORE_API_KEY);
   const googleConfigured =
     present(process.env.GOOGLE_CLIENT_ID) && present(process.env.GOOGLE_CLIENT_SECRET);
@@ -202,6 +206,28 @@ export function getIntegrationChecks(): IntegrationCheck[] {
           ? "Grab not configured — mock quotes/bookings allowed in this runtime."
           : "Grab not configured — Grab quote/book must fail.",
       envVars: ["GRAB_CLIENT_ID", "GRAB_CLIENT_SECRET", "GRAB_ENV"],
+    }),
+    buildCheck({
+      id: "bayango",
+      label: "BayanGo delivery",
+      severity: "optional",
+      status: bayangoConfigured ? "configured" : mocks ? "mock_allowed" : "missing",
+      configured: bayangoConfigured,
+      wouldMock: bayangoEnabled && !bayangoConfigured && mocks,
+      message: !bayangoEnabled
+        ? "BayanGo is switched off (BAYANGO_ENABLED is not true)."
+        : bayangoConfigured
+          ? "BayanGo Partner API URL + key are set."
+          : mocks
+            ? "BayanGo enabled without API credentials — mock quotes/bookings in this runtime."
+            : "BayanGo enabled but BAYANGO_API_BASE_URL / BAYANGO_API_KEY missing — it will not be offered.",
+      envVars: [
+        "BAYANGO_ENABLED",
+        "BAYANGO_API_BASE_URL",
+        "BAYANGO_API_KEY",
+        "BAYANGO_WEBHOOK_SECRET",
+        "BAYANGO_PREFERRED",
+      ],
     }),
     buildCheck({
       id: "semaphore",

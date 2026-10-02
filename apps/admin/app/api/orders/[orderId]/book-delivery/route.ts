@@ -21,9 +21,10 @@ const log = createLogger("orders:book-delivery");
 function bookingAllowList(
   preferred: "lalamove" | "grab" | "manual" | undefined
 ): DeliveryProviderId[] {
-  if (preferred === "grab") return ["grab", "lalamove", "manual"];
   if (preferred === "manual") return ["manual"];
-  return ["lalamove", "grab", "manual"];
+  // BayanGo is only quoted when BAYANGO_ENABLED=true (the adapter gates itself).
+  if (preferred === "grab") return ["grab", "lalamove", "bayango", "manual"];
+  return ["lalamove", "grab", "bayango", "manual"];
 }
 
 /** Books the best available courier (preferred app → failover → manual). */
@@ -117,16 +118,24 @@ export async function POST(
         senderName: session.tenantName,
         senderPhone,
         remarks: [order.orderNumber, order.dropoffNotes].filter(Boolean).join(" · "),
+        externalRef: order.orderId,
+        merchant: { externalId: session.tenantId, name: session.tenantName, phone: senderPhone },
+        codAmount: order.codAmount,
       },
       {
         allow: bookingAllowList(preferred),
         manualFlatFee: flatFee,
+        preferInHouse: process.env.BAYANGO_PREFERRED === "true",
       }
     );
 
-    const provider =
-      result.booking.provider === "bayango" ? "manual" : result.booking.provider;
-    if (provider !== "lalamove" && provider !== "grab" && provider !== "manual") {
+    const provider = result.booking.provider;
+    if (
+      provider !== "lalamove" &&
+      provider !== "grab" &&
+      provider !== "manual" &&
+      provider !== "bayango"
+    ) {
       return NextResponse.json(
         { ok: false, error: "Unsupported delivery provider." },
         { status: 502 }

@@ -57,6 +57,7 @@ export const deliveryProviderEnum = pgEnum("delivery_provider", [
   "lalamove",
   "grab",
   "manual",
+  "bayango",
 ]);
 export const notificationChannelEnum = pgEnum("notification_channel", [
   "sms",

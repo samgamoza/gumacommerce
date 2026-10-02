@@ -116,6 +116,9 @@ export interface DispatchInput {
   senderName?: string;
   senderPhone?: string;
   remarks?: string;
+  externalRef?: string;
+  merchant?: { externalId: string; name: string; phone?: string };
+  codAmount?: number;
   /** Reuse quotes already shown at checkout instead of re-quoting. */
   quotes?: DeliveryQuote[];
 }
@@ -160,6 +163,9 @@ export async function dispatch(
         senderName: input.senderName,
         senderPhone: input.senderPhone,
         remarks: input.remarks,
+        externalRef: input.externalRef,
+        merchant: input.merchant,
+        codAmount: input.codAmount,
       });
       return { booking, quote, failedOver };
     } catch (error) {

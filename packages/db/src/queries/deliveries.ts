@@ -6,7 +6,7 @@ import type { OrderStatus } from "./orders";
 export interface RecordDeliveryQuoteInput {
   tenantId: string;
   orderId?: string;
-  provider: "lalamove" | "grab" | "manual";
+  provider: "lalamove" | "grab" | "manual" | "bayango";
   quoteId: string;
   fee: string;
   currency?: string;
@@ -38,7 +38,7 @@ export async function recordDeliveryQuote(input: RecordDeliveryQuoteInput): Prom
 export interface CreateDeliveryBookingInput {
   orderId: string;
   quoteId?: string;
-  provider: "lalamove" | "grab" | "manual";
+  provider: "lalamove" | "grab" | "manual" | "bayango";
   providerOrderId: string;
   status: string;
   trackingUrl?: string;
@@ -69,6 +69,7 @@ export interface DeliveryStatusPatch {
   driverPlateNumber?: string;
   driverLat?: string;
   driverLng?: string;
+  trackingUrl?: string;
   pickedUp?: boolean;
   delivered?: boolean;
 }
@@ -105,6 +106,7 @@ export async function updateDeliveryByProviderOrderId(
       ...(hasLocation
         ? { driverLat: patch.driverLat, driverLng: patch.driverLng, driverLocationAt: now }
         : {}),
+      ...(patch.trackingUrl !== undefined ? { trackingUrl: patch.trackingUrl } : {}),
       ...(patch.pickedUp ? { pickedUpAt: now } : {}),
       ...(patch.delivered ? { deliveredAt: now } : {}),
     })
@@ -188,6 +190,8 @@ export interface OrderForDeliveryBooking {
   dropoffAddress: string;
   dropoffNotes: string;
   existingProviderOrderId: string | null;
+  /** Pesos the rider collects on delivery; 0 for prepaid orders. */
+  codAmount: number;
 }
 
 export async function getOrderForDeliveryBooking(
@@ -219,6 +223,9 @@ export async function getOrderForDeliveryBooking(
     dropoffAddress: address.line1 ?? "",
     dropoffNotes: address.notes ?? "",
     existingProviderOrderId: existing?.providerOrderId ?? null,
+    // Cash the rider must collect: the order total while a COD order is unpaid.
+    codAmount:
+      order.paymentMethod === "cod" && order.paymentStatus !== "paid" ? Number(order.total) : 0,
   };
 }
 

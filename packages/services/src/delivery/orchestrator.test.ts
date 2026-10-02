@@ -57,7 +57,7 @@ test("autoSelect picks the fastest and honours the in-house preference", () => {
   assert.equal(autoSelect([]), null);
 });
 
-test("BayanGo is never offered while it is an open hook", async () => {
+test("BayanGo is never offered while BAYANGO_ENABLED is unset", async () => {
   const ids = createDeliveryProviders().map((p) => p.id);
   assert.ok(!ids.includes("bayango"), "BayanGo must stay disabled until deployed");
 
