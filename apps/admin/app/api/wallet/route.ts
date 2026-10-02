@@ -3,6 +3,8 @@ import { z } from "zod";
 import {
   getTenantSettings,
   getWalletSummary,
+  isTenantKycApproved,
+  walletPayoutsEnabled,
   listTenantPayouts,
   listWalletLedger,
   resolveWalletSettings,
@@ -13,11 +15,12 @@ import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 export async function GET() {
   try {
     const session = await requireTenantSession();
-    const [summary, ledger, payouts, tenantSettings] = await Promise.all([
+    const [summary, ledger, payouts, tenantSettings, kycApproved] = await Promise.all([
       getWalletSummary(session.tenantId),
       listWalletLedger(session.tenantId),
       listTenantPayouts(session.tenantId),
       getTenantSettings(session.tenantId),
+      isTenantKycApproved(session.tenantId),
     ]);
 
     const walletSettings = resolveWalletSettings(
@@ -29,7 +32,9 @@ export async function GET() {
       summary,
       ledger,
       payouts,
-      walletSettings,
+      // KYC truth comes from the reviewed session row, not settings JSON.
+      walletSettings: { ...walletSettings, kycVerified: kycApproved },
+      payoutsEnabled: walletPayoutsEnabled(),
     });
   } catch (error) {
     if (error instanceof ApiAuthError) {

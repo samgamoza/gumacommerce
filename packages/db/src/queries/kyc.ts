@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { and, desc, eq, inArray, gt } from "drizzle-orm";
 import { getDb } from "../client";
 import { kycDocuments, kycVerificationSessions } from "../schema/index";
-import { updateTenantSettings } from "./tenant-settings";
+import { setTenantKycFlags } from "./tenant-settings";
 
 export type KycStatus = "draft" | "in_progress" | "submitted" | "approved" | "rejected";
 export type KycIdPath = "primary" | "secondary";
@@ -133,6 +133,10 @@ export async function createKycSession(tenantId: string): Promise<KycSessionReco
 }
 
 export async function getOrCreateActiveKycSession(tenantId: string): Promise<KycSessionRecord> {
+  // A session waiting for review (or already approved) is never replaced by a
+  // fresh draft — the 24h upload window doesn't apply to the review queue.
+  const latest = await getLatestKycSession(tenantId);
+  if (latest && (latest.status === "submitted" || latest.status === "approved")) return latest;
   const existing = await getActiveKycSession(tenantId);
   if (existing) return existing;
   return createKycSession(tenantId);
@@ -315,34 +319,83 @@ export async function submitKycSession(
 
   const db = getDb();
   const now = new Date();
+  // Submitting only queues the session for platform review. Nothing here marks
+  // the shop verified — see reviewKycSession.
   const [row] = await db
     .update(kycVerificationSessions)
     .set({
-      status: "approved",
+      status: "submitted",
       submittedAt: now,
-      reviewedAt: now,
+      reviewedAt: null,
+      rejectionReason: null,
       updatedAt: now,
     })
     .where(
       and(
         eq(kycVerificationSessions.id, sessionId),
-        eq(kycVerificationSessions.tenantId, tenantId)
+        eq(kycVerificationSessions.tenantId, tenantId),
+        inArray(kycVerificationSessions.status, ["draft", "in_progress"])
       )
     )
     .returning();
+  if (!row) throw new KycValidationError("This verification session can no longer be submitted.");
 
-  await updateTenantSettings(tenantId, {
-    settings: {
-      wallet: {
-        kycVerified: true,
-        kycStatus: "approved",
-        kycVerifiedAt: now.toISOString(),
-      },
-    },
-  });
+  await setTenantKycFlags(tenantId, { kycVerified: false, kycStatus: "submitted" });
 
-  const documents = await loadDocuments(row!.id);
-  return mapSession(row!, documents);
+  const documents = await loadDocuments(row.id);
+  return mapSession(row, documents);
+}
+
+/**
+ * Platform review of a submitted KYC session. The only code path that can mark
+ * a shop verified.
+ */
+export async function reviewKycSession(params: {
+  tenantId: string;
+  sessionId: string;
+  decision: "approve" | "reject";
+  reason?: string | null;
+}): Promise<KycSessionRecord> {
+  const reason = params.reason?.trim() || null;
+  if (params.decision === "reject" && !reason) {
+    throw new KycValidationError("Give the seller a reason so they know what to fix.");
+  }
+
+  const db = getDb();
+  const now = new Date();
+  const [row] = await db
+    .update(kycVerificationSessions)
+    .set({
+      status: params.decision === "approve" ? "approved" : "rejected",
+      reviewedAt: now,
+      rejectionReason: params.decision === "reject" ? reason : null,
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(kycVerificationSessions.id, params.sessionId),
+        eq(kycVerificationSessions.tenantId, params.tenantId),
+        eq(kycVerificationSessions.status, "submitted")
+      )
+    )
+    .returning();
+  if (!row) throw new KycValidationError("Only a submitted verification can be reviewed.");
+
+  await setTenantKycFlags(
+    params.tenantId,
+    params.decision === "approve"
+      ? { kycVerified: true, kycStatus: "approved", kycVerifiedAt: now.toISOString() }
+      : { kycVerified: false, kycStatus: "rejected" }
+  );
+
+  const documents = await loadDocuments(row.id);
+  return mapSession(row, documents);
+}
+
+/** Source of truth for "is this shop verified": the latest session, not settings JSON. */
+export async function isTenantKycApproved(tenantId: string): Promise<boolean> {
+  const latest = await getLatestKycSession(tenantId);
+  return latest?.status === "approved";
 }
 
 export async function getKycDocumentStorageKey(

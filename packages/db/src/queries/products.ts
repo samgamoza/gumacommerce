@@ -1,4 +1,4 @@
-import { and, desc, eq, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ne, sql } from "drizzle-orm";
 import { getDb } from "../client";
 import { orderItems, productImages, productVariants, products } from "../schema/index";
 
@@ -92,9 +92,10 @@ export async function listProductsForTenant(tenantId: string): Promise<ProductLi
     .from(products)
     .leftJoin(productVariants, eq(productVariants.productId, products.id))
     .where(eq(products.tenantId, tenantId))
-    .orderBy(desc(products.isMain), desc(products.createdAt));
+    .orderBy(desc(products.isMain), desc(products.createdAt), asc(productVariants.id));
 
-  // The variant left join can produce one row per variant; keep the first.
+  // The variant left join can produce one row per variant; keep the first
+  // (lowest variant id — the same one checkout charges and decrements).
   const seen = new Set<string>();
   const items: ProductListItem[] = [];
   for (const row of rows) {
@@ -278,6 +279,7 @@ export async function updateProductForTenant(
         .select({ id: productVariants.id })
         .from(productVariants)
         .where(eq(productVariants.productId, productId))
+        .orderBy(asc(productVariants.id))
         .limit(1);
 
       if (variant) {

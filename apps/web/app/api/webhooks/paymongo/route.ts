@@ -101,6 +101,14 @@ export async function POST(request: Request) {
   try {
     if (eventType === "payment.paid" && intentId) {
       const result = await markOrderPaidByIntent(intentId, resource.id, event);
+      if (result.ok && result.paidAfterCancel) {
+        // The order was cancelled/refunded before the money arrived. It stays
+        // closed; the seller sees a history note and must refund the buyer.
+        console.warn("[PayMongo Webhook] Payment arrived after order was closed — refund needed", {
+          intentId,
+          orderNumber: result.orderNumber,
+        });
+      }
       if (!result.ok) {
         // Not an order payment — check plan-upgrade billing.
         const planResult = await markPlanPaymentPaidByIntent(intentId);

@@ -80,9 +80,14 @@ const checkoutSchema = z.object({
     .max(50),
 });
 
-function trackingUrl(tenantSlug: string, orderNumber: string): string {
+/** Path to the buyer's order page. The `t` token is what lets them see it. */
+function orderPath(tenantSlug: string, orderNumber: string, accessToken: string): string {
+  return `/${tenantSlug}/orders/${encodeURIComponent(orderNumber)}?t=${accessToken}`;
+}
+
+function trackingUrl(tenantSlug: string, orderNumber: string, accessToken: string): string {
   const base = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3010";
-  return `${base}/${tenantSlug}/orders/${orderNumber}`;
+  return `${base}${orderPath(tenantSlug, orderNumber, accessToken)}`;
 }
 
 /** COD orders skip the payment webhook, so notify the seller right away. */
@@ -367,7 +372,7 @@ export async function POST(request: Request) {
           to: body.customer.phone,
           orderNumber: order.orderNumber,
           total: formatPhp(Number(order.total)),
-          trackingUrl: trackingUrl(body.tenantSlug, order.orderNumber),
+          trackingUrl: trackingUrl(body.tenantSlug, order.orderNumber, order.accessToken),
         })
         .catch((error) => console.error("[checkout] SMS failed:", error));
 
@@ -377,6 +382,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         orderNumber: order.orderNumber,
+        orderUrl: orderPath(body.tenantSlug, order.orderNumber, order.accessToken),
         status: order.status,
         paymentMethod: "cod",
         adapter: "cod",
@@ -418,7 +424,7 @@ export async function POST(request: Request) {
           to: body.customer.phone,
           orderNumber: order.orderNumber,
           total: formatPhp(Number(order.total)),
-          trackingUrl: trackingUrl(body.tenantSlug, order.orderNumber),
+          trackingUrl: trackingUrl(body.tenantSlug, order.orderNumber, order.accessToken),
         })
         .catch((error) => console.error("[checkout] SMS failed:", error));
 
@@ -428,6 +434,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         orderNumber: order.orderNumber,
+        orderUrl: orderPath(body.tenantSlug, order.orderNumber, order.accessToken),
         status: order.status,
         paymentMethod: method,
         adapter: "manual_ewallet",
@@ -454,6 +461,7 @@ export async function POST(request: Request) {
       description: `Order ${order.orderNumber} — ${tenant.name}`,
       method: body.paymentMethod as Exclude<CheckoutPaymentMethod, "cod" | "bank">,
       metadata: { order_number: order.orderNumber, tenant: body.tenantSlug },
+      returnUrl: trackingUrl(body.tenantSlug, order.orderNumber, order.accessToken),
     });
 
     await recordPaymentIntent({
@@ -469,12 +477,13 @@ export async function POST(request: Request) {
         to: body.customer.phone,
         orderNumber: order.orderNumber,
         total: formatPhp(Number(order.total)),
-        trackingUrl: trackingUrl(body.tenantSlug, order.orderNumber),
+        trackingUrl: trackingUrl(body.tenantSlug, order.orderNumber, order.accessToken),
       })
       .catch((error) => console.error("[checkout] SMS failed:", error));
 
     return NextResponse.json({
       orderNumber: order.orderNumber,
+      orderUrl: orderPath(body.tenantSlug, order.orderNumber, order.accessToken),
       paymentIntentId: started.paymentIntentId,
       redirectUrl: started.redirectUrl,
       status: order.status,

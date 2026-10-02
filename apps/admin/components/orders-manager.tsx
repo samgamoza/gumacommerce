@@ -29,6 +29,7 @@ interface OrderRow {
   createdAt: string;
   paymentReference?: string | null;
   paymentProofUrl?: string | null;
+  paymentGateway?: string | null;
 }
 
 const TABS = [
@@ -65,8 +66,15 @@ function nextAction(order: OrderRow): { label: string; status: OrderStatus } | n
   }
 }
 
-function canCancel(status: OrderStatus): boolean {
-  return ["pending_payment", "paid", "accepted", "preparing"].includes(status);
+/** Paid orders leave through Refund (money goes back), never a bare cancel. */
+function canCancel(order: OrderRow): boolean {
+  if (order.paymentStatus === "paid") return false;
+  return ["pending_payment", "accepted", "preparing"].includes(order.status);
+}
+
+/** Includes cancelled orders whose payment arrived after the cancel. */
+function canRefund(order: OrderRow): boolean {
+  return order.paymentStatus === "paid" && order.status !== "refunded";
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -264,7 +272,9 @@ export function OrdersManager() {
       `Refund order ${order.orderNumber} (${formatPrice(Number(order.total))})?` +
         (order.paymentMethod === "cod"
           ? "\n\nCOD order — you'll need to return the cash to the customer yourself."
-          : "\n\nThe amount will be refunded through PayMongo.")
+          : order.paymentGateway === "paymongo"
+            ? "\n\nThe amount will be refunded through PayMongo."
+            : "\n\nPaid by direct transfer — send the money back to the customer yourself, then confirm here.")
     );
     if (!confirmed) return;
 
@@ -283,7 +293,11 @@ export function OrdersManager() {
           row.id === order.id ? { ...row, status: "refunded", paymentStatus: "refunded" } : row
         )
       );
-      setNotice(`Order ${order.orderNumber} refunded.`);
+      setNotice(
+        data.refundedOutsidePlatform
+          ? `Order ${order.orderNumber} marked refunded. Remember to return the money to the customer.`
+          : `Order ${order.orderNumber} refunded through PayMongo.`
+      );
     } catch {
       setError("Network error while refunding the order.");
     } finally {
@@ -465,7 +479,7 @@ export function OrdersManager() {
                           </button>
                         </>
                       )}
-                    {canCancel(order.status) && (
+                    {canCancel(order) && (
                       <button
                         onClick={() => {
                           if (window.confirm(`Cancel order ${order.orderNumber}?`)) {
@@ -478,8 +492,7 @@ export function OrdersManager() {
                         Cancel
                       </button>
                     )}
-                    {order.paymentStatus === "paid" &&
-                      !["cancelled", "refunded"].includes(order.status) && (
+                    {canRefund(order) && (
                         <button
                           onClick={() => refundOrder(order)}
                           disabled={updatingId === order.id}

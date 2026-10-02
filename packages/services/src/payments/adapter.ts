@@ -63,6 +63,8 @@ export interface StartOnlinePaymentInput {
   description: string;
   method: Exclude<CheckoutPaymentMethod, "cod" | "bank">;
   metadata: Record<string, string>;
+  /** Where the buyer lands after paying — the tokenized order page. */
+  returnUrl?: string;
 }
 
 export interface StartOnlinePaymentResult {
@@ -89,7 +91,8 @@ export async function startOnlinePayment(
   const attached = await paymongo.attachPaymentMethod(
     intent.id,
     input.method as PayMongoMethod,
-    intent.clientKey
+    intent.clientKey,
+    input.returnUrl
   );
   return {
     adapter: "paymongo",

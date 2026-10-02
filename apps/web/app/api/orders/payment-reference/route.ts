@@ -6,11 +6,13 @@ import {
   submitManualPaymentReference,
 } from "@gumakart/db";
 import { clientIpFrom, rateLimit } from "@gumakart/services";
+import { isPaymentProofUrlForOrder } from "@/lib/payment-proof-uploads";
 
 const schema = z
   .object({
     tenantSlug: z.string().min(1),
     orderNumber: z.string().min(1),
+    accessToken: z.string().max(128).optional().default(""),
     reference: z.string().trim().max(120).optional().default(""),
     proofUrl: z
       .string()
@@ -55,9 +57,16 @@ export async function POST(request: Request) {
     }
 
     const body = schema.parse(await request.json());
-    const order = await getOrderForTracking(body.tenantSlug, body.orderNumber);
+    // Only the buyer holding the order link may submit a payment reference.
+    const order = await getOrderForTracking(body.tenantSlug, body.orderNumber, body.accessToken);
     if (!order) {
-      return NextResponse.json({ ok: false, error: "Order not found." }, { status: 404 });
+      return NextResponse.json(
+        { ok: false, error: "Open this order from the link in your SMS, then try again." },
+        { status: 404 }
+      );
+    }
+    if (body.proofUrl && !isPaymentProofUrlForOrder(body.proofUrl, body.tenantSlug, order.orderNumber)) {
+      return NextResponse.json({ ok: false, error: "Upload the screenshot again." }, { status: 400 });
     }
 
     const tenantId = await getTenantIdBySlug(body.tenantSlug);

@@ -293,7 +293,10 @@ export function CheckoutForm({
       cart.clear();
       if (data.redirectUrl) {
         window.location.href = data.redirectUrl;
+      } else if (data.orderUrl) {
+        window.location.href = data.orderUrl;
       } else if (data.orderNumber) {
+        // Demo shops only — real orders always come back with a tokenized orderUrl.
         window.location.href = `/${tenantSlug}/orders/${data.orderNumber}`;
       }
     } catch {

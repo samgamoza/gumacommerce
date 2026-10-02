@@ -8,6 +8,7 @@ import type { StorefrontStoreSettings } from "@/lib/storefront-settings";
 export function ManualPaymentPanel({
   tenantSlug,
   orderNumber,
+  accessToken,
   paymentMethod,
   totalLabel,
   instructions,
@@ -17,6 +18,8 @@ export function ManualPaymentPanel({
 }: {
   tenantSlug: string;
   orderNumber: string;
+  /** Order access token from the buyer's link; required by the payment APIs. */
+  accessToken: string;
   paymentMethod: string;
   totalLabel: string;
   instructions: {
@@ -48,6 +51,7 @@ export function ManualPaymentPanel({
       const formData = new FormData();
       formData.set("tenantSlug", tenantSlug);
       formData.set("orderNumber", orderNumber);
+      formData.set("accessToken", accessToken);
       formData.set("file", file);
       const res = await fetch("/api/orders/payment-proof", {
         method: "POST",
@@ -83,6 +87,7 @@ export function ManualPaymentPanel({
         body: JSON.stringify({
           tenantSlug,
           orderNumber,
+          accessToken,
           reference: reference.trim() || `screenshot-${Date.now()}`,
           proofUrl: proofUrl ?? "",
         }),

@@ -23,6 +23,7 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const tenantSlug = String(formData.get("tenantSlug") ?? "").trim();
     const orderNumber = String(formData.get("orderNumber") ?? "").trim();
+    const accessToken = String(formData.get("accessToken") ?? "").trim();
     const file = formData.get("file");
 
     z.object({
@@ -39,9 +40,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: "Shop not found." }, { status: 404 });
     }
 
-    const order = await getOrderForTracking(tenantSlug, orderNumber);
+    // Only the buyer holding the order link may attach proof to it.
+    const order = await getOrderForTracking(tenantSlug, orderNumber, accessToken);
     if (!order) {
-      return NextResponse.json({ ok: false, error: "Order not found." }, { status: 404 });
+      return NextResponse.json(
+        { ok: false, error: "Open this order from the link in your SMS, then try again." },
+        { status: 404 }
+      );
+    }
+    if (order.status === "cancelled" || order.status === "refunded") {
+      return NextResponse.json({ ok: false, error: "This order is closed." }, { status: 400 });
     }
     if (order.paymentStatus === "paid") {
       return NextResponse.json({ ok: false, error: "This order is already paid." }, { status: 400 });

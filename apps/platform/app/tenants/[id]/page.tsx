@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Package, PackageCheck, ShoppingCart, Wallet } from "lucide-react";
-import { getTenantDetail } from "@gumakart/db";
+import { getLatestKycSession, getTenantDetail } from "@gumakart/db";
 import { requireSuperAdmin } from "@/lib/session";
 import { PlatformShell } from "@/components/platform-shell";
 import { TenantActions } from "@/components/tenant-actions";
+import { KycReviewPanel, type KycReviewSummary } from "@/components/kyc-review-panel";
 import {
   EmptyState,
   Panel,
@@ -26,6 +27,24 @@ export default async function TenantDetailPage({ params }: PageProps) {
   const { id } = await params;
   const tenant = await getTenantDetail(id);
   if (!tenant) notFound();
+
+  const kycSession = await getLatestKycSession(tenant.id);
+  const kyc: KycReviewSummary | null = kycSession
+    ? {
+        sessionId: kycSession.id,
+        status: kycSession.status,
+        idPath: kycSession.idPath,
+        idTypes: [
+          kycSession.primaryIdType,
+          kycSession.secondaryIdType1,
+          kycSession.secondaryIdType2,
+        ].filter((v): v is string => Boolean(v)),
+        documentTypes: kycSession.documents.map((d) => d.docType),
+        submittedAt: kycSession.submittedAt?.toISOString() ?? null,
+        reviewedAt: kycSession.reviewedAt?.toISOString() ?? null,
+        rejectionReason: kycSession.rejectionReason,
+      }
+    : null;
 
   const shopUrl = `${STOREFRONT_URL}/${tenant.slug}`;
 
@@ -165,6 +184,10 @@ export default async function TenantDetailPage({ params }: PageProps) {
                 shopUrl={shopUrl}
                 paymentsMode={tenant.paymentsMode}
               />
+            </Panel>
+            <Panel className="mt-6">
+              <SectionHeader title="KYC verification" />
+              <KycReviewPanel tenantId={tenant.id} name={tenant.name} kyc={kyc} />
             </Panel>
           </div>
         </div>

@@ -13,7 +13,7 @@ import {
   uniqueIndex,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
 
@@ -574,8 +574,17 @@ export const orders = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     paidAt: timestamp("paid_at", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
+    // Unguessable secret in the buyer's order link (?t=…). Order numbers are
+    // sequential per shop, so the number alone must never unlock an order.
+    accessToken: varchar("access_token", { length: 64 })
+      .default(sql`replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '')`)
+      .notNull(),
+    // Set once when reserved stock is put back (cancel / refund / expiry), so a
+    // replayed transition can never restock twice.
+    stockRestoredAt: timestamp("stock_restored_at", { withTimezone: true }),
   },
   (table) => [
+    uniqueIndex("orders_access_token_idx").on(table.accessToken),
     // Order numbers are unique per tenant (tracking lookups are always scoped
     // by tenant slug), which lets every shop have its own 0001, 0002, ...
     uniqueIndex("orders_tenant_number_idx").on(table.tenantId, table.orderNumber),

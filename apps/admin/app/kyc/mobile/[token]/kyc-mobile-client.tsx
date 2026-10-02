@@ -22,7 +22,7 @@ export default function KycMobileClient({ token }: { token: string }) {
       return;
     }
     setSession(data.session);
-    if (data.session.status === "approved") setVerified(true);
+    if (["submitted", "approved"].includes(data.session.status)) setVerified(true);
   }, [token]);
 
   useEffect(() => {
@@ -50,8 +50,14 @@ export default function KycMobileClient({ token }: { token: string }) {
           </div>
         ) : verified ? (
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-            <p className="font-semibold">Verification complete</p>
-            <p className="mt-1">You can close this page and return to your dashboard.</p>
+            <p className="font-semibold">
+              {session?.status === "approved" ? "Verification complete" : "Documents submitted"}
+            </p>
+            <p className="mt-1">
+              {session?.status === "approved"
+                ? "You can close this page and return to your dashboard."
+                : "We'll review them within 1–2 business days. You can close this page."}
+            </p>
           </div>
         ) : session ? (
           <KycVerificationFlow

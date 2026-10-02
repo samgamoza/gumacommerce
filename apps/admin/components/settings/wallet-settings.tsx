@@ -48,6 +48,7 @@ export function WalletSettingsPage() {
   const [payouts, setPayouts] = useState<TenantPayoutItem[]>([]);
   const [walletSettings, setWalletSettings] = useState<TenantWalletSettings>({});
   const [payoutAmount, setPayoutAmount] = useState("");
+  const [payoutsEnabled, setPayoutsEnabled] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -63,6 +64,7 @@ export function WalletSettingsPage() {
     setLedger(data.ledger ?? []);
     setPayouts(data.payouts ?? []);
     setWalletSettings(data.walletSettings ?? {});
+    setPayoutsEnabled(data.payoutsEnabled === true);
     if (data.summary?.availableBalance) {
       setPayoutAmount(String(Number(data.summary.availableBalance)));
     }
@@ -244,7 +246,24 @@ export function WalletSettingsPage() {
 
           <div ref={requestRef} className="mt-6">
             <SettingsCard title="Request payout">
-              {!kycVerified ? (
+              {!payoutsEnabled ? (
+                <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+                  <p className="font-semibold">Payouts are coming soon</p>
+                  <p className="mt-1">
+                    Your sales keep adding up safely in your wallet. We&apos;ll let you know as
+                    soon as withdrawals open.
+                    {!kycVerified ? (
+                      <>
+                        {" "}Finish{" "}
+                        <Link href="/settings/kyc" className="font-medium underline">
+                          KYC verification
+                        </Link>{" "}
+                        now so you&apos;re ready.
+                      </>
+                    ) : null}
+                  </p>
+                </div>
+              ) : !kycVerified ? (
                 <p className="text-sm text-muted-foreground">
                   Complete{" "}
                   <Link href="/settings/kyc" className="font-medium text-emerald-700 underline">

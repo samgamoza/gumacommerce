@@ -36,6 +36,28 @@ function resolveWebUploadsRoot(): string {
 }
 
 /**
+ * True when `url` is a proof we stored for this exact order (local/R2 path, or a
+ * Blob URL under the same key). Stops a buyer attaching an arbitrary link that
+ * the seller would then open.
+ */
+export function isPaymentProofUrlForOrder(url: string, tenantSlug: string, orderNumber: string): boolean {
+  const safeSlug = tenantSlug.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 64) || "shop";
+  const safeOrder = orderNumber.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 64) || "order";
+  const key = `payment-proofs/${safeSlug}/${safeOrder}/`;
+  if (url.startsWith(`/uploads/${key}`)) return !url.includes("..");
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.protocol === "https:" &&
+      parsed.hostname.endsWith(".blob.vercel-storage.com") &&
+      parsed.pathname.startsWith(`/${key}`)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Saves a buyer payment screenshot (GCash/Maya receipt).
  * Uses Vercel Blob when configured; otherwise local public/uploads (dev).
  */

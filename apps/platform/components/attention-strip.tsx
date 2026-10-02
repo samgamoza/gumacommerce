@@ -39,6 +39,12 @@ export function AttentionStrip({ attention }: { attention: PlatformAttention }) 
         tone: (attention.moderationFlagged > 0 ? "rose" : "sky") as Item["tone"],
       },
       {
+        href: attention.kycOldestTenantId ? `/tenants/${attention.kycOldestTenantId}` : "/tenants",
+        label: "KYC to review",
+        count: attention.kycPending,
+        tone: "amber" as const,
+      },
+      {
         href: "/templates",
         label: "Stock drafts to publish",
         count: attention.stockDrafts,
@@ -50,8 +56,8 @@ export function AttentionStrip({ attention }: { attention: PlatformAttention }) 
   if (items.length === 0) {
     return (
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-        Nothing urgent — no open tickets, pending/suspended shops, moderation backlog, or stock
-        drafts.
+        Nothing urgent — no open tickets, pending/suspended shops, KYC reviews, moderation
+        backlog, or stock drafts.
       </div>
     );
   }

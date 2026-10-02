@@ -9,6 +9,7 @@ import {
   listShopBusinessCategories,
   listTemplateStock,
   moderateContentItem,
+  reviewKycSession,
   recordTemplateIntelligenceEvent,
   setActiveLanding,
   setShopCategoryStatus,
@@ -148,6 +149,41 @@ export async function setTenantPaymentsModeAction(
     });
     revalidatePath(`/tenants/${tenantId}`);
     revalidatePath("/tenants");
+    return { ok: true };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+/** Approve or reject a seller's submitted KYC. The only way a shop becomes verified. */
+export async function reviewKycAction(input: {
+  tenantId: string;
+  sessionId: string;
+  decision: "approve" | "reject";
+  reason?: string;
+  label: string;
+}): Promise<ActionResult> {
+  try {
+    const session = await guard();
+    const reviewed = await reviewKycSession({
+      tenantId: input.tenantId,
+      sessionId: input.sessionId,
+      decision: input.decision,
+      reason: input.reason,
+    });
+    await writeAudit({
+      actorId: session.userId,
+      actorEmail: session.email,
+      action: input.decision === "approve" ? "tenant_kyc_approved" : "tenant_kyc_rejected",
+      entityType: "tenant",
+      entityId: input.tenantId,
+      entityLabel: input.label,
+      metadata: {
+        sessionId: reviewed.id,
+        ...(input.decision === "reject" ? { reason: reviewed.rejectionReason } : {}),
+      },
+    });
+    revalidatePath(`/tenants/${input.tenantId}`);
     return { ok: true };
   } catch (error) {
     return fail(error);

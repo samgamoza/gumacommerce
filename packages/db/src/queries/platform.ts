@@ -2,6 +2,7 @@ import { and, count, desc, eq, gte, ilike, inArray, or, sql } from "drizzle-orm"
 import { getDb } from "../client";
 import {
   contentQueue,
+  kycVerificationSessions,
   orders,
   platformAuditLog,
   products,
@@ -554,11 +555,15 @@ export type PlatformAttention = {
   moderationPending: number;
   moderationFlagged: number;
   stockDrafts: number;
+  /** KYC sessions waiting for platform review. */
+  kycPending: number;
+  /** Oldest waiting shop — the attention link goes straight to it. */
+  kycOldestTenantId: string | null;
 };
 
 export async function getPlatformAttention(): Promise<PlatformAttention> {
   const db = getDb();
-  const [ticketRow, tenantRow, mod, stockRow] = await Promise.all([
+  const [ticketRow, tenantRow, mod, stockRow, kycRows] = await Promise.all([
     db
       .select({
         open: sql<number>`count(*) filter (where ${supportTickets.status} in ('open', 'pending', 'in_progress'))::int`,
@@ -583,6 +588,11 @@ export async function getPlatformAttention(): Promise<PlatformAttention> {
         drafts: sql<number>`count(*) filter (where ${templateStock.status} in ('draft', 'approved'))::int`,
       })
       .from(templateStock),
+    db
+      .select({ tenantId: kycVerificationSessions.tenantId })
+      .from(kycVerificationSessions)
+      .where(eq(kycVerificationSessions.status, "submitted"))
+      .orderBy(kycVerificationSessions.submittedAt),
   ]);
 
   return {
@@ -593,6 +603,8 @@ export async function getPlatformAttention(): Promise<PlatformAttention> {
     moderationPending: mod.pending,
     moderationFlagged: mod.flagged,
     stockDrafts: toNumber(stockRow[0]?.drafts),
+    kycPending: kycRows.length,
+    kycOldestTenantId: kycRows[0]?.tenantId ?? null,
   };
 }
 

@@ -4,14 +4,28 @@ import { tenants } from "../schema/index";
 import type {
   TenantSettingsJson,
   TenantSettingsRecord,
+  TenantWalletSettings,
   UpdateTenantSettingsInput,
 } from "../types/tenant-settings";
 
+/**
+ * KYC result fields are written only by `setTenantKycFlags` (platform review).
+ * A seller-facing settings patch must never be able to mark itself verified.
+ */
+function stripKycFields(
+  wallet: Partial<TenantWalletSettings> | undefined
+): Partial<TenantWalletSettings> | undefined {
+  if (!wallet) return wallet;
+  const { kycVerified: _v, kycStatus: _s, kycVerifiedAt: _a, ...rest } = wallet;
+  return rest;
+}
+
 function mergeSettings(
   current: TenantSettingsJson | null | undefined,
-  patch: UpdateTenantSettingsInput["settings"]
+  rawPatch: UpdateTenantSettingsInput["settings"]
 ): TenantSettingsJson {
-  if (!patch) return current ?? {};
+  if (!rawPatch) return current ?? {};
+  const patch = rawPatch.wallet ? { ...rawPatch, wallet: stripKycFields(rawPatch.wallet) } : rawPatch;
 
   return {
     ...current,
@@ -90,6 +104,28 @@ export async function setTenantPaymentsMode(
     .where(eq(tenants.id, tenantId));
 
   return getTenantSettings(tenantId);
+}
+
+/**
+ * Platform/KYC-review only. Writes the wallet KYC flags directly, bypassing the
+ * merge filter above. Not exported from the package index on purpose — call
+ * `reviewKycSession` instead.
+ */
+export async function setTenantKycFlags(
+  tenantId: string,
+  flags: { kycVerified: boolean; kycStatus: NonNullable<TenantWalletSettings["kycStatus"]>; kycVerifiedAt?: string }
+): Promise<void> {
+  const db = getDb();
+  const [existing] = await db.select().from(tenants).where(eq(tenants.id, tenantId)).limit(1);
+  if (!existing) return;
+  const current = (existing.settingsJson ?? {}) as TenantSettingsJson;
+  const wallet: TenantWalletSettings = { ...(current.wallet ?? {}), ...flags };
+  if (!flags.kycVerified) delete wallet.kycVerifiedAt;
+  const nextSettings: TenantSettingsJson = { ...current, wallet };
+  await db
+    .update(tenants)
+    .set({ settingsJson: nextSettings, updatedAt: new Date() })
+    .where(eq(tenants.id, tenantId));
 }
 
 export async function updateTenantSettings(

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import {
   getOrderForTracking,
   getTenantStorefrontBySlug,
@@ -18,6 +17,28 @@ export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ tenantSlug: string; orderNumber: string }>;
+  searchParams: Promise<{ t?: string | string[] }>;
+}
+
+/** Shown when the link has no (or a wrong) access token. Same page either way, so it doesn't reveal whether an order number exists. */
+function OrderLinkRequired({ tenantSlug, orderNumber }: { tenantSlug: string; orderNumber: string }) {
+  return (
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="mx-auto max-w-lg">
+        <Card className="text-center">
+          <div className="text-4xl">🔒</div>
+          <h1 className="mt-3 text-xl font-bold">Open your order from your SMS</h1>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-gray-600">
+            To keep your details private, order #{orderNumber} can only be viewed with the
+            personal link we sent to your phone after checkout.
+          </p>
+          <Link href={`/${tenantSlug}`} className="mt-5 inline-block">
+            <Button>Back to the shop</Button>
+          </Link>
+        </Card>
+      </div>
+    </div>
+  );
 }
 
 function formatPrice(amount: string | number): string {
@@ -94,15 +115,21 @@ function buildTimeline(status: OrderStatus, deliveryType: string, paymentMethod:
   });
 }
 
-export default async function OrderTrackingPage({ params }: PageProps) {
+export default async function OrderTrackingPage({ params, searchParams }: PageProps) {
   const { tenantSlug, orderNumber } = await params;
+  const { t } = await searchParams;
+  const accessToken = typeof t === "string" ? t : "";
 
   // Demo shops show a simulated order instead of hitting the database.
   const demoTenant = getDemoTenant(tenantSlug);
-  const order = demoTenant ? null : await getOrderForTracking(tenantSlug, orderNumber);
-  const tenant = demoTenant ? null : await getTenantStorefrontBySlug(tenantSlug);
+  const order = demoTenant
+    ? null
+    : await getOrderForTracking(tenantSlug, orderNumber, accessToken);
 
-  if (!order && !demoTenant) notFound();
+  if (!order && !demoTenant) {
+    return <OrderLinkRequired tenantSlug={tenantSlug} orderNumber={orderNumber} />;
+  }
+  const tenant = demoTenant ? null : await getTenantStorefrontBySlug(tenantSlug);
 
   const storeSettings = tenant
     ? resolveStorefrontSettings(
@@ -178,6 +205,7 @@ export default async function OrderTrackingPage({ params }: PageProps) {
           <ManualPaymentPanel
             tenantSlug={tenantSlug}
             orderNumber={order.orderNumber}
+            accessToken={accessToken}
             paymentMethod={order.paymentMethod}
             totalLabel={formatPrice(order.total)}
             instructions={payInstructions}

@@ -1,25 +1,23 @@
 import { NextResponse } from "next/server";
-import {
-  getLatestKycSession,
-  getOrCreateActiveKycSession,
-  getTenantSettings,
-} from "@gumakart/db";
+import { getLatestKycSession, getOrCreateActiveKycSession } from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 import { adminBaseUrl, kycMobileUrl } from "@/lib/kyc-url";
 
 export async function GET() {
   try {
     const session = await requireTenantSession();
-    const [kycSession, settings] = await Promise.all([
-      getLatestKycSession(session.tenantId),
-      getTenantSettings(session.tenantId),
-    ]);
+    const kycSession = await getLatestKycSession(session.tenantId);
 
-    const verified = settings?.settings?.wallet?.kycVerified === true;
+    // The session row is the source of truth; only a platform reviewer can
+    // move it to "approved".
+    const status = kycSession?.status ?? "none";
+    const verified = status === "approved";
 
     return NextResponse.json({
       ok: true,
       verified,
+      status,
+      rejectionReason: status === "rejected" ? kycSession?.rejectionReason ?? null : null,
       session: kycSession,
       mobileBaseUrl: adminBaseUrl(),
       mobileUrl: kycSession ? kycMobileUrl(kycSession.token) : null,

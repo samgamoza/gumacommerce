@@ -10,11 +10,10 @@ import {
 } from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
+// Money only goes to the destination saved in Wallet settings — a request body
+// can't redirect a payout to some other account.
 const payoutSchema = z.object({
   amount: z.number().min(100).max(999999),
-  method: z.enum(["gcash", "maya", "bank"]).optional(),
-  destinationAccount: z.string().min(5).max(64).optional(),
-  destinationName: z.string().min(2).max(120).optional(),
 });
 
 export async function POST(request: Request) {
@@ -27,9 +26,9 @@ export async function POST(request: Request) {
       (settings?.settings ?? {}) as unknown as Record<string, unknown>
     );
 
-    const method = body.method ?? walletSettings.payoutMethod;
-    const destinationAccount = body.destinationAccount ?? walletSettings.payoutAccount;
-    const destinationName = body.destinationName ?? walletSettings.payoutAccountName;
+    const method = walletSettings.payoutMethod;
+    const destinationAccount = walletSettings.payoutAccount;
+    const destinationName = walletSettings.payoutAccountName;
 
     if (!method || !destinationAccount || !destinationName) {
       return NextResponse.json(

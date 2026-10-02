@@ -1,10 +1,8 @@
-import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { timingSafeEqual } from "node:crypto";
 import { getDb } from "../client";
-import {
-  creditSaleForOrder,
-  releaseOrderSaleCredit,
-  reverseSaleCreditForOrder,
-} from "./wallet";
+import { creditSaleForOrder } from "./wallet";
+import { transitionOrderStatus } from "./order-lifecycle";
 import {
   customers,
   deliveries,
@@ -27,29 +25,8 @@ import {
   TENANT_SUSPENDED_BUYER_MESSAGE,
 } from "../tenant-access";
 
-export type OrderStatus =
-  | "pending_payment"
-  | "paid"
-  | "accepted"
-  | "preparing"
-  | "ready_for_pickup"
-  | "out_for_delivery"
-  | "delivered"
-  | "cancelled"
-  | "refunded";
-
-/** Valid forward transitions a seller (or webhook) can make. */
-export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  pending_payment: ["paid", "cancelled"],
-  paid: ["accepted", "cancelled", "refunded"],
-  accepted: ["preparing", "cancelled"],
-  preparing: ["ready_for_pickup", "out_for_delivery", "cancelled"],
-  ready_for_pickup: ["out_for_delivery", "delivered"],
-  out_for_delivery: ["delivered"],
-  delivered: ["refunded"],
-  cancelled: [],
-  refunded: [],
-};
+export { ORDER_STATUS_TRANSITIONS, OrderError, type OrderStatus } from "./order-status";
+import { OrderError, type OrderStatus } from "./order-status";
 
 function toCentavos(value: string | number): number {
   return Math.round(Number(value) * 100);
@@ -61,25 +38,6 @@ function fromCentavos(centavos: number): string {
 
 function orderNumberPrefix(slug: string): string {
   return slug.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3) || "ORD";
-}
-
-export class OrderError extends Error {
-  constructor(
-    message: string,
-    public code:
-      | "TENANT_NOT_FOUND"
-      | "TENANT_SUSPENDED"
-      | "EMPTY_CART"
-      | "PRODUCT_UNAVAILABLE"
-      | "OUT_OF_STOCK"
-      | "BELOW_MINIMUM"
-      | "COUPON_LIMIT_REACHED"
-      | "INVALID_TRANSITION"
-      | "ORDER_NOT_FOUND"
-  ) {
-    super(message);
-    this.name = "OrderError";
-  }
 }
 
 export interface CreateOrderItemInput {
@@ -125,6 +83,8 @@ export interface CreatedOrder {
   total: string;
   totalCentavos: number;
   couponCode: string | null;
+  /** Secret for the buyer's order link (?t=…). Never log it. */
+  accessToken: string;
   items: Array<{ title: string; quantity: number; unitPrice: string; lineTotal: string }>;
 }
 
@@ -180,7 +140,10 @@ export async function createOrderForTenant(input: CreateOrderInput): Promise<Cre
       })
       .from(products)
       .leftJoin(productVariants, eq(productVariants.productId, products.id))
-      .where(and(eq(products.tenantId, tenant.id), inArray(products.id, productIds)));
+      .where(and(eq(products.tenantId, tenant.id), inArray(products.id, productIds)))
+      // Deterministic "first variant" — must match products.ts, which keeps the
+      // same variant's price/stock in sync with the product.
+      .orderBy(asc(products.id), asc(productVariants.id));
 
     // one row per product (first/default variant wins)
     const byProduct = new Map<string, (typeof catalog)[number]>();
@@ -421,6 +384,7 @@ export async function createOrderForTenant(input: CreateOrderInput): Promise<Cre
       total: order.total,
       totalCentavos,
       couponCode: totals.couponCode,
+      accessToken: order.accessToken,
       items: lines.map((line) => ({
         title: line.title,
         quantity: line.quantity,
@@ -452,72 +416,103 @@ export async function recordPaymentIntent(params: {
 
 export interface MarkOrderPaidResult {
   ok: boolean;
+  orderId?: string;
   orderNumber?: string;
   tenantId?: string;
   total?: string;
   /** True when this webhook call transitioned the order to paid (vs a replay). */
   transitioned?: boolean;
+  /** Payment landed on a cancelled/refunded order — needs a refund. */
+  paidAfterCancel?: boolean;
 }
 
-/** Webhook handler: marks the payment + order paid by PayMongo intent id. Idempotent. */
+/**
+ * Webhook handler: marks the payment + order paid by PayMongo intent id.
+ * Idempotent and race-safe: the transaction and order rows are locked, so a
+ * webhook retry arriving mid-flight waits and then sees the paid state.
+ *
+ * A payment that lands on an order already cancelled/refunded is recorded on
+ * the transaction but does NOT revive the order or credit the seller — the
+ * caller must flag it for a refund (paidAfterCancel).
+ */
 export async function markOrderPaidByIntent(
   gatewayIntentId: string,
   gatewayPaymentId?: string,
   rawWebhookJson?: unknown
 ): Promise<MarkOrderPaidResult> {
   const db = getDb();
-  const [txn] = await db
-    .select()
-    .from(paymentTransactions)
-    .where(eq(paymentTransactions.gatewayIntentId, gatewayIntentId))
-    .limit(1);
-  if (!txn) return { ok: false };
+  const result = await db.transaction(async (tx) => {
+    const [txn] = await tx
+      .select()
+      .from(paymentTransactions)
+      .where(eq(paymentTransactions.gatewayIntentId, gatewayIntentId))
+      .limit(1)
+      .for("update");
+    if (!txn) return { ok: false } as MarkOrderPaidResult;
 
-  const now = new Date();
-  await db
-    .update(paymentTransactions)
-    .set({
-      status: "paid",
-      gatewayPaymentId,
-      paidAt: now,
-      ...(rawWebhookJson !== undefined ? { rawWebhookJson } : {}),
-    })
-    .where(eq(paymentTransactions.id, txn.id));
+    const [order] = await tx
+      .select()
+      .from(orders)
+      .where(eq(orders.id, txn.orderId))
+      .limit(1)
+      .for("update");
+    if (!order) return { ok: false } as MarkOrderPaidResult;
 
-  const [order] = await db.select().from(orders).where(eq(orders.id, txn.orderId)).limit(1);
-  if (!order) return { ok: false };
+    const now = new Date();
+    await tx
+      .update(paymentTransactions)
+      .set({
+        status: "paid",
+        gatewayPaymentId,
+        paidAt: txn.paidAt ?? now,
+        ...(rawWebhookJson !== undefined ? { rawWebhookJson } : {}),
+      })
+      .where(eq(paymentTransactions.id, txn.id));
 
-  let transitioned = false;
-  if (order.status === "pending_payment") {
-    await db
-      .update(orders)
-      .set({ status: "paid", paymentStatus: "paid", paidAt: now })
-      .where(eq(orders.id, order.id));
-    await db.insert(orderStatusHistory).values({
+    const base = {
+      ok: true,
       orderId: order.id,
-      status: "paid",
-      note: "Payment confirmed via PayMongo",
-    });
-    transitioned = true;
-  } else if (order.paymentStatus !== "paid") {
-    await db
-      .update(orders)
-      .set({ paymentStatus: "paid", paidAt: now })
-      .where(eq(orders.id, order.id));
-    transitioned = true;
-  }
+      orderNumber: order.orderNumber,
+      tenantId: order.tenantId,
+      total: order.total,
+    };
 
-  if (transitioned) {
-    await creditSaleForOrder(order.id);
-  }
+    if (order.status === "cancelled" || order.status === "refunded") {
+      if (txn.status !== "paid") {
+        await tx.insert(orderStatusHistory).values({
+          orderId: order.id,
+          status: order.status,
+          note: "Payment arrived after the order was closed — refund the buyer",
+        });
+      }
+      return { ...base, transitioned: false, paidAfterCancel: txn.status !== "paid" };
+    }
 
-  return {
-    ok: true,
-    orderNumber: order.orderNumber,
-    tenantId: order.tenantId,
-    total: order.total,
-    transitioned,
-  };
+    if (order.paymentStatus === "paid") return { ...base, transitioned: false };
+
+    if (order.status === "pending_payment") {
+      await tx
+        .update(orders)
+        .set({ status: "paid", paymentStatus: "paid", paidAt: now })
+        .where(eq(orders.id, order.id));
+      await tx.insert(orderStatusHistory).values({
+        orderId: order.id,
+        status: "paid",
+        note: "Payment confirmed via PayMongo",
+      });
+    } else {
+      await tx
+        .update(orders)
+        .set({ paymentStatus: "paid", paidAt: now })
+        .where(eq(orders.id, order.id));
+    }
+    return { ...base, transitioned: true };
+  });
+
+  if (result.ok && result.transitioned && result.orderId) {
+    await creditSaleForOrder(result.orderId);
+  }
+  return result;
 }
 
 export async function markPaymentFailedByIntent(gatewayIntentId: string): Promise<void> {
@@ -550,6 +545,8 @@ export interface TenantOrderListItem {
   createdAt: Date;
   paymentReference: string | null;
   paymentProofUrl: string | null;
+  /** Gateway of the settled payment (paymongo / manual / cod), when there is one. */
+  paymentGateway: string | null;
 }
 
 export async function listOrdersForTenant(tenantId: string): Promise<TenantOrderListItem[]> {
@@ -588,13 +585,13 @@ export async function listOrdersForTenant(tenantId: string): Promise<TenantOrder
     .select({
       orderId: paymentTransactions.orderId,
       status: paymentTransactions.status,
+      gateway: paymentTransactions.gateway,
       rawWebhookJson: paymentTransactions.rawWebhookJson,
     })
     .from(paymentTransactions)
     .where(
       and(
         eq(paymentTransactions.tenantId, tenantId),
-        eq(paymentTransactions.gateway, "manual"),
         inArray(
           paymentTransactions.orderId,
           rows.map((row) => row.id)
@@ -606,7 +603,12 @@ export async function listOrdersForTenant(tenantId: string): Promise<TenantOrder
     string,
     { reference: string | null; proofUrl: string | null }
   >();
+  const settledGatewayByOrder = new Map<string, string>();
   for (const txn of paymentRows) {
+    if (txn.status === "paid" || txn.status === "refunded") {
+      settledGatewayByOrder.set(txn.orderId, txn.gateway);
+    }
+    if (txn.gateway !== "manual") continue;
     const raw = (txn.rawWebhookJson ?? {}) as {
       buyerReference?: string;
       proofUrl?: string | null;
@@ -637,10 +639,12 @@ export async function listOrdersForTenant(tenantId: string): Promise<TenantOrder
       createdAt: row.createdAt,
       paymentReference: payMeta?.reference ?? null,
       paymentProofUrl: payMeta?.proofUrl ?? null,
+      paymentGateway: settledGatewayByOrder.get(row.id) ?? null,
     };
   });
 }
 
+/** Seller status change — delegates to the single order lifecycle service. */
 export async function updateOrderStatusForTenant(params: {
   tenantId: string;
   orderId: string;
@@ -648,49 +652,15 @@ export async function updateOrderStatusForTenant(params: {
   note?: string;
   actorId?: string;
 }): Promise<TenantOrderListItem["status"]> {
-  const db = getDb();
-  const [order] = await db
-    .select()
-    .from(orders)
-    .where(and(eq(orders.id, params.orderId), eq(orders.tenantId, params.tenantId)))
-    .limit(1);
-  if (!order) throw new OrderError("Order not found.", "ORDER_NOT_FOUND");
-
-  const allowed = ORDER_STATUS_TRANSITIONS[order.status as OrderStatus] ?? [];
-  if (!allowed.includes(params.status)) {
-    throw new OrderError(
-      `Cannot move an order from "${order.status}" to "${params.status}".`,
-      "INVALID_TRANSITION"
-    );
-  }
-
-  const now = new Date();
-  const isDelivered = params.status === "delivered";
-  const codCollected = isDelivered && order.paymentMethod === "cod";
-
-  await db
-    .update(orders)
-    .set({
-      status: params.status,
-      ...(isDelivered ? { completedAt: now } : {}),
-      ...(codCollected ? { paymentStatus: "paid" as const, paidAt: now } : {}),
-    })
-    .where(eq(orders.id, order.id));
-
-  await db.insert(orderStatusHistory).values({
-    orderId: order.id,
-    status: params.status,
-    note: params.note ?? (codCollected ? "Delivered — COD collected" : undefined),
+  const result = await transitionOrderStatus({
+    orderId: params.orderId,
+    tenantId: params.tenantId,
+    to: params.status,
+    source: "seller",
     actorId: params.actorId,
+    note: params.note,
   });
-
-  if (codCollected) {
-    await creditSaleForOrder(order.id, { immediateAvailable: true });
-  } else if (isDelivered) {
-    await releaseOrderSaleCredit(order.id);
-  }
-
-  return params.status;
+  return result.to;
 }
 
 export interface OrderRefundInfo {
@@ -739,41 +709,6 @@ export async function getOrderPaymentForRefund(
   };
 }
 
-/** Marks the order + its payment transaction refunded and logs history. */
-export async function markOrderRefunded(params: {
-  tenantId: string;
-  orderId: string;
-  actorId?: string;
-  note?: string;
-}): Promise<void> {
-  const db = getDb();
-  await db.transaction(async (tx) => {
-    await tx
-      .update(orders)
-      .set({ status: "refunded", paymentStatus: "refunded" })
-      .where(and(eq(orders.id, params.orderId), eq(orders.tenantId, params.tenantId)));
-
-    await tx
-      .update(paymentTransactions)
-      .set({ status: "refunded" })
-      .where(
-        and(
-          eq(paymentTransactions.orderId, params.orderId),
-          eq(paymentTransactions.status, "paid")
-        )
-      );
-
-    await tx.insert(orderStatusHistory).values({
-      orderId: params.orderId,
-      status: "refunded",
-      note: params.note ?? "Refund issued by seller",
-      actorId: params.actorId,
-    });
-
-    await reverseSaleCreditForOrder(params.orderId);
-  });
-}
-
 export interface OrderTrackingDelivery {
   provider: string;
   status: string | null;
@@ -805,10 +740,23 @@ export interface OrderTrackingData {
   delivery: OrderTrackingDelivery | null;
 }
 
+function tokensMatch(expected: string, provided: string): boolean {
+  const a = Buffer.from(expected);
+  const b = Buffer.from(provided);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+/**
+ * Buyer-facing order lookup. Order numbers are sequential per shop, so the
+ * secret `accessToken` from the buyer's link is required — a missing or wrong
+ * token returns null (indistinguishable from "not found").
+ */
 export async function getOrderForTracking(
   tenantSlug: string,
-  orderNumber: string
+  orderNumber: string,
+  accessToken: string | null | undefined
 ): Promise<OrderTrackingData | null> {
+  if (!accessToken || accessToken.length < 32) return null;
   const db = getDb();
   const [row] = await db
     .select({ order: orders, tenant: tenants })
@@ -817,6 +765,7 @@ export async function getOrderForTracking(
     .where(and(eq(orders.orderNumber, orderNumber), eq(tenants.slug, tenantSlug)))
     .limit(1);
   if (!row) return null;
+  if (!tokensMatch(row.order.accessToken, accessToken)) return null;
 
   const items = await db
     .select()

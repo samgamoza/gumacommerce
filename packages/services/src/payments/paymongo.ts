@@ -108,7 +108,8 @@ export class PayMongoClient {
   async attachPaymentMethod(
     intentId: string,
     methodType: PayMongoMethod,
-    clientKey: string
+    clientKey: string,
+    returnUrl?: string
   ): Promise<AttachPaymentMethodResult> {
     if (intentId.startsWith("pi_mock_")) {
       if (!allowIntegrationMocks()) {
@@ -136,6 +137,7 @@ export class PayMongoClient {
           attributes: {
             client_key: clientKey,
             payment_method: { type: methodType },
+            ...(returnUrl ? { return_url: returnUrl } : {}),
           },
         },
       }),

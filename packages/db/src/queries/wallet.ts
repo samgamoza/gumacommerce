@@ -1,6 +1,7 @@
 import { and, desc, eq, inArray, lte, sql } from "drizzle-orm";
 import { getDb } from "../client";
 import {
+  kycVerificationSessions,
   orders,
   tenantPayouts,
   tenantWallets,
@@ -363,10 +364,30 @@ export class WalletError extends Error {
       | "KYC_REQUIRED"
       | "PAYOUT_DESTINATION_REQUIRED"
       | "INVALID_AMOUNT"
+      | "PAYOUTS_DISABLED"
   ) {
     super(message);
     this.name = "WalletError";
   }
+}
+
+/**
+ * Payouts move real money. Until a disbursement provider is wired into
+ * processQueuedPayouts, they stay off unless WALLET_PAYOUTS_ENABLED=true.
+ */
+export function walletPayoutsEnabled(): boolean {
+  return process.env.WALLET_PAYOUTS_ENABLED?.trim().toLowerCase() === "true";
+}
+
+/** KYC truth is the latest session row (only platform review approves it). */
+async function latestKycApproved(db: Db | Tx, tenantId: string): Promise<boolean> {
+  const [latest] = await db
+    .select({ status: kycVerificationSessions.status })
+    .from(kycVerificationSessions)
+    .where(eq(kycVerificationSessions.tenantId, tenantId))
+    .orderBy(desc(kycVerificationSessions.createdAt))
+    .limit(1);
+  return latest?.status === "approved";
 }
 
 export async function requestTenantPayout(params: {
@@ -377,7 +398,13 @@ export async function requestTenantPayout(params: {
   destinationName: string;
   autoTriggered?: boolean;
 }): Promise<{ payoutId: string }> {
-  if (params.amountCentavos < 10000) {
+  if (!walletPayoutsEnabled()) {
+    throw new WalletError(
+      "Payouts are not available yet — your balance stays safe in your wallet.",
+      "PAYOUTS_DISABLED"
+    );
+  }
+  if (!Number.isInteger(params.amountCentavos) || params.amountCentavos < 10000) {
     throw new WalletError("Minimum payout is ₱100.", "INVALID_AMOUNT");
   }
 
@@ -390,17 +417,21 @@ export async function requestTenantPayout(params: {
       .limit(1);
     if (!tenant) throw new WalletError("Shop not found.", "INVALID_AMOUNT");
 
-    const walletSettings = resolveWalletSettings(
-      (tenant.settingsJson ?? {}) as Record<string, unknown>
-    );
-    if (!walletSettings.kycVerified) {
+    if (!(await latestKycApproved(tx, params.tenantId))) {
       throw new WalletError(
         "Complete KYC verification before requesting a payout.",
         "KYC_REQUIRED"
       );
     }
 
-    const wallet = await ensureTenantWallet(tx, params.tenantId);
+    await ensureTenantWallet(tx, params.tenantId);
+    // Lock the wallet so two concurrent requests can't both spend the balance.
+    const [wallet] = await tx
+      .select()
+      .from(tenantWallets)
+      .where(eq(tenantWallets.tenantId, params.tenantId))
+      .for("update");
+    if (!wallet) throw new WalletError("Wallet not found.", "INVALID_AMOUNT");
     const availableCentavos = toCentavos(wallet.availableBalance);
     if (params.amountCentavos > availableCentavos) {
       throw new WalletError("Insufficient available balance.", "INSUFFICIENT_BALANCE");
@@ -445,6 +476,8 @@ export async function requestTenantPayout(params: {
 
 /** Process queued payouts (simulated transfer — wire PayMongo/disbursement API here). */
 export async function processQueuedPayouts(limit = 50): Promise<number> {
+  // Simulated transfer: never mark payouts "completed" unless explicitly enabled.
+  if (!walletPayoutsEnabled()) return 0;
   const db = getDb();
   const queued = await db
     .select()
@@ -487,6 +520,7 @@ export async function processQueuedPayouts(limit = 50): Promise<number> {
 
 /** Auto-request payouts for tenants with auto-payout enabled and enough balance. */
 export async function processAutoPayouts(): Promise<number> {
+  if (!walletPayoutsEnabled()) return 0;
   const db = getDb();
   const minCentavos = minAutoPayoutCentavos();
   const activeTenants = await db
@@ -502,7 +536,8 @@ export async function processAutoPayouts(): Promise<number> {
     const settings = resolveWalletSettings(
       (tenant.settingsJson ?? {}) as Record<string, unknown>
     );
-    if (!settings.autoPayoutEnabled || !settings.kycVerified) continue;
+    if (!settings.autoPayoutEnabled) continue;
+    if (!(await latestKycApproved(db, tenant.id))) continue;
     if (!settings.payoutMethod || !settings.payoutAccount || !settings.payoutAccountName) {
       continue;
     }

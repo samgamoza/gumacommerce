@@ -10,6 +10,8 @@ export function KycSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
   const [verified, setVerified] = useState(false);
+  const [status, setStatus] = useState<string>("none");
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
   const [session, setSession] = useState<KycSessionRecord | null>(null);
   const [mobileUrl, setMobileUrl] = useState<string | null>(null);
   const [showFlow, setShowFlow] = useState(false);
@@ -26,6 +28,8 @@ export function KycSettingsPage() {
       return;
     }
     setVerified(data.verified === true);
+    setStatus(typeof data.status === "string" ? data.status : "none");
+    setRejectionReason(data.rejectionReason ?? null);
     setSession(data.session ?? null);
     setMobileUrl(data.mobileUrl ?? null);
     if (
@@ -56,11 +60,15 @@ export function KycSettingsPage() {
     setShowFlow(true);
   }
 
+  // Submitting queues the documents for review; it does not verify the shop.
   function handleVerified() {
-    setVerified(true);
     setShowFlow(false);
     void load();
   }
+
+  const underReview = status === "submitted";
+  const rejected = status === "rejected";
+  const canStart = !verified && !underReview && !showFlow;
 
   return (
     <SettingsPageLayout
@@ -80,6 +88,24 @@ export function KycSettingsPage() {
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
             <p className="font-semibold">Verified</p>
             <p className="mt-1">Your account is cleared for wallet payouts.</p>
+          </div>
+        ) : underReview ? (
+          <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+            <p className="font-semibold">Under review</p>
+            <p className="mt-1">
+              We received your documents
+              {session?.submittedAt
+                ? ` on ${new Date(session.submittedAt).toLocaleDateString("en-PH", { dateStyle: "medium" })}`
+                : ""}
+              . Our team usually reviews them within 1–2 business days.
+            </p>
+          </div>
+        ) : rejected ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+            <p className="font-semibold">Verification not approved</p>
+            <p className="mt-1">
+              {rejectionReason ?? "Your documents could not be verified."} Please submit again.
+            </p>
           </div>
         ) : (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -103,19 +129,19 @@ export function KycSettingsPage() {
           <li>• Desktop without a camera? Scan a QR code to finish on your phone.</li>
         </ul>
 
-        {!verified && !showFlow ? (
+        {canStart ? (
           <button
             type="button"
             onClick={startVerification}
             disabled={starting}
             className="mt-4 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
           >
-            {starting ? "Starting…" : "Start verification"}
+            {starting ? "Starting…" : rejected ? "Submit again" : "Start verification"}
           </button>
         ) : null}
       </SettingsCard>
 
-      {!verified && showFlow && session ? (
+      {!verified && !underReview && showFlow && session ? (
         <SettingsCard title="Complete verification">
           <KycVerificationFlow
             initialSession={session}

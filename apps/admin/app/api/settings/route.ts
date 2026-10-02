@@ -83,7 +83,6 @@ const patchSchema = z.object({
           payoutMethod: z.enum(["gcash", "maya", "bank"]).optional(),
           payoutAccount: z.string().min(5).max(64).optional(),
           payoutAccountName: z.string().min(2).max(120).optional(),
-          kycVerified: z.boolean().optional(),
         })
         .optional(),
       payments: z

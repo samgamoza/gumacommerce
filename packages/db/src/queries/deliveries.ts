@@ -1,7 +1,8 @@
 import { desc, eq } from "drizzle-orm";
 import { getDb } from "../client";
 import { deliveries, deliveryQuotes, orderStatusHistory, orders } from "../schema/index";
-import type { OrderStatus } from "./orders";
+import type { OrderStatus } from "./order-status";
+import { transitionOrderStatus } from "./order-lifecycle";
 
 export interface RecordDeliveryQuoteInput {
   tenantId: string;
@@ -136,48 +137,25 @@ export interface OrderDeliveryInfo {
 }
 
 /**
- * Courier-driven status update. The courier webhook is ground truth for the
- * physical delivery, so this bypasses the seller-side transition matrix but
- * never moves an order backwards or out of a terminal state.
+ * Courier-driven status update. Delegates to the order lifecycle service with
+ * source "courier": forward-only, never out of a terminal state, and the same
+ * COD/wallet side effects as a seller marking the order delivered.
+ *
+ * Courier cancellations are NOT order cancellations (the seller rebooks), so
+ * only out_for_delivery / delivered are accepted here.
  */
 export async function advanceOrderStatusFromDelivery(
   orderId: string,
-  nextStatus: Extract<OrderStatus, "out_for_delivery" | "delivered" | "cancelled">,
+  nextStatus: Extract<OrderStatus, "out_for_delivery" | "delivered">,
   note: string
 ): Promise<boolean> {
-  const db = getDb();
-  const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
-  if (!order) return false;
-
-  const rank: Record<string, number> = {
-    pending_payment: 0,
-    paid: 1,
-    accepted: 2,
-    preparing: 3,
-    ready_for_pickup: 4,
-    out_for_delivery: 5,
-    delivered: 6,
-    cancelled: 99,
-    refunded: 99,
-  };
-  const current = rank[order.status] ?? 0;
-  const next = rank[nextStatus] ?? 0;
-  if (current >= 99) return false;
-  if (nextStatus !== "cancelled" && next <= current) return false;
-
-  const now = new Date();
-  await db
-    .update(orders)
-    .set({
-      status: nextStatus,
-      ...(nextStatus === "delivered" ? { completedAt: now } : {}),
-      ...(nextStatus === "delivered" && order.paymentMethod === "cod"
-        ? { paymentStatus: "paid" as const, paidAt: now }
-        : {}),
-    })
-    .where(eq(orders.id, orderId));
-  await db.insert(orderStatusHistory).values({ orderId, status: nextStatus, note });
-  return true;
+  const result = await transitionOrderStatus({
+    orderId,
+    to: nextStatus,
+    source: "courier",
+    note,
+  });
+  return result.changed;
 }
 
 export interface OrderForDeliveryBooking {

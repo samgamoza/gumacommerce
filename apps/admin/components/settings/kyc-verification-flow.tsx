@@ -73,7 +73,8 @@ export function KycVerificationFlow({
 
   useEffect(() => {
     if (!session) return;
-    if (session.status === "approved") onVerified();
+    // Finished on the phone (or already reviewed) → hand back to the status card.
+    if (session.status === "submitted" || session.status === "approved") onVerified();
   }, [session, onVerified]);
 
   useEffect(() => {

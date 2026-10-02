@@ -67,6 +67,9 @@ export async function submitManualPaymentReference(params: {
     .limit(1);
   if (!order) return { ok: false, error: "Order not found." };
   if (order.paymentStatus === "paid") return { ok: true };
+  if (order.status === "cancelled" || order.status === "refunded") {
+    return { ok: false, error: "This order was closed. Contact the shop if you already paid." };
+  }
 
   const [txn] = await db
     .select()
@@ -117,7 +120,11 @@ export async function submitManualPaymentReference(params: {
   return { ok: true };
 }
 
-/** Seller confirms a direct e-wallet / bank transfer. Idempotent. */
+/**
+ * Seller confirms a direct e-wallet / bank transfer.
+ * Idempotent and race-safe (order row locked for the whole update). Refuses
+ * orders that were cancelled/refunded — the seller should refund those instead.
+ */
 export async function confirmManualOrderPayment(params: {
   tenantId: string;
   orderId: string;
@@ -125,88 +132,90 @@ export async function confirmManualOrderPayment(params: {
   note?: string;
 }): Promise<{ ok: boolean; error?: string; orderNumber?: string; transitioned?: boolean }> {
   const db = getDb();
-  const [order] = await db
-    .select()
-    .from(orders)
-    .where(and(eq(orders.id, params.orderId), eq(orders.tenantId, params.tenantId)))
-    .limit(1);
-  if (!order) return { ok: false, error: "Order not found." };
-  if (order.paymentMethod === "cod") {
-    return { ok: false, error: "COD orders are not confirmed via e-wallet payment." };
-  }
+  const result = await db.transaction(async (tx) => {
+    const [order] = await tx
+      .select()
+      .from(orders)
+      .where(and(eq(orders.id, params.orderId), eq(orders.tenantId, params.tenantId)))
+      .limit(1)
+      .for("update");
+    if (!order) return { ok: false, error: "Order not found." };
+    if (order.paymentMethod === "cod") {
+      return { ok: false, error: "COD orders are not confirmed via e-wallet payment." };
+    }
+    if (order.status === "cancelled" || order.status === "refunded") {
+      return {
+        ok: false,
+        error: "This order was already closed. If the buyer paid, return the money directly.",
+      };
+    }
+    if (order.paymentStatus === "paid") {
+      return { ok: true, orderNumber: order.orderNumber, transitioned: false };
+    }
 
-  const now = new Date();
-  let transitioned = false;
-
-  if (order.status === "pending_payment") {
-    await db
-      .update(orders)
-      .set({ status: "paid", paymentStatus: "paid", paidAt: now })
-      .where(eq(orders.id, order.id));
-    await db.insert(orderStatusHistory).values({
-      orderId: order.id,
-      status: "paid",
-      note: params.note ?? "Payment confirmed by seller (direct e-wallet)",
-      actorId: params.actorId,
-    });
-    transitioned = true;
-  } else if (order.paymentStatus !== "paid") {
-    await db
-      .update(orders)
-      .set({ paymentStatus: "paid", paidAt: now })
-      .where(eq(orders.id, order.id));
-    transitioned = true;
-  }
-
-  const [txn] = await db
-    .select()
-    .from(paymentTransactions)
-    .where(
-      and(
-        eq(paymentTransactions.orderId, order.id),
-        eq(paymentTransactions.gateway, "manual")
-      )
-    )
-    .limit(1);
-
-  if (txn) {
-    await db
-      .update(paymentTransactions)
-      .set({
+    const now = new Date();
+    if (order.status === "pending_payment") {
+      await tx
+        .update(orders)
+        .set({ status: "paid", paymentStatus: "paid", paidAt: now })
+        .where(eq(orders.id, order.id));
+      await tx.insert(orderStatusHistory).values({
+        orderId: order.id,
         status: "paid",
+        note: params.note ?? "Payment confirmed by seller (direct e-wallet)",
+        actorId: params.actorId,
+      });
+    } else {
+      await tx
+        .update(orders)
+        .set({ paymentStatus: "paid", paidAt: now })
+        .where(eq(orders.id, order.id));
+    }
+
+    const [txn] = await tx
+      .select()
+      .from(paymentTransactions)
+      .where(
+        and(eq(paymentTransactions.orderId, order.id), eq(paymentTransactions.gateway, "manual"))
+      )
+      .limit(1);
+
+    const confirmation = { confirmedAt: now.toISOString(), confirmedBy: params.actorId ?? null };
+    if (txn) {
+      await tx
+        .update(paymentTransactions)
+        .set({
+          status: "paid",
+          paidAt: now,
+          rawWebhookJson: {
+            ...(typeof txn.rawWebhookJson === "object" && txn.rawWebhookJson
+              ? (txn.rawWebhookJson as object)
+              : {}),
+            ...confirmation,
+          },
+        })
+        .where(eq(paymentTransactions.id, txn.id));
+    } else {
+      await tx.insert(paymentTransactions).values({
+        orderId: order.id,
+        tenantId: order.tenantId,
+        gateway: "manual",
+        gatewayIntentId: `manual_${order.id}`,
+        amount: order.total,
+        status: "paid",
+        methodType: order.paymentMethod,
         paidAt: now,
-        rawWebhookJson: {
-          ...(typeof txn.rawWebhookJson === "object" && txn.rawWebhookJson
-            ? (txn.rawWebhookJson as object)
-            : {}),
-          confirmedAt: now.toISOString(),
-          confirmedBy: params.actorId ?? null,
-        },
-      })
-      .where(eq(paymentTransactions.id, txn.id));
-  } else {
-    await db.insert(paymentTransactions).values({
-      orderId: order.id,
-      tenantId: order.tenantId,
-      gateway: "manual",
-      gatewayIntentId: `manual_${order.id}`,
-      amount: order.total,
-      status: "paid",
-      methodType: order.paymentMethod,
-      paidAt: now,
-      rawWebhookJson: {
-        adapter: "manual_ewallet",
-        confirmedAt: now.toISOString(),
-        confirmedBy: params.actorId ?? null,
-      },
-    });
-  }
+        rawWebhookJson: { adapter: "manual_ewallet", ...confirmation },
+      });
+    }
 
-  if (transitioned) {
-    await creditSaleForOrder(order.id);
-  }
+    return { ok: true, orderNumber: order.orderNumber, transitioned: true };
+  });
 
-  return { ok: true, orderNumber: order.orderNumber, transitioned };
+  if (result.ok && result.transitioned) {
+    await creditSaleForOrder(params.orderId);
+  }
+  return result;
 }
 
 export async function getManualPaymentMetaForOrder(

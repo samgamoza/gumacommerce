@@ -1,19 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { OrderError, updateOrderStatusForTenant } from "@gumakart/db";
+import { OrderError, SELLER_SETTABLE_STATUSES, updateOrderStatusForTenant } from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 const patchSchema = z.object({
-  status: z.enum([
-    "paid",
-    "accepted",
-    "preparing",
-    "ready_for_pickup",
-    "out_for_delivery",
-    "delivered",
-    "cancelled",
-    "refunded",
-  ]),
+  // "paid" comes only from payment confirmation, "refunded" only from the
+  // refund endpoint — a seller can't set either by hand.
+  status: z.enum(SELLER_SETTABLE_STATUSES),
   note: z.string().trim().max(500).optional(),
 });
 

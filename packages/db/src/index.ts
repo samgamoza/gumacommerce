@@ -145,7 +145,6 @@ export {
   getOrderPaymentForRefund,
   listOrdersForTenant,
   markOrderPaidByIntent,
-  markOrderRefunded,
   markPaymentFailedByIntent,
   recordPaymentIntent,
   updateOrderStatusForTenant,
@@ -160,6 +159,18 @@ export {
   type OrderTrackingDelivery,
   type TenantOrderListItem,
 } from "./queries/orders";
+export {
+  transitionOrderStatus,
+  refundOrder,
+  expireUnpaidOrders,
+  restockOrderInTx,
+  SELLER_SETTABLE_STATUSES,
+  DEFAULT_UNPAID_EXPIRY_HOURS,
+  type TransitionSource,
+  type TransitionResult,
+  type GatewayRefundRequest,
+  type RefundOrderResult,
+} from "./queries/order-lifecycle";
 export {
   persistDomainEvent,
   listDomainEventsForTenant,
@@ -375,6 +386,7 @@ export {
   resolveWalletSettings,
   creditSaleForOrder,
   WalletError,
+  walletPayoutsEnabled,
   type TenantWalletSummary,
   type WalletLedgerItem,
   type TenantPayoutItem,
@@ -397,6 +409,8 @@ export {
   updateKycSession,
   upsertKycDocument,
   submitKycSession,
+  reviewKycSession,
+  isTenantKycApproved,
   validateKycSubmission,
   getKycDocumentStorageKey,
   getKycDocumentByToken,
