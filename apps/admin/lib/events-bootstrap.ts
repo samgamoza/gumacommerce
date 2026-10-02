@@ -2,8 +2,8 @@
  * Wire domain event persistence once per Node process.
  * Import from API routes that emit events.
  */
-import { persistDomainEvent } from "@guma-commerce/db";
-import { registerEventPersistence } from "@guma-commerce/events";
+import { persistDomainEvent } from "@gumakart/db";
+import { registerEventPersistence } from "@gumakart/events";
 
 let wired = false;
 

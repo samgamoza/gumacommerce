@@ -4,7 +4,7 @@ import {
   getSessionFromRequest,
   getUserSessionById,
   sessionCookieHeader,
-} from "@guma-commerce/auth";
+} from "@gumakart/auth";
 
 export async function GET(request: Request) {
   const session = await getSessionFromRequest(request);

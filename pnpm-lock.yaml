@@ -20,28 +20,28 @@ importers:
 
   apps/admin:
     dependencies:
-      '@guma-commerce/ai':
+      '@gumakart/ai':
         specifier: workspace:*
         version: link:../../packages/ai
-      '@guma-commerce/auth':
+      '@gumakart/auth':
         specifier: workspace:*
         version: link:../../packages/auth
-      '@guma-commerce/db':
+      '@gumakart/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@guma-commerce/events':
+      '@gumakart/events':
         specifier: workspace:*
         version: link:../../packages/events
-      '@guma-commerce/plans':
+      '@gumakart/plans':
         specifier: workspace:*
         version: link:../../packages/plans
-      '@guma-commerce/services':
+      '@gumakart/services':
         specifier: workspace:*
         version: link:../../packages/services
-      '@guma-commerce/storefront-themes':
+      '@gumakart/storefront-themes':
         specifier: workspace:*
         version: link:../../packages/storefront-themes
-      '@guma-commerce/ui':
+      '@gumakart/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@imgly/background-removal-node':
@@ -99,25 +99,25 @@ importers:
 
   apps/platform:
     dependencies:
-      '@guma-commerce/ai':
+      '@gumakart/ai':
         specifier: workspace:*
         version: link:../../packages/ai
-      '@guma-commerce/auth':
+      '@gumakart/auth':
         specifier: workspace:*
         version: link:../../packages/auth
-      '@guma-commerce/db':
+      '@gumakart/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@guma-commerce/plans':
+      '@gumakart/plans':
         specifier: workspace:*
         version: link:../../packages/plans
-      '@guma-commerce/services':
+      '@gumakart/services':
         specifier: workspace:*
         version: link:../../packages/services
-      '@guma-commerce/storefront-themes':
+      '@gumakart/storefront-themes':
         specifier: workspace:*
         version: link:../../packages/storefront-themes
-      '@guma-commerce/ui':
+      '@gumakart/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       lucide-react:
@@ -160,25 +160,25 @@ importers:
 
   apps/web:
     dependencies:
-      '@guma-commerce/ai':
+      '@gumakart/ai':
         specifier: workspace:*
         version: link:../../packages/ai
-      '@guma-commerce/db':
+      '@gumakart/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@guma-commerce/events':
+      '@gumakart/events':
         specifier: workspace:*
         version: link:../../packages/events
-      '@guma-commerce/plans':
+      '@gumakart/plans':
         specifier: workspace:*
         version: link:../../packages/plans
-      '@guma-commerce/services':
+      '@gumakart/services':
         specifier: workspace:*
         version: link:../../packages/services
-      '@guma-commerce/storefront-themes':
+      '@gumakart/storefront-themes':
         specifier: workspace:*
         version: link:../../packages/storefront-themes
-      '@guma-commerce/ui':
+      '@gumakart/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@radix-ui/react-accordion':
@@ -266,7 +266,7 @@ importers:
 
   packages/ai:
     dependencies:
-      '@guma-commerce/plans':
+      '@gumakart/plans':
         specifier: workspace:*
         version: link:../plans
       openai:
@@ -288,10 +288,10 @@ importers:
 
   packages/auth:
     dependencies:
-      '@guma-commerce/db':
+      '@gumakart/db':
         specifier: workspace:*
         version: link:../db
-      '@guma-commerce/storefront-themes':
+      '@gumakart/storefront-themes':
         specifier: workspace:*
         version: link:../storefront-themes
       bcryptjs:
@@ -322,7 +322,7 @@ importers:
 
   packages/db:
     dependencies:
-      '@guma-commerce/plans':
+      '@gumakart/plans':
         specifier: workspace:*
         version: link:../plans
       '@jobuntux/psgc':

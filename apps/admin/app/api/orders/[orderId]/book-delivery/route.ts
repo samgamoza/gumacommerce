@@ -6,14 +6,14 @@ import {
   getTenantOwnerContact,
   getTenantSettings,
   recordDeliveryQuote,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import {
   createLogger,
   dispatch,
   geocodeAddress,
   IntegrationNotConfiguredError,
   type DeliveryProviderId,
-} from "@guma-commerce/services";
+} from "@gumakart/services";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 const log = createLogger("orders:book-delivery");

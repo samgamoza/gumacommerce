@@ -11,7 +11,7 @@ import {
   triFlagToBoolOverride,
   updateStoreDna,
   saveThemeDraft,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import {
   brandGuardHasErrors,
   buildStoreDNA,
@@ -25,10 +25,10 @@ import {
   selectionFitsSellerCategory,
   SHOP_BUSINESS_CATEGORIES,
   validateBrandGuardPersonalize,
-} from "@guma-commerce/storefront-themes";
+} from "@gumakart/storefront-themes";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 import { mergeCuratedWithStock, resolveStockInstall } from "@/lib/template-stock-launch";
-import { canChangeStorefrontTemplateAfterPublish } from "@guma-commerce/plans";
+import { canChangeStorefrontTemplateAfterPublish } from "@gumakart/plans";
 
 async function templateSwitchOverrides() {
   const ops = await getPlatformOpsSettings();
@@ -414,8 +414,8 @@ export async function POST(request: Request) {
     }
 
     if (body.action === "publish") {
-      const { resolveApprovalLevel } = await import("@guma-commerce/ai");
-      const { publishStorefrontWithApproval } = await import("@guma-commerce/db");
+      const { resolveApprovalLevel } = await import("@gumakart/ai");
+      const { publishStorefrontWithApproval } = await import("@gumakart/db");
       const approvalLevel = resolveApprovalLevel(
         "ai.publish.store",
         state.subscriptionPlan
@@ -431,7 +431,7 @@ export async function POST(request: Request) {
 
       const { ensureEventsWired } = await import("@/lib/events-bootstrap");
       ensureEventsWired();
-      const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+      const { emitDomainEvent, EVENT_NAMES } = await import("@gumakart/events");
       await emitDomainEvent({
         name: EVENT_NAMES.THEME_CHANGE_APPROVED,
         data: {

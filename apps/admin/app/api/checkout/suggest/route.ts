@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { resolveApprovalLevel } from "@guma-commerce/ai";
+import { resolveApprovalLevel } from "@gumakart/ai";
 import {
   createChangeRequest,
   getTenantCheckoutState,
   normalizeCheckoutJson,
   recordAiUsage,
   saveTenantCheckoutDraft,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 import { assertAiQuota } from "@/lib/agents/usage-gate";
 
@@ -86,7 +86,7 @@ export async function POST() {
 
     const { ensureEventsWired } = await import("@/lib/events-bootstrap");
     ensureEventsWired();
-    const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+    const { emitDomainEvent, EVENT_NAMES } = await import("@gumakart/events");
     await emitDomainEvent({
       name: EVENT_NAMES.CHECKOUT_UPDATED,
       data: {

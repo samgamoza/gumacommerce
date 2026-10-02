@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { resolveApprovalLevel } from "@guma-commerce/ai";
+import { resolveApprovalLevel } from "@gumakart/ai";
 import {
   createChangeRequest,
   getTenantCheckoutState,
   normalizeCheckoutJson,
   saveTenantCheckoutDraft,
   submitChangeRequest,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 const bodySchema = z.object({
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
 
     const { ensureEventsWired } = await import("@/lib/events-bootstrap");
     ensureEventsWired();
-    const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+    const { emitDomainEvent, EVENT_NAMES } = await import("@gumakart/events");
     await emitDomainEvent({
       name: EVENT_NAMES.CHECKOUT_UPDATED,
       data: {

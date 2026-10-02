@@ -16,7 +16,7 @@ import {
   rollbackCheckoutChangeRequest,
   publishShippingChangeRequest,
   rollbackShippingChangeRequest,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 export async function GET(request: Request) {
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
       });
       const { ensureEventsWired } = await import("@/lib/events-bootstrap");
       ensureEventsWired();
-      const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+      const { emitDomainEvent, EVENT_NAMES } = await import("@gumakart/events");
       if (requestRow.domain === "catalog") {
         await emitDomainEvent({
           name: EVENT_NAMES.CATALOG_CHANGE_APPROVED,
@@ -181,7 +181,7 @@ export async function POST(request: Request) {
         });
         const { ensureEventsWired } = await import("@/lib/events-bootstrap");
         ensureEventsWired();
-        const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+        const { emitDomainEvent, EVENT_NAMES } = await import("@gumakart/events");
         await emitDomainEvent({
           name: EVENT_NAMES.CATALOG_CHANGE_APPROVED,
           data: {
@@ -211,7 +211,7 @@ export async function POST(request: Request) {
         });
         const { ensureEventsWired } = await import("@/lib/events-bootstrap");
         ensureEventsWired();
-        const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+        const { emitDomainEvent, EVENT_NAMES } = await import("@gumakart/events");
         await emitDomainEvent({
           name: EVENT_NAMES.PRICING_CHANGE_APPROVED,
           data: {
@@ -245,7 +245,7 @@ export async function POST(request: Request) {
         });
         const { ensureEventsWired } = await import("@/lib/events-bootstrap");
         ensureEventsWired();
-        const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+        const { emitDomainEvent, EVENT_NAMES } = await import("@gumakart/events");
         await emitDomainEvent({
           name: EVENT_NAMES.SEO_PUBLISHED,
           data: {
@@ -275,7 +275,7 @@ export async function POST(request: Request) {
         });
         const { ensureEventsWired } = await import("@/lib/events-bootstrap");
         ensureEventsWired();
-        const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+        const { emitDomainEvent, EVENT_NAMES } = await import("@gumakart/events");
         await emitDomainEvent({
           name: EVENT_NAMES.CHECKOUT_PUBLISHED,
           data: {
@@ -304,7 +304,7 @@ export async function POST(request: Request) {
         });
         const { ensureEventsWired } = await import("@/lib/events-bootstrap");
         ensureEventsWired();
-        const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+        const { emitDomainEvent, EVENT_NAMES } = await import("@gumakart/events");
         await emitDomainEvent({
           name: EVENT_NAMES.SHIPPING_PUBLISHED,
           data: {
@@ -339,7 +339,7 @@ export async function POST(request: Request) {
       });
       const { ensureEventsWired } = await import("@/lib/events-bootstrap");
       ensureEventsWired();
-      const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+      const { emitDomainEvent, EVENT_NAMES } = await import("@gumakart/events");
       await emitDomainEvent({
         name: EVENT_NAMES.THEME_PUBLISHED,
         data: {
@@ -366,7 +366,7 @@ export async function POST(request: Request) {
         });
         const { ensureEventsWired } = await import("@/lib/events-bootstrap");
         ensureEventsWired();
-        const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+        const { emitDomainEvent, EVENT_NAMES } = await import("@gumakart/events");
         await emitDomainEvent({
           name: EVENT_NAMES.SEO_ROLLED_BACK,
           data: {
@@ -386,7 +386,7 @@ export async function POST(request: Request) {
         });
         const { ensureEventsWired } = await import("@/lib/events-bootstrap");
         ensureEventsWired();
-        const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+        const { emitDomainEvent, EVENT_NAMES } = await import("@gumakart/events");
         await emitDomainEvent({
           name: EVENT_NAMES.CHECKOUT_ROLLED_BACK,
           data: {
@@ -406,7 +406,7 @@ export async function POST(request: Request) {
         });
         const { ensureEventsWired } = await import("@/lib/events-bootstrap");
         ensureEventsWired();
-        const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+        const { emitDomainEvent, EVENT_NAMES } = await import("@gumakart/events");
         await emitDomainEvent({
           name: EVENT_NAMES.SHIPPING_ROLLED_BACK,
           data: {
@@ -434,7 +434,7 @@ export async function POST(request: Request) {
       });
       const { ensureEventsWired } = await import("@/lib/events-bootstrap");
       ensureEventsWired();
-      const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+      const { emitDomainEvent, EVENT_NAMES } = await import("@gumakart/events");
       await emitDomainEvent({
         name: EVENT_NAMES.THEME_ROLLED_BACK,
         data: {

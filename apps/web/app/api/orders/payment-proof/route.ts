@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getOrderForTracking, getTenantIdBySlug } from "@guma-commerce/db";
-import { clientIpFrom, rateLimit } from "@guma-commerce/services";
+import { getOrderForTracking, getTenantIdBySlug } from "@gumakart/db";
+import { clientIpFrom, rateLimit } from "@gumakart/services";
 import { savePaymentProofImage } from "@/lib/payment-proof-uploads";
 
 /**

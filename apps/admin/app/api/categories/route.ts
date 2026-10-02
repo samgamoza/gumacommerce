@@ -4,7 +4,7 @@ import {
   createCategoryForTenant,
   deleteCategoryForTenant,
   listCategoriesForTenant,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 const createSchema = z.object({

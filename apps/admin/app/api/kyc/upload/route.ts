@@ -5,7 +5,7 @@ import {
   getKycSessionByToken,
   upsertKycDocument,
   type KycDocType,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 import { saveKycImage } from "@/lib/kyc-uploads";
 

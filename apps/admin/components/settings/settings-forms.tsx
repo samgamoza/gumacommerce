@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { TenantSettingsRecord } from "@guma-commerce/db";
-import { Button, Card } from "@guma-commerce/ui";
+import type { TenantSettingsRecord } from "@gumakart/db";
+import { Button, Card } from "@gumakart/ui";
 
 export function useTenantSettings() {
   const [settings, setSettings] = useState<TenantSettingsRecord | null>(null);

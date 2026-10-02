@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { AuthError, completeGoogleShopSetup, sessionCookieHeader } from "@guma-commerce/auth";
+import { AuthError, completeGoogleShopSetup, sessionCookieHeader } from "@gumakart/auth";
 import { getSessionFromRequest } from "@/lib/session";
 
 const schema = z.object({
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     if (user.tenantId && user.tenantSlug) {
       const { ensureEventsWired } = await import("@/lib/events-bootstrap");
       ensureEventsWired();
-      const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+      const { emitDomainEvent, EVENT_NAMES } = await import("@gumakart/events");
       await emitDomainEvent({
         name: EVENT_NAMES.TENANT_CREATED,
         data: {

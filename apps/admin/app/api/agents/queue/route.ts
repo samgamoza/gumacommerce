@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { updateContentQueueStatus } from "@guma-commerce/db";
+import { updateContentQueueStatus } from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 const patchSchema = z.object({

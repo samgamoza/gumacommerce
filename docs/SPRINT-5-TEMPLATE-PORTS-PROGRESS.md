@@ -34,7 +34,7 @@ Port the four Phase 4 priority Free Bundle 2023 templates into live Guma React s
 ## Verify
 
 ```bash
-pnpm --filter @guma-commerce/storefront-themes exec tsc --noEmit
+pnpm --filter @gumakart/storefront-themes exec tsc --noEmit
 pnpm --filter web exec tsc --noEmit
 # Dev: http://localhost:3010/aircon-demo | /carserv-demo | /motto-demo | /studio-demo
 ```

@@ -12,7 +12,7 @@
 
 Handbook v1.2 is a strong **enterprise blueprint**, but it describes a heavier and partly different system than the one in this repo. It is stamped "Approved for Development"; **do not read that as "implement verbatim."** Adopt its cheap, high-leverage *patterns* (AI permissions + draft→approve→publish, events, audit, DDD-as-modules). Defer its heavy *infrastructure* (Prisma/RLS, ClickHouse, pgvector-at-scale, Meili/Typesense, plugin marketplace, Vault) until a real scale or compliance trigger exists — adopting it wholesale would contradict the Handbook's own stated philosophy of *cost-efficiency, freemium, simplicity*.
 
-**As of 2026-07-13:** Crown-jewel CR rails cover theme/catalog/pricing/SEO/checkout/shipping; plan catalog is unified (`@guma-commerce/plans`); priority Free Bundle ports (aircon/carserv/motto/studio) are live. Remaining gaps are Workstation UX convergence, migration reconcile, suspension enforcement, and demand-driven template scale — not a stack rewrite.
+**As of 2026-07-13:** Crown-jewel CR rails cover theme/catalog/pricing/SEO/checkout/shipping; plan catalog is unified (`@gumakart/plans`); priority Free Bundle ports (aircon/carserv/motto/studio) are live. Remaining gaps are Workstation UX convergence, migration reconcile, suspension enforcement, and demand-driven template scale — not a stack rewrite.
 
 The platform remains **ahead of the Handbook on commerce/logistics** and **closer on AI-architecture** than at the 2026-07-12 assessment; template scale is **18 live ports** vs 100+ marketed.
 
@@ -31,7 +31,7 @@ Verified against `package.json` files and `packages/db/src/schema/index.ts` (ame
 | Meili/Typesense search | none | Deferred — Postgres FTS first |
 | 100+ templates, AI auto-personalizes | **18** live React ports; 100 *catalogued*; priority queue **ported** | Scale ongoing; Launch Top 3 scoring exists |
 | Unified AI Workstation (diff/approve) | **Approvals** + Workspace modules; Shop Builder / Agents still separate entry points | Converge UX — not greenfield |
-| Plans FREE / PRO / ADVANCE | **IDs** `free`/`growth`/`pro`; **labels** Free/Pro/Advance via `@guma-commerce/plans` | **Resolved** (ADR D4 / Sprint 4) |
+| Plans FREE / PRO / ADVANCE | **IDs** `free`/`growth`/`pro`; **labels** Free/Pro/Advance via `@gumakart/plans` | **Resolved** (ADR D4 / Sprint 4) |
 
 ---
 
@@ -45,7 +45,7 @@ Legend: ✅ Adopt · 🟡 Adapt (scoped) · ⏸ Defer · ⛔ Reject-for-now · �
 | **§3 Event-driven (Inngest)** | ✔ **Thin landed** | `packages/events` + Domain.Event.Vn for landed domains. Grow handlers; do not invent a second bus. |
 | **§4 DDD bounded contexts** | ✅ **Adopt as modules** | Folder/interface boundaries + docs. Do **not** turn into services. |
 | **§10 Audit / compliance** | ✔ **Extended** | `platform_audit_log` shape reused for AI/seller publish actions. |
-| **§2.2 Cost-efficiency principles** | ✔ **Canonicalized** | Quotas/models in `@guma-commerce/plans` (`PLAN_AI_LIMITS`); soft budget degrade. |
+| **§2.2 Cost-efficiency principles** | ✔ **Canonicalized** | Quotas/models in `@gumakart/plans` (`PLAN_AI_LIMITS`); soft budget degrade. |
 | **Plan naming FREE/PRO/ADVANCE** | ✔ **Mapped** | FREE→`free`, PRO→`growth`, ADVANCE→`pro`; UI labels Free/Pro/Advance. |
 | **§9 Media pipeline** | 🟡 **Partial** | Sharp/WebP optimization is a cheap win; virus-scan / video / AI alt-text defer. |
 | **§6 Memory (multi-tier, pgvector)** | 🟡 **Defer heavy parts** | Redis short-term + structured tenant memory now; pgvector only when template-suggest needs it. |
@@ -70,11 +70,11 @@ Legend: ✅ Adopt · 🟡 Adapt (scoped) · ⏸ Defer · ⛔ Reject-for-now · �
 
 ---
 
-## 5. Strategic flag — Guma Commerce vs "Guma OS"
+## 5. Strategic flag — Guma Kart vs "Guma OS"
 
-There is a parallel initiative — **"Guma OS," an autonomous AI Business OS** — with its own approved handbook, a separate `guma-os/` monorepo, and a **Redis-Streams OS bus**. Handbook v1.2 here independently proposes **Inngest + Redis Streams** as *Guma Commerce's* event bus. That risks **two event buses and two "constitutions"** over overlapping ground.
+There is a parallel initiative — **"Guma OS," an autonomous AI Business OS** — with its own approved handbook, a separate `guma-os/` monorepo, and a **Redis-Streams OS bus**. Handbook v1.2 here independently proposes **Inngest + Redis Streams** as *Guma Kart's* event bus. That risks **two event buses and two "constitutions"** over overlapping ground.
 
-**Action:** before investing in either event architecture beyond commerce side-effects, confirm **which document is the source of truth and where Guma Commerce ends and Guma OS begins.** Tracked in ADR-0001 D8. Until resolved, `packages/events` stays **commerce-scoped**.
+**Action:** before investing in either event architecture beyond commerce side-effects, confirm **which document is the source of truth and where Guma Kart ends and Guma OS begins.** Tracked in ADR-0001 D8. Until resolved, `packages/events` stays **commerce-scoped**.
 
 ---
 
@@ -82,7 +82,7 @@ There is a parallel initiative — **"Guma OS," an autonomous AI Business OS** �
 
 ### Done (Sprints / crown jewel)
 
-1. ✔ Unify plan catalog — ADR D4 / `@guma-commerce/plans` (Sprint 4)
+1. ✔ Unify plan catalog — ADR D4 / `@gumakart/plans` (Sprint 4)
 2. ✔ Crown jewel Phases 1–3 + Phase 4 domains (theme, catalog, pricing, SEO, checkout, shipping)
 3. ✔ Thin `packages/events` for landed domains
 4. ✔ Priority template ports — aircon → carserv → motto → studio (Sprint 5)

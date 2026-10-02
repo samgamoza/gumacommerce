@@ -33,10 +33,10 @@ import {
   type TenantStatus,
   type TriFlag,
   type UserStatus,
-} from "@guma-commerce/db";
-import { createSupportAccessGrantToken } from "@guma-commerce/auth";
-import { curateTemplateSkins } from "@guma-commerce/ai";
-import { notifyHelpdeskAgentReply } from "@guma-commerce/services";
+} from "@gumakart/db";
+import { createSupportAccessGrantToken } from "@gumakart/auth";
+import { curateTemplateSkins } from "@gumakart/ai";
+import { notifyHelpdeskAgentReply } from "@gumakart/services";
 import {
   BRAND_PALETTES,
   defaultLiveTemplateForCategory,
@@ -46,7 +46,7 @@ import {
   previewImageForCategory,
   sellerFacingStockLabel,
   sellerLabelForStockKey,
-} from "@guma-commerce/storefront-themes";
+} from "@gumakart/storefront-themes";
 import { requireSuperAdminApi } from "@/lib/api-auth";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
@@ -292,7 +292,7 @@ export async function setActiveLandingAction(value: ActiveLanding): Promise<Acti
       actorEmail: session.email,
       action: "active_landing_changed",
       entityType: "platform_setting",
-      entityLabel: value === "frontend2" ? "Guma One.ai" : "GumaCommerce",
+      entityLabel: value === "frontend2" ? "Guma One.ai" : "GumaKart",
       metadata: { key: "active_landing", value },
     });
     revalidatePath("/frontends");

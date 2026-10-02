@@ -7,7 +7,7 @@
 ## One command
 
 ```powershell
-cd "D:\All Apps\gumacommerce"
+cd "D:\All Apps\gumakart"
 .\scripts\deploy-kart.ps1          # -SkipInstall / -SkipSecrets for quick re-deploys
 ```
 

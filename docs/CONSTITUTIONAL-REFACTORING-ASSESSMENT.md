@@ -4,7 +4,7 @@
 **Date:** 2026-07-12 (amended **2026-07-13**)  
 **Status:** Phase 0–3 + Crown Jewel Approvals MVP + Phase 4 breadth (SEO/Checkout/Shipping) + plan catalog (D4) + priority template ports landed  
 **Constitution source:** Cursor Master Prompt — GUMA ai-Commerce Constitutional Refactoring  
-**Codebase:** `D:\All Apps\gumacommerce`  
+**Codebase:** `D:\All Apps\gumakart`  
 **Companion docs:** `docs/CONSTITUTION.md`, `docs/ARCHITECTURE.md`, `docs/COMPREHENSIVE-HANDOFF-2026-07-12.md`, `docs/HANDBOOK-V1.2-ASSESSMENT.md`, Handbook v1.2
 
 ---
@@ -21,7 +21,7 @@ Every recommendation below is scored against that question.
 
 ## 1.1 Current state summary
 
-Guma Commerce is a **working modular monolith**: three Next.js 15 apps (`web`, `admin`, `platform`) sharing Drizzle-backed packages. It is **not** a Shopify clone in implementation — it is closer to a **storefront + seller admin + AI content tools** stack with strong PH commerce integrations (PayMongo, Lalamove, COD, wallet).
+Guma Kart is a **working modular monolith**: three Next.js 15 apps (`web`, `admin`, `platform`) sharing Drizzle-backed packages. It is **not** a Shopify clone in implementation — it is closer to a **storefront + seller admin + AI content tools** stack with strong PH commerce integrations (PayMongo, Lalamove, COD, wallet).
 
 | Layer | Current | Constitutional target |
 |-------|---------|---------------------|
@@ -53,7 +53,7 @@ Guma Commerce is a **working modular monolith**: three Next.js 15 apps (`web`, `
 6. **AI in wrong places** — Buyer chat + agent crons available on free tier (acceptable with quotas); no separation of “Launch = no LLM required” vs “Workspace = LLM.”
 7. **No event bus** — Side effects inline in routes/webhooks; blocks audit replay and loose coupling.
 8. **Domain boundaries implicit** — Packages exist but cross-import freely; no published domain APIs.
-9. **Plan / product naming** — ✔ Unified: IDs `free`/`growth`/`pro`; labels Free/Pro/Advance via `@guma-commerce/plans` (legacy `starter`/`sulit`/`advance` normalize at read).
+9. **Plan / product naming** — ✔ Unified: IDs `free`/`growth`/`pro`; labels Free/Pro/Advance via `@gumakart/plans` (legacy `starter`/`sulit`/`advance` normalize at read).
 
 ## 1.4 Alignment score (approximate)
 
@@ -127,7 +127,7 @@ The codebase **embodies the spirit** of the constitution (deterministic launch h
 
 **Goal:** Single source of truth before structural moves.
 
-- [x] Unify plan catalog (`free`/`growth`/`pro` IDs; Free/Pro/Advance labels) — `@guma-commerce/plans` (Sprint 4 / ADR D4)
+- [x] Unify plan catalog (`free`/`growth`/`pro` IDs; Free/Pro/Advance labels) — `@gumakart/plans` (Sprint 4 / ADR D4)
 - [x] Adopt constitution as `docs/CONSTITUTION.md` (+ ADR-0001)
 - [x] Add `ARCHITECTURE.md` domain map
 - [ ] Reconcile Drizzle migrations with Neon
@@ -216,7 +216,7 @@ The codebase **embodies the spirit** of the constitution (deterministic launch h
 **Principle:** Modular monolith — domains in `packages/`, experiences in `apps/`. No microservices until scale proves need.
 
 ```
-guma-commerce/
+gumakart/
 ├── apps/
 │   ├── web/                          # Buyer storefront + marketing
 │   │   └── app/
@@ -303,7 +303,7 @@ Experience layer mapping:
 
 | Domain | Owns tables / state | Public API surface | Emits events |
 |--------|---------------------|-------------------|--------------|
-| Identity | users, sessions | `@guma-commerce/auth` | User.Registered |
+| Identity | users, sessions | `@gumakart/auth` | User.Registered |
 | Tenancy | tenants, store_dna | `tenancy.service` | Tenant.Created, Merchant.Upgraded |
 | Templates | registry metadata | `recommendTemplates(dna)` | Template.Installed |
 | Storefront | renderers (code) | pattern dispatch | — |

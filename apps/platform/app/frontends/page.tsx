@@ -1,4 +1,4 @@
-import { getActiveLanding } from "@guma-commerce/db";
+import { getActiveLanding } from "@gumakart/db";
 import { requireSuperAdmin } from "@/lib/session";
 import { PlatformShell } from "@/components/platform-shell";
 import { Panel, SectionHeader } from "@/components/ui";

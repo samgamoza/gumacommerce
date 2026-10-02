@@ -21,7 +21,7 @@ export function isPushConfigured(): boolean {
 function configure(): boolean {
   if (!isPushConfigured()) return false;
   webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT ?? "mailto:support@gumacommerce.ph",
+    process.env.VAPID_SUBJECT ?? "mailto:support@guma.one",
     process.env.VAPID_PUBLIC_KEY!,
     process.env.VAPID_PRIVATE_KEY!
   );

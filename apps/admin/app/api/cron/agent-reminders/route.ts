@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
-import { PLAN_AI_LIMITS, normalizePlan } from "@guma-commerce/ai";
-import { createSemaphoreClient } from "@guma-commerce/services";
+import { PLAN_AI_LIMITS, normalizePlan } from "@gumakart/ai";
+import { createSemaphoreClient } from "@gumakart/services";
 import {
   getDb,
   getTenantOwnerContact,
@@ -9,7 +9,7 @@ import {
   listContentQueue,
   resolveAgentSettings,
   tenants,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 
 function isAuthorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET;

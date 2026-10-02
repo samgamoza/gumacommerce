@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
-import { getDb, tenants, users } from "@guma-commerce/db";
+import { getDb, tenants, users } from "@gumakart/db";
 import {
   createSessionToken,
   sessionCookieHeader,
   verifyPassword,
   type SessionUser,
-} from "@guma-commerce/auth";
+} from "@gumakart/auth";
 
 const loginSchema = z.object({
   email: z.string().email(),

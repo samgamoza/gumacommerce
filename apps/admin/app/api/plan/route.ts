@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getTenantDashboard, getTenantStorefrontSettings } from "@guma-commerce/db";
-import { PLAN_AI_LIMITS, normalizePlan } from "@guma-commerce/ai";
+import { getTenantDashboard, getTenantStorefrontSettings } from "@gumakart/db";
+import { PLAN_AI_LIMITS, normalizePlan } from "@gumakart/ai";
 import { getUsageSnapshot } from "@/lib/agents/usage-gate";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Flag, ShieldCheck } from "lucide-react";
-import { getModerationCounts, listModerationQueue } from "@guma-commerce/db";
+import { getModerationCounts, listModerationQueue } from "@gumakart/db";
 import { requireSuperAdmin } from "@/lib/session";
 import { PlatformShell } from "@/components/platform-shell";
 import { FilterBar } from "@/components/filter-bar";

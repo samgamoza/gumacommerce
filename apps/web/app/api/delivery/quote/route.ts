@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getTenantStorefrontBySlug } from "@guma-commerce/db";
-import { resolveShippingFee } from "@guma-commerce/db/shipping";
-import { clientIpFrom, rateLimit } from "@guma-commerce/services";
+import { getTenantStorefrontBySlug } from "@gumakart/db";
+import { resolveShippingFee } from "@gumakart/db/shipping";
+import { clientIpFrom, rateLimit } from "@gumakart/services";
 import { getCheckoutDeliveryQuote } from "@/lib/delivery-quote";
 import {
   computeDeliveryFee,

@@ -60,7 +60,7 @@ function ReadEnvFile($path) {
   return $map
 }
 
-if (-not (Test-Path "pnpm-workspace.yaml")) { throw "Run this from the repo root (D:\All Apps\gumacommerce)." }
+if (-not (Test-Path "pnpm-workspace.yaml")) { throw "Run this from the repo root (D:\All Apps\gumakart)." }
 
 $envMap = ReadEnvFile ".env"
 foreach ($fallback in @("E:\All Apps\Kuya Eddie\.env", "E:\All apps\Kuya Eddie\.env")) {
@@ -159,4 +159,4 @@ foreach ($path in @("/kart", "/")) {
   }
 }
 Write-Host "`nDone. Storefront + /kart revamp live at https://$Hostname  (Worker gumakart-web, R2 $Bucket)" -ForegroundColor Green
-Write-Host "Logs: pnpm --filter @guma-commerce/web exec wrangler tail"
+Write-Host "Logs: pnpm --filter @gumakart/web exec wrangler tail"

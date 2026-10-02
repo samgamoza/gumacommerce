@@ -205,7 +205,7 @@ export function resolveEffectiveModel(requested: LlmModelId): LlmModelId {
   return requested;
 }
 
-/** Mirrors @guma-commerce/services allowIntegrationMocks without a package cycle. */
+/** Mirrors @gumakart/services allowIntegrationMocks without a package cycle. */
 function allowLlmMocks(): boolean {
   if (process.env.NODE_ENV === "test" || process.env.GUMA_TEST_ADAPTERS === "true") {
     return true;

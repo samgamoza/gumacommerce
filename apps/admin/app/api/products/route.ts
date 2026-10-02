@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createProductForTenant, listProductsForTenant, markChangeRequestPublished, tryAutoActivateTenant } from "@guma-commerce/db";
+import { createProductForTenant, listProductsForTenant, markChangeRequestPublished, tryAutoActivateTenant } from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 export async function GET() {
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       });
       const { ensureEventsWired } = await import("@/lib/events-bootstrap");
       ensureEventsWired();
-      const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+      const { emitDomainEvent, EVENT_NAMES } = await import("@gumakart/events");
       await emitDomainEvent({
         name: EVENT_NAMES.CATALOG_CHANGE_APPROVED,
         data: {

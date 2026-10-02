@@ -1,4 +1,4 @@
-import type { ContentQueueItem, OrderInsights7d } from "@guma-commerce/db";
+import type { ContentQueueItem, OrderInsights7d } from "@gumakart/db";
 
 export interface DailyBriefing {
   headline: string;

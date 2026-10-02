@@ -1,5 +1,5 @@
 import { serve } from "inngest/next";
-import { inngest, inngestFunctions } from "@guma-commerce/events";
+import { inngest, inngestFunctions } from "@gumakart/events";
 import { ensureEventsWired } from "@/lib/events-bootstrap";
 
 ensureEventsWired();

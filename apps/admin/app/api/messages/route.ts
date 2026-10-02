@@ -4,7 +4,7 @@ import {
   listShopChatMessages,
   listShopChatSessions,
   saveShopChatMessage,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 export async function GET(request: Request) {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { activateTenantShop } from "@guma-commerce/db";
+import { activateTenantShop } from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 export async function POST() {

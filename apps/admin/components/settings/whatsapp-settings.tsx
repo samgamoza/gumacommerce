@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, ExternalLink, MessageCircle } from "lucide-react";
-import { Badge, Button } from "@guma-commerce/ui";
+import { Badge, Button } from "@gumakart/ui";
 import { SettingsShell } from "@/components/settings/settings-shell";
 import {
   SettingsActions,

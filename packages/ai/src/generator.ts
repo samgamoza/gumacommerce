@@ -50,7 +50,7 @@ const MOCK_OUTPUTS: Record<string, unknown> = {
   tiktok_package: {
     hook_options: ["Grabe ang init — kailangan mo 'to! 🔥", "POV: Premium find na worth every peso"],
     caption: "Check out our latest drop 🛍️ Order now via link!",
-    hashtags: ["#GumaCommerce", "#ShopLocal", "#SupportSmallBusiness"],
+    hashtags: ["#GumaKart", "#ShopLocal", "#SupportSmallBusiness"],
     order_cta: "Tap link sa bio para umorder!",
   },
   social_post: {

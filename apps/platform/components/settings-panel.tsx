@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import type { PlatformOpsSettings, PlatformPaymentsMode, TriFlag } from "@guma-commerce/db";
+import type { PlatformOpsSettings, PlatformPaymentsMode, TriFlag } from "@gumakart/db";
 import { updatePlatformSettingsAction } from "@/app/actions";
 import { Panel, SectionHeader } from "@/components/ui";
 

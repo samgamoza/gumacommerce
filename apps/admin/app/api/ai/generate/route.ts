@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createAiGenerator, type TemplateKey } from "@guma-commerce/ai";
-import { getTenantSettings, recordAiUsage } from "@guma-commerce/db";
+import { createAiGenerator, type TemplateKey } from "@gumakart/ai";
+import { getTenantSettings, recordAiUsage } from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 import { assertAiQuota } from "@/lib/agents/usage-gate";
 

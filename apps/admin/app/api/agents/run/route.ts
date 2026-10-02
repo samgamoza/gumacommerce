@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getTenantSettings, resolveAgentSettings } from "@guma-commerce/db";
+import { getTenantSettings, resolveAgentSettings } from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 import { runCampaignAgent, runPostingAgent } from "@/lib/agents/run-agents";
 import { assertAiQuota } from "@/lib/agents/usage-gate";

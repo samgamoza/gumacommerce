@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { PatternAdminShell } from "@/components/pattern-admin-shell";
 import { DashboardView } from "@/components/dashboard-view";
 import { getSession } from "@/lib/session";
-import { needsGumaLaunch, getLaunchTenantState } from "@guma-commerce/db";
+import { needsGumaLaunch, getLaunchTenantState } from "@gumakart/db";
 
 export default async function DashboardPage() {
   const session = await getSession();

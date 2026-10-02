@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import {
   getKycDocumentByToken,
   getKycDocumentStorageKey,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 import { readKycImageBuffer } from "@/lib/kyc-uploads";
 

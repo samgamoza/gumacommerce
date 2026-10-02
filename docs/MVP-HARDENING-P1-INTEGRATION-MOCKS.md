@@ -21,7 +21,7 @@ Override: `GUMA_ALLOW_INTEGRATION_MOCKS=false` forces fail-closed in development
 
 ## Central validator
 
-Package: `@guma-commerce/services`
+Package: `@gumakart/services`
 
 | Export | Role |
 |--------|------|
@@ -69,7 +69,7 @@ Checkout and book-delivery map `IntegrationNotConfiguredError` → **503** with 
 ## Verify
 
 ```powershell
-pnpm --filter @guma-commerce/services test
+pnpm --filter @gumakart/services test
 ```
 
 Manual:

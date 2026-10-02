@@ -14,7 +14,7 @@ import {
   Settings,
   Store,
 } from "lucide-react";
-import { GumaMark } from "@guma-commerce/ui";
+import { GumaMark } from "@gumakart/ui";
 import { UpgradeGateModal } from "@/components/plan/upgrade-gate-modal";
 import { PlanTierBadge } from "@/components/plan/plan-tier-badge";
 import { useTenantPlan } from "@/components/plan/use-tenant-plan";

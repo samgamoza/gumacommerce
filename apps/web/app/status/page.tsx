@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { CheckCircle2, AlertCircle, XCircle, MinusCircle } from "lucide-react";
 import { sql } from "drizzle-orm";
-import { getDb } from "@guma-commerce/db";
+import { getDb } from "@gumakart/db";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -160,8 +160,8 @@ export default async function StatusPage() {
               <p className="mt-1 text-muted-foreground">
                 &quot;Not configured&quot; means the integration isn&apos;t enabled in this
                 environment. For incidents, email{" "}
-                <a href="mailto:support@gumacommerce.ph" className="text-primary hover:underline">
-                  support@gumacommerce.ph
+                <a href="mailto:support@guma.one" className="text-primary hover:underline">
+                  support@guma.one
                 </a>
                 .
               </p>

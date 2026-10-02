@@ -3,7 +3,7 @@ import {
   planAtLeast as catalogPlanAtLeast,
   planDisplayName,
   type SubscriptionPlanId,
-} from "@guma-commerce/plans";
+} from "@gumakart/plans";
 
 export type StorePlan = SubscriptionPlanId;
 export { planDisplayName };

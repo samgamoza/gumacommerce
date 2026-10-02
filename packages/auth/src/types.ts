@@ -1,4 +1,4 @@
-export const AUTH_COOKIE_NAME = "gumacommerce_session";
+export const AUTH_COOKIE_NAME = "gumakart_session";
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
 export const EMAIL_VERIFY_MAX_AGE_SECONDS = 60 * 60 * 24; // 24 hours
 /** One-time grant exchanged on admin host for a support session. */

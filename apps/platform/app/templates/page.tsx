@@ -5,7 +5,7 @@ import {
   listShopBusinessCategories,
   listTemplateStock,
   renameGenericLookStockLabels,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import {
   BUNDLE_2023_LICENSE,
   BUNDLE_2023_STATS,
@@ -17,7 +17,7 @@ import {
   isGenericLookNumberLabel,
   listCatalogByCategory,
   sellerFacingStockLabel,
-} from "@guma-commerce/storefront-themes";
+} from "@gumakart/storefront-themes";
 import { requireSuperAdmin } from "@/lib/session";
 import { PlatformShell } from "@/components/platform-shell";
 import { Panel, SectionHeader, StatCard } from "@/components/ui";

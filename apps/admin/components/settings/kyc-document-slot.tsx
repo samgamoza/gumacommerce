@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { KycDocType, KycSessionRecord } from "@guma-commerce/db";
+import type { KycDocType, KycSessionRecord } from "@gumakart/db";
 import { Camera, CheckCircle2, ImagePlus, Loader2 } from "lucide-react";
 
 interface KycDocumentSlotProps {

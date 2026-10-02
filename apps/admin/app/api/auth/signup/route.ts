@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { AuthError, registerSeller, sendVerificationEmail, sessionCookieHeader } from "@guma-commerce/auth";
-import { clientIpFrom, rateLimit } from "@guma-commerce/services";
+import { AuthError, registerSeller, sendVerificationEmail, sessionCookieHeader } from "@gumakart/auth";
+import { clientIpFrom, rateLimit } from "@gumakart/services";
 
 const signupSchema = z.object({
   email: z.string().email(),
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     if (user.tenantId && user.tenantSlug) {
       const { ensureEventsWired } = await import("@/lib/events-bootstrap");
       ensureEventsWired();
-      const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+      const { emitDomainEvent, EVENT_NAMES } = await import("@gumakart/events");
       await emitDomainEvent({
         name: EVENT_NAMES.TENANT_CREATED,
         data: {

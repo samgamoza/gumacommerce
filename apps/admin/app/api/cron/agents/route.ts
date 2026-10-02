@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import {
   listActiveTenantsForAgents,
   resolveAgentSettings,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import { runCampaignAgent, runPostingAgent } from "@/lib/agents/run-agents";
 import { assertAiQuota } from "@/lib/agents/usage-gate";
 

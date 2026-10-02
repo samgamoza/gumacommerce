@@ -7,12 +7,12 @@
  *
  * Setup (one time):
  *   pnpm db:up                                  # docker-compose postgres on :5434
- *   $env:DATABASE_URL="postgres://postgres:postgres@localhost:5434/guma_commerce"
- *   pnpm --filter @guma-commerce/db exec drizzle-kit migrate
+ *   $env:DATABASE_URL="postgres://postgres:postgres@localhost:5434/gumakart"
+ *   pnpm --filter @gumakart/db exec drizzle-kit migrate
  *
  * Run:
- *   $env:DATABASE_URL="postgres://postgres:postgres@localhost:5434/guma_commerce"
- *   pnpm --filter @guma-commerce/db exec tsx --test src/orders-concurrency.test.ts
+ *   $env:DATABASE_URL="postgres://postgres:postgres@localhost:5434/gumakart"
+ *   pnpm --filter @gumakart/db exec tsx --test src/orders-concurrency.test.ts
  *
  * SAFETY: this test writes and deletes rows. It hard-refuses to run against a
  * Neon/production URL — see the guard below. Never point DATABASE_URL at
@@ -38,7 +38,7 @@ if (/neon\.tech|neon\.database|amazonaws|supabase|render\.com/i.test(url)) {
 if (!url) {
   throw new Error(
     "DATABASE_URL is not set. Start local Postgres with `pnpm db:up` and set " +
-      "DATABASE_URL=postgres://postgres:postgres@localhost:5434/guma_commerce"
+      "DATABASE_URL=postgres://postgres:postgres@localhost:5434/gumakart"
   );
 }
 

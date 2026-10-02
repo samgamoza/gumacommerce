@@ -5,8 +5,8 @@ import {
   TIER_LABELS,
   canUseTemplate,
   normalizeShopTemplateId,
-} from "@guma-commerce/storefront-themes";
-import { getTenantStorefrontSettings } from "@guma-commerce/db";
+} from "@gumakart/storefront-themes";
+import { getTenantStorefrontSettings } from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 export async function GET() {

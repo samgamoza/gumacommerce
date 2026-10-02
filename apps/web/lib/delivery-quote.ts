@@ -4,7 +4,7 @@ import {
   quoteAll,
   type DeliveryProviderId,
   type DeliveryQuote,
-} from "@guma-commerce/services";
+} from "@gumakart/services";
 import type { StorefrontStoreSettings } from "./storefront-settings";
 
 export interface CheckoutDeliveryQuote {

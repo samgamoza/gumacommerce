@@ -12,9 +12,9 @@ import { company } from "@/lib/site-content";
 import { adminUrl } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "About Us — Guma Commerce",
+  title: "About Us — Guma Kart",
   description:
-    "Why we built Guma Commerce for Philippine social sellers — branded storefronts, honest checkout, and seller-first tools.",
+    "Why we built Guma Kart for Philippine social sellers — branded storefronts, honest checkout, and seller-first tools.",
 };
 
 const values = [
@@ -47,7 +47,7 @@ export default function AboutPage() {
       <PageHeader
         eyebrow="Company"
         title="Empowering every Filipino social seller"
-        description="Guma Commerce exists so talented sellers stop losing sales in messy chat threads. One branded storefront. Guest checkout. Tools that match how you actually sell today."
+        description="Guma Kart exists so talented sellers stop losing sales in messy chat threads. One branded storefront. Guest checkout. Tools that match how you actually sell today."
       />
 
       <ContentSection>

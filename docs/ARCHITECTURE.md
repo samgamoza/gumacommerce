@@ -116,7 +116,7 @@ Legacy `/ai-studio` and `/agents` redirect into Workspace modules.
 | SEO | Live (Workspace SEO + AI suggest → CR → Approvals publish; storefront metadata / robots / sitemap / JSON-LD) |
 | Checkout | Live (Workspace Checkout + AI suggest → CR → Approvals publish; cart session, tax/coupons, payment adapters, Order.Created/Succeeded + Checkout.Abandoned) |
 | Shipping | Live (Workspace Shipping + AI suggest → CR → Approvals publish; profiles/zones/rates/courier/pickup/ETA; mirrors `settings_json.delivery`) |
-| Plan catalog (ADR D4) | Live — `@guma-commerce/plans` (ids `free`/`growth`/`pro`; labels Free/Pro/Advance; aliases `starter`/`advance`/`sulit`) |
+| Plan catalog (ADR D4) | Live — `@gumakart/plans` (ids `free`/`growth`/`pro`; labels Free/Pro/Advance; aliases `starter`/`advance`/`sulit`) |
 | Priority template ports | Live — `aircon` → `carserv` → `motto` → `studio` (demos `/{id}-demo`; catalog status `integrated`) |
 | Brand Guard (anti-slop) | **Next priority** — see `docs/PRIORITY-SCOPE-BRAND-GUARD.md` (CI + Launch prevention free; Polish CR on Growth+) |
 

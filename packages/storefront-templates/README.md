@@ -1,6 +1,6 @@
 # Storefront template library
 
-External full-code templates are extracted under `reference/` and integrated as Guma Commerce storefront patterns.
+External full-code templates are extracted under `reference/` and integrated as Guma Kart storefront patterns.
 
 ## Free Bundle 2023 (100 templates)
 
@@ -53,7 +53,7 @@ External full-code templates are extracted under `reference/` and integrated as 
 
 ### Platform wiring
 
-| Bloom original | Guma Commerce |
+| Bloom original | Guma Kart |
 |----------------|---------------|
 | `BLOOMSHOP` header/footer | `tenant.name` + `logoUrl` |
 | Hero copy | `promoTitle` + `tagline` |

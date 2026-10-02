@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Users as UsersIcon } from "lucide-react";
-import { getUserRoleCounts, listUsers } from "@guma-commerce/db";
+import { getUserRoleCounts, listUsers } from "@gumakart/db";
 import { requireSuperAdmin } from "@/lib/session";
 import { PlatformShell } from "@/components/platform-shell";
 import { FilterBar } from "@/components/filter-bar";

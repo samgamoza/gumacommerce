@@ -6,7 +6,7 @@ import { Inngest } from "inngest";
  * when the Inngest Dev Server or cloud is connected.
  */
 export const inngest = new Inngest({
-  id: "guma-commerce",
+  id: "gumakart",
   name: "GUMA ai-Commerce",
 });
 

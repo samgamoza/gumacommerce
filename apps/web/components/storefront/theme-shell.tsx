@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import type { ResolvedShopTheme } from "@guma-commerce/storefront-themes";
+import type { ResolvedShopTheme } from "@gumakart/storefront-themes";
 
 /**
  * Storefront components use Tailwind's `font-display` (var(--font-bricolage)).

@@ -23,7 +23,7 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult | n
     const res = await fetch(url, {
       headers: {
         // Nominatim usage policy requires an identifying user agent.
-        "User-Agent": "guma-commerce/1.0 (delivery-quotes)",
+        "User-Agent": "gumakart/1.0 (delivery-quotes)",
       },
       signal: AbortSignal.timeout(4000),
     });

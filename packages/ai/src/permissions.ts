@@ -1,4 +1,4 @@
-import { normalizePlanId, type SubscriptionPlan } from "@guma-commerce/plans";
+import { normalizePlanId, type SubscriptionPlan } from "@gumakart/plans";
 
 /** AI capability scopes — deny by default unless matrix allows. */
 export type AiScope =

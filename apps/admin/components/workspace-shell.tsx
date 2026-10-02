@@ -15,7 +15,7 @@ import {
   Workflow,
 } from "lucide-react";
 import { PatternAdminShell } from "@/components/pattern-admin-shell";
-import { Button, Card } from "@guma-commerce/ui";
+import { Button, Card } from "@gumakart/ui";
 import {
   normalizeAdminPlan,
   planAtLeast,

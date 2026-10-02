@@ -1,5 +1,5 @@
 import { DEFAULT_STOREFRONT_SETTINGS } from "./storefront-settings";
-import type { StorePatternId } from "@guma-commerce/storefront-themes";
+import type { StorePatternId } from "@gumakart/storefront-themes";
 import { getModelStoreTenant } from "./model-store-tenant";
 
 export interface DemoProduct {
@@ -32,7 +32,7 @@ export interface DemoTenant {
   logoEmoji: string;
   logoUrl?: string;
   theme: { primaryColor: string; accentColor: string };
-  shopTheme: import("@guma-commerce/storefront-themes").ResolvedShopTheme;
+  shopTheme: import("@gumakart/storefront-themes").ResolvedShopTheme;
   shopCategories: Array<{ id: string; name: string; slug: string }>;
   coverUrl?: string;
   codEnabled: boolean;
@@ -40,7 +40,7 @@ export interface DemoTenant {
   products: DemoProduct[];
   subscriptionPlan?: string | null;
   patternId?: StorePatternId;
-  seo?: import("@guma-commerce/db").TenantSeoJson | null;
+  seo?: import("@gumakart/db").TenantSeoJson | null;
 }
 
 export const DEMO_TENANT: DemoTenant = {

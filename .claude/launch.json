@@ -4,13 +4,13 @@
     {
       "name": "admin",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--workspace", "@guma-commerce/admin"],
+      "runtimeArgs": ["run", "dev", "--workspace", "@gumakart/admin"],
       "port": 3001
     },
     {
       "name": "web",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--workspace", "@guma-commerce/web"],
+      "runtimeArgs": ["run", "dev", "--workspace", "@gumakart/web"],
       "port": 3010
     }
   ]

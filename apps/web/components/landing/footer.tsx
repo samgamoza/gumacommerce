@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowRight, Mail, MapPin } from "lucide-react";
-import { GumaMark } from "@guma-commerce/ui";
+import { GumaMark } from "@gumakart/ui";
 import { Button } from "@/components/ui/button";
 import { company, footerLinks } from "@/lib/site-content";
 import { adminUrl } from "@/lib/utils";

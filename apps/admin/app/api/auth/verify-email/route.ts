@@ -7,9 +7,9 @@ import {
   sendVerificationEmail,
   sessionCookieHeader,
   verifyUserEmail,
-} from "@guma-commerce/auth";
-import { getSessionFromRequest } from "@guma-commerce/auth";
-import { resolveSellerHomePath } from "@guma-commerce/db";
+} from "@gumakart/auth";
+import { getSessionFromRequest } from "@gumakart/auth";
+import { resolveSellerHomePath } from "@gumakart/db";
 
 const bodySchema = z.object({
   token: z.string().min(10).optional(),

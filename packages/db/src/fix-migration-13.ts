@@ -7,7 +7,7 @@
  * This applies 0013's SQL directly, then records it in the ledger.
  * Safe to re-run: aborts if the tables already exist. Touches no app data.
  *
- * Run:    pnpm --filter @guma-commerce/db exec tsx src/fix-migration-13.ts
+ * Run:    pnpm --filter @gumakart/db exec tsx src/fix-migration-13.ts
  * Then:   pnpm db:inspect
  * After:  delete this file.
  */

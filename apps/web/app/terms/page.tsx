@@ -9,8 +9,8 @@ import {
 import { company } from "@/lib/site-content";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — Guma Commerce",
-  description: "Terms and conditions for using the Guma Commerce social commerce platform.",
+  title: "Terms of Service — Guma Kart",
+  description: "Terms and conditions for using the Guma Kart social commerce platform.",
 };
 
 const toc = [
@@ -46,7 +46,7 @@ export default function TermsPage() {
 
         <h2 id="platform">2. Platform description</h2>
         <p>
-          Guma Commerce provides social commerce tools for Philippine sellers, including branded
+          Guma Kart provides social commerce tools for Philippine sellers, including branded
           storefront hosting, guest checkout, seller messaging, optional payment-gateway
           integration when configured, courier booking / rider assignment, and optional AI
           assistants. Features available to you depend on your plan and which integrations are
@@ -80,20 +80,20 @@ export default function TermsPage() {
 
         <h2 id="ita">5. Internet Transactions Act (RA 11967)</h2>
         <p>
-          Sellers using Guma Commerce must display their business identity, contact information, and
+          Sellers using Guma Kart must display their business identity, contact information, and
           return/refund policies on their storefront as required by RA 11967 and DTI guidelines.
         </p>
 
         <h2 id="ip">6. Intellectual property</h2>
         <p>
-          Guma Commerce owns the platform, branding, and software. Sellers retain ownership of their
+          Guma Kart owns the platform, branding, and software. Sellers retain ownership of their
           product content, images, and brand materials. AI-generated content created at your request
           is licensed to you for commercial use on your shops and social media.
         </p>
 
         <h2 id="liability">7. Limitation of liability</h2>
         <p>
-          Guma Commerce is a technology platform. We are not a party to transactions between sellers
+          Guma Kart is a technology platform. We are not a party to transactions between sellers
           and buyers. We are not liable for product quality, delivery failures by third-party
           couriers, or payment disputes beyond our platform obligations — including disputes arising
           from seller-confirmed manual e-wallet payments.

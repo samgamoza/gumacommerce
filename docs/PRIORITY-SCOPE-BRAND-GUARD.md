@@ -94,12 +94,12 @@ CI: `.github/workflows/brand-guard.yml` — fails on P0 tells, warns on P1.
 Validators live in `packages/storefront-themes/src/brand-guard.ts` (`validateBrandGuardPersonalize`, `hintBrandGuardCopy`). Wired from `apps/admin/app/api/launch/route.ts` personalize + soft hints in `launch-wizard.tsx`.
 
 ```powershell
-pnpm --filter @guma-commerce/storefront-themes test
+pnpm --filter @gumakart/storefront-themes test
 ```
 
 ### Slice C — Paid Brand Guard “Polish” (Growth+)
 
-**Owner:** Workspace · **Cost:** existing `@guma-commerce/plans` AI quotas · **Plan gate:** `growth` / `pro`
+**Owner:** Workspace · **Cost:** existing `@gumakart/plans` AI quotas · **Plan gate:** `growth` / `pro`
 
 1. Workspace action: **Brand Guard — Polish storefront** (or under Marketing / Approvals).
 2. Pipeline:
@@ -112,7 +112,7 @@ pnpm --filter @guma-commerce/storefront-themes test
 **DoD**
 
 - [ ] No auto-publish
-- [ ] Quota checked via `@guma-commerce/plans` / existing usage tables
+- [ ] Quota checked via `@gumakart/plans` / existing usage tables
 - [ ] Approvals diff UI shows Brand Guard proposed changes
 - [ ] Free plan: upgrade CTA only (no silent LLM)
 

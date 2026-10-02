@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 
 import { CheckCircle2 } from "lucide-react";
 
-import { Badge } from "@guma-commerce/ui";
+import { Badge } from "@gumakart/ui";
 
 import { SettingsShell } from "@/components/settings/settings-shell";
 

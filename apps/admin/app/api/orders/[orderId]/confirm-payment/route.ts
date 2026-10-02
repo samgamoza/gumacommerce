@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { confirmManualOrderPayment } from "@guma-commerce/db";
+import { confirmManualOrderPayment } from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 const bodySchema = z.object({

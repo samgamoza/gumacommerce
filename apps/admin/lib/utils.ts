@@ -14,9 +14,9 @@ function resolveStorefrontBaseUrl(): string {
 
 export const storefrontBaseUrl = resolveStorefrontBaseUrl();
 
-/** Host shown in signup (e.g. gumacommerce.ph/demo) */
+/** Host shown in signup (e.g. kart.guma.one/demo) */
 export function shopUrlDisplayPrefix(): string {
-  const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "gumacommerce.ph";
+  const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "kart.guma.one";
   const host = root.replace(/^https?:\/\//, "").replace(/\/$/, "");
   // Keep display host aligned with local storefront port.
   if (/^(localhost|127\.0\.0\.1):3000$/i.test(host)) return "localhost:3010/";

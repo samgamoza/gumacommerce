@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Banknote, TrendingUp, Users, Wallet } from "lucide-react";
-import { PLATFORM_PLANS, getPlatformStats, listTenants, planPrice } from "@guma-commerce/db";
+import { PLATFORM_PLANS, getPlatformStats, listTenants, planPrice } from "@gumakart/db";
 import { requireSuperAdmin } from "@/lib/session";
 import { PlatformShell } from "@/components/platform-shell";
 import { PlanSelect } from "@/components/plan-select";

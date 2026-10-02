@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Package, PackageCheck, ShoppingCart, Wallet } from "lucide-react";
-import { getTenantDetail } from "@guma-commerce/db";
+import { getTenantDetail } from "@gumakart/db";
 import { requireSuperAdmin } from "@/lib/session";
 import { PlatformShell } from "@/components/platform-shell";
 import { TenantActions } from "@/components/tenant-actions";

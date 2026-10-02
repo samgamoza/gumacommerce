@@ -3,8 +3,8 @@ import { z } from "zod";
 import {
   getTenantStorefrontBySlug,
   upsertCheckoutSession,
-} from "@guma-commerce/db";
-import { clientIpFrom, rateLimit } from "@guma-commerce/services";
+} from "@gumakart/db";
+import { clientIpFrom, rateLimit } from "@gumakart/services";
 
 const bodySchema = z.object({
   tenantSlug: z.string().min(1).max(64),

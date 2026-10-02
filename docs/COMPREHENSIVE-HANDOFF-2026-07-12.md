@@ -1,4 +1,4 @@
-# Guma Commerce — Comprehensive Summary & Handoff
+# Guma Kart — Comprehensive Summary & Handoff
 
 **Last updated:** 2026-08-06 (delivery orchestrator live in apps + helpdesk tickets; Frontend1 CTA polish; Chat MVP Beta; manual e-wallet)  
 **Audience:** Next developer, architect, or AI agent continuing this repo  
@@ -9,21 +9,21 @@
 
 ## 1. Executive summary
 
-**Guma Commerce** is a multi-tenant, AI-assisted social commerce platform for Philippine sellers. Merchants get a branded mobile storefront at `/{shop-slug}`, manage products/orders in a seller admin, and optionally use AI for content, campaigns, and buyer chat.
+**Guma Kart** is a multi-tenant, AI-assisted social commerce platform for Philippine sellers. Merchants get a branded mobile storefront at `/{shop-slug}`, manage products/orders in a seller admin, and optionally use AI for content, campaigns, and buyer chat.
 
 | Dimension | Status |
 |-----------|--------|
 | **Maturity** | Soft-launchable MVP+ — checkout (incl. manual e-wallet), orders, owner-led chat, multi-courier delivery wiring, ticketed helpdesk, **18** themes, platform super-admin, crown-jewel CR rails |
 | **Stack** | pnpm + Turbo monorepo, Next.js 15, React 19, Drizzle + Neon Postgres |
 | **Templates** | **18** HTML-ported themes live + built-in token themes; Free Bundle 2023 catalogued; Sprint 5 priority ports **aircon / carserv / motto / studio** integrated |
-| **Plans (ADR D4)** | Single catalog `@guma-commerce/plans` — IDs `free`/`growth`/`pro`; labels **Free / Pro / Advance**; ₱0 / ₱499 / ₱999 |
+| **Plans (ADR D4)** | Single catalog `@gumakart/plans` — IDs `free`/`growth`/`pro`; labels **Free / Pro / Advance**; ₱0 / ₱499 / ₱999 |
 | **Delivery** | Orchestrator in checkout/book path — Lalamove + GrabExpress (+ failover) + manual Assign rider; webhooks for Lalamove/Grab |
 | **Helpdesk** | Ticket domain (`support_tickets`) — web contact, seller admin, platform `/helpdesk` with SLA clocks |
 | **Handbook** | v1.2 hybrid adoption — crown jewel + plan catalog landed; Workstation unification and infra still incremental |
 | **Deployment** | Vercel-ready docs; production deploy not assumed complete |
 
-**Repo path:** `D:\All Apps\gumacommerce`  
-**npm scope:** `@guma-commerce/*`
+**Repo path:** `D:\All Apps\gumakart`  
+**npm scope:** `@gumakart/*`
 
 ---
 
@@ -46,7 +46,7 @@
 | LangGraph orchestration | Custom `packages/ai` + cron agents — **no LangGraph** |
 | Event bus (Inngest) | `packages/events` thin bus — Theme/Catalog/Pricing/SEO/Checkout/Shipping/Order events emitting |
 | Prisma + RLS | **Drizzle**, app-level `tenantId` scoping |
-| Plans FREE/PRO/ADVANCE | **Canonical:** IDs `free`/`growth`/`pro`; labels Free/Pro/Advance via `@guma-commerce/plans` (ADR D4 done) |
+| Plans FREE/PRO/ADVANCE | **Canonical:** IDs `free`/`growth`/`pro`; labels Free/Pro/Advance via `@gumakart/plans` (ADR D4 done) |
 | Live selling, POS, smart pricing | **Not built** (pricing *suggest* CR domain exists) |
 | Commerce + logistics | **Largely built** (checkout CR + tax/coupons, shipping CR, PayMongo/manual e-wallet, Lalamove+Grab orchestrator, manual riders, wallet, helpdesk) |
 
@@ -55,7 +55,7 @@
 1. **Keep** Drizzle, 3-app monolith, PayMongo-first, pattern-based TSX renderers  
 2. **Add** Inngest events (partially landed), unified Workstation, theme draft/publish (landed), LangGraph for customization only (deferred)  
 3. **Defer** Prisma migration, plugin marketplace, ClickHouse, full pgvector memory  
-4. **Map plans:** Handbook FREE → `free`, PRO → `growth`, ADVANCE → `pro` — **implemented** in `@guma-commerce/plans`
+4. **Map plans:** Handbook FREE → `free`, PRO → `growth`, ADVANCE → `pro` — **implemented** in `@gumakart/plans`
 
 Full assessment: `docs/HANDBOOK-V1.2-ASSESSMENT.md`. Binding decisions: `docs/ADR-0001-handbook-adoption.md`.
 
@@ -64,14 +64,14 @@ Full assessment: `docs/HANDBOOK-V1.2-ASSESSMENT.md`. Binding decisions: `docs/AD
 ## 3. Repository structure
 
 ```
-guma-commerce/
+gumakart/
 ├── apps/
 │   ├── web/                 # Storefront + marketing (buyer-facing) :3010
 │   ├── admin/               # Seller dashboard + Launch + Workspace :3001
 │   └── platform/            # Super-admin console (all tenants) :3002
 ├── packages/
 │   ├── db/                  # Drizzle schema, migrations, queries
-│   ├── ai/                  # LLM router, permissions; plan-limits re-exports @guma-commerce/plans
+│   ├── ai/                  # LLM router, permissions; plan-limits re-exports @gumakart/plans
 │   ├── plans/               # Canonical plan catalog + AI limits (ADR D4)
 │   ├── auth/                # JWT sessions, signup, Google OAuth
 │   ├── events/              # Inngest client + Domain.Event.Vn emitters
@@ -106,14 +106,14 @@ guma-commerce/
 
 | App | Package | Dev port | Role |
 |-----|---------|----------|------|
-| **Storefront + marketing** | `@guma-commerce/web` | **3010** (`package.json`; README still says 3000) | `/{tenantSlug}`, checkout, buyer chat, webhooks |
-| **Seller admin** | `@guma-commerce/admin` | **3001** | Dashboard, products, orders, Shop Builder, Agents, AI Studio, settings |
-| **Platform console** | `@guma-commerce/platform` | **3002** | Super-admin: tenants, users, plans, helpdesk, moderation, frontends, audit |
+| **Storefront + marketing** | `@gumakart/web` | **3010** (`package.json`; README still says 3000) | `/{tenantSlug}`, checkout, buyer chat, webhooks |
+| **Seller admin** | `@gumakart/admin` | **3001** | Dashboard, products, orders, Shop Builder, Agents, AI Studio, settings |
+| **Platform console** | `@gumakart/platform` | **3002** | Super-admin: tenants, users, plans, helpdesk, moderation, frontends, audit |
 
 ### Dev commands
 
 ```powershell
-cd D:\All Apps\gumacommerce
+cd D:\All Apps\gumakart
 pnpm install
 
 # All apps (Turbo)
@@ -127,7 +127,7 @@ cd apps/platform && pnpm exec next dev # → http://localhost:3002
 
 ### Auth
 
-- Shared cookie: `gumacommerce_session`
+- Shared cookie: `gumakart_session`
 - Package: `packages/auth` (JWT via `jose`)
 - **Platform login (seeded):** `admin@guma.ph` / `GumaAdmin2026!` — change before shared use
 - Roles: `super_admin`, `seller_owner`, `seller_staff`, `customer`
@@ -188,7 +188,7 @@ Buyer / Seller / Super-admin
 ### Pitfalls
 
 - **Never run `db:push`** against live Neon if handoff SQL was applied manually — use `db:generate` + migrate or targeted SQL
-- **Never import `@guma-commerce/db` from `"use client"`** — pulls Postgres driver, breaks browser bundle
+- **Never import `@gumakart/db` from `"use client"`** — pulls Postgres driver, breaks browser bundle
 - **Schema drift:** platform tables may exist in Neon before matching drizzle migration files — run `pnpm db:reconcile`
 
 ---
@@ -319,7 +319,7 @@ Examples in `templates.ts`: `clean-guma`, `neon-bazaar`, `simply-sweet`, `glass-
 | Component | Path |
 |-----------|------|
 | LLM router | `packages/ai/src/providers/llm.ts` (OpenAI, Gemini, Groq, mock) |
-| Quotas | `@guma-commerce/plans` (+ thin re-export `packages/ai/src/plan-limits.ts`) + `ai_usage_monthly` |
+| Quotas | `@gumakart/plans` (+ thin re-export `packages/ai/src/plan-limits.ts`) + `ai_usage_monthly` |
 | Generators | `packages/ai/src/generator.ts` |
 | Permissions / SCOPE_MATRIX | `packages/ai/src/permissions.ts` |
 | Agent runner | `apps/admin/lib/agents/run-agents.ts` |
@@ -330,7 +330,7 @@ Examples in `templates.ts`: `clean-guma`, `neon-bazaar`, `simply-sweet`, `glass-
 
 ### AI limits by plan (seller billing)
 
-Canonical source: `@guma-commerce/plans` (`PLAN_AI_LIMITS`).
+Canonical source: `@gumakart/plans` (`PLAN_AI_LIMITS`).
 
 | Plan ID | Label | Chat/day | Generations/mo | Agent runs/week |
 |---------|-------|----------|----------------|-----------------|
@@ -350,10 +350,10 @@ Built 2026-07-05; extended 2026-08. Surfaces:
 - Tenants (suspend/activate/plan change)
 - Users, Subscriptions, Moderation (`content_queue`)
 - **Helpdesk** (ticket queue, SLA, assign/reply/internal notes)
-- **Frontends** (`active_landing` → frontend1 GumaCommerce / frontend2 Guma One.ai)
+- **Frontends** (`active_landing` → frontend1 GumaKart / frontend2 Guma One.ai)
 - Orders (platform-wide), Audit log
 
-**Plan catalog:** Uses `@guma-commerce/plans` via `CLIENT_PLANS` / `PLATFORM_PLANS` re-exports (ADR D4). Legacy DB rows with `starter` normalize to `growth` at read time. Filters show Free / Pro / Advance (+ legacy starter).
+**Plan catalog:** Uses `@gumakart/plans` via `CLIENT_PLANS` / `PLATFORM_PLANS` re-exports (ADR D4). Legacy DB rows with `starter` normalize to `growth` at read time. Filters show Free / Pro / Advance (+ legacy starter).
 
 **Login (seeded):** `admin@guma.ph` / `GumaAdmin2026!` — change before shared/prod use.
 
@@ -363,7 +363,7 @@ Built 2026-07-05; extended 2026-08. Surfaces:
 
 | Source | Plans | Notes |
 |--------|-------|-------|
-| **Canonical** | `@guma-commerce/plans` | IDs `free`/`growth`/`pro`; labels Free/Pro/Advance; ₱0 / ₱499 / ₱999 |
+| **Canonical** | `@gumakart/plans` | IDs `free`/`growth`/`pro`; labels Free/Pro/Advance; ₱0 / ₱499 / ₱999 |
 | Seller admin / web / platform | same | Thin wrappers / re-exports |
 | AI limits | same package | `PLAN_AI_LIMITS` |
 | Handbook v1.2 | FREE, PRO, ADVANCE | Mapped → free / growth / pro |
@@ -401,7 +401,7 @@ Features **degrade gracefully** without keys (mocks for PayMongo/Lalamove/LLM).
 | 1 SEO | Tenant SEO draft/publish JSON; Workspace SEO; storefront metadata/robots/sitemap/JSON-LD | `SPRINT-1-SEO-PROGRESS.md` |
 | 2 Checkout | Checkout draft/publish; tax/coupons; sessions; abandon sweep; Order events | `SPRINT-2-CHECKOUT-PROGRESS.md` |
 | 3 Shipping | Shipping profiles/zones/rates; CR publish; delivery mirror | `SPRINT-3-SHIPPING-PROGRESS.md` |
-| 4 Plan catalog | `@guma-commerce/plans`; Free/Pro/Advance labels; aliases; ADR D4 | `SPRINT-4-PLAN-CATALOG-PROGRESS.md` |
+| 4 Plan catalog | `@gumakart/plans`; Free/Pro/Advance labels; aliases; ADR D4 | `SPRINT-4-PLAN-CATALOG-PROGRESS.md` |
 | 5 Template ports | aircon, carserv, motto, studio React ports + demos | `SPRINT-5-TEMPLATE-PORTS-PROGRESS.md` |
 
 ### 2026-07-06 — 2026-07-12 (pre-sprint)
@@ -416,7 +416,7 @@ Features **degrade gracefully** without keys (mocks for PayMongo/Lalamove/LLM).
 - Do **not** migrate to Prisma
 - Adopt **Inngest + Workstation + draft/publish** incrementally (CR rails + events largely landed for Phase 4 domains)
 - Keep **pattern + TSX renderer** model for templates
-- **One plan catalog** — `@guma-commerce/plans` (ADR D4)
+- **One plan catalog** — `@gumakart/plans` (ADR D4)
 
 ---
 
@@ -424,7 +424,7 @@ Features **degrade gracefully** without keys (mocks for PayMongo/Lalamove/LLM).
 
 | Issue | Severity | Notes |
 |-------|----------|-------|
-| ~~Plan price sources disagree~~ | ~~High~~ | **Resolved Sprint 4** — `@guma-commerce/plans` |
+| ~~Plan price sources disagree~~ | ~~High~~ | **Resolved Sprint 4** — `@gumakart/plans` |
 | Large uncommitted working tree (2026-08) | High | Commit/PR in slices before production |
 | Marketing overclaims vs shipped logistics/payments | High | Prefer frontend1 live; honest FAQ copy |
 | Drizzle migrations lag / journal quirks | Medium | Prefer migrate/reconcile; never `db:push` |
@@ -475,7 +475,7 @@ Detail: `DELIVERY-AND-HELPDESK.md`, `MVP-MANUAL-EWALLET-CHAT.md`, `CHIEF-ENGINEE
 
 ### Done (do not re-open unless regressing)
 
-- [x] Unify plan catalog (`@guma-commerce/plans`, ADR D4)
+- [x] Unify plan catalog (`@gumakart/plans`, ADR D4)
 - [x] Theme draft/publish + change_requests + Approvals (crown jewel Phases 1–3)
 - [x] Phase 4 domains: catalog, pricing, SEO, checkout, shipping
 - [x] Priority template ports: aircon → carserv → motto → studio
@@ -556,7 +556,7 @@ packages/plans/src/ai-limits.ts
 packages/db/src/schema/index.ts
 packages/db/drizzle/0013_support_helpdesk.sql
 packages/auth/src/service.ts
-packages/ai/src/plan-limits.ts         — re-export of @guma-commerce/plans
+packages/ai/src/plan-limits.ts         — re-export of @gumakart/plans
 packages/ai/src/permissions.ts
 packages/services/src/payments/paymongo.ts
 packages/events/
@@ -596,22 +596,22 @@ After clone or major pull:
 ```powershell
 pnpm install
 pnpm db:migrate
-pnpm --filter @guma-commerce/plans test
-pnpm --filter @guma-commerce/storefront-themes exec tsc --noEmit
-pnpm --filter @guma-commerce/web exec tsc --noEmit
-pnpm --filter @guma-commerce/admin exec tsc --noEmit
-pnpm --filter @guma-commerce/platform exec tsc --noEmit
+pnpm --filter @gumakart/plans test
+pnpm --filter @gumakart/storefront-themes exec tsc --noEmit
+pnpm --filter @gumakart/web exec tsc --noEmit
+pnpm --filter @gumakart/admin exec tsc --noEmit
+pnpm --filter @gumakart/platform exec tsc --noEmit
 
-pnpm --filter @guma-commerce/web run dev        # :3010
+pnpm --filter @gumakart/web run dev        # :3010
 # http://localhost:3010/frontend1
 # http://localhost:3010/demo
 # http://localhost:3010/model
 # http://localhost:3010/contact
 
-pnpm --filter @guma-commerce/admin run dev      # :3001
+pnpm --filter @gumakart/admin run dev      # :3001
 # /messages · /orders · /settings/support · /settings/delivery-shipping
 
-pnpm --filter @guma-commerce/platform run dev   # :3002
+pnpm --filter @gumakart/platform run dev   # :3002
 # login admin@guma.ph · /helpdesk · /frontends
 ```
 
@@ -622,7 +622,7 @@ pnpm --filter @guma-commerce/platform run dev   # :3002
 - **Commits:** Only when user asks
 - **Scope:** Minimize diff; match existing patterns in each package
 - **Template ports:** One zip at a time; always add demo + build verify
-- **Plans:** Never hardcode prices/limits outside `@guma-commerce/plans`
+- **Plans:** Never hardcode prices/limits outside `@gumakart/plans`
 - **Handbook:** v1.2 is target architecture — implement incrementally via ADR-0001
 - **Launch review:** `docs/CHIEF-ENGINEER-REVIEW-SUMMARY.md`
 

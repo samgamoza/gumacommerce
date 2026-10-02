@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { deletePushSubscription, savePushSubscription } from "@guma-commerce/db";
+import { deletePushSubscription, savePushSubscription } from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 const subscribeSchema = z.object({

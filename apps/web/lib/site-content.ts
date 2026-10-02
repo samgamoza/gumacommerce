@@ -1,9 +1,9 @@
 export const company = {
   name: "Guma One Technologies",
   product: "Guma One",
-  email: "hello@gumacommerce.ph",
-  support: "support@gumacommerce.ph",
-  privacy: "privacy@gumacommerce.ph",
+  email: "hello@guma.one",
+  support: "support@guma.one",
+  privacy: "privacy@guma.one",
   /** Placeholder phone — replace with the real business line when available. */
   phone: "",
   address: "Metro Manila, Philippines",
@@ -61,7 +61,7 @@ export const faqCategories = [
       },
       {
         q: "Do I need a website or coding skills?",
-        a: "No. Guma One gives you a ready-made mobile storefront at yourname.gumacommerce.ph. No developers, no Shopify setup, no technical knowledge required.",
+        a: "No. Guma One gives you a ready-made mobile storefront at kart.guma.one/yourname. No developers, no Shopify setup, no technical knowledge required.",
       },
     ],
   },

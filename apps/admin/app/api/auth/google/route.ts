@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getGoogleAuthUrl, isGoogleAuthConfigured } from "@guma-commerce/auth";
+import { getGoogleAuthUrl, isGoogleAuthConfigured } from "@gumakart/auth";
 import {
   createGoogleOAuthState,
   googleOAuthStateCookieHeader,

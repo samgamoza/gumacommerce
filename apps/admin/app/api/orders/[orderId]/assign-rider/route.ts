@@ -3,8 +3,8 @@ import { z } from "zod";
 import {
   getOrderForDeliveryBooking,
   upsertManualDeliveryForOrder,
-} from "@guma-commerce/db";
-import { createLogger } from "@guma-commerce/services";
+} from "@gumakart/db";
+import { createLogger } from "@gumakart/services";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 const log = createLogger("orders:assign-rider");

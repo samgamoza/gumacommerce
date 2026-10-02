@@ -4,7 +4,7 @@ import {
   getSessionFromRequest,
   verifySessionToken,
   type SessionPayload,
-} from "@guma-commerce/auth";
+} from "@gumakart/auth";
 
 export type { SessionPayload as Session };
 

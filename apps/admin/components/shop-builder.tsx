@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Badge, Button, Card } from "@guma-commerce/ui";
-import { BRAND_PALETTES } from "@guma-commerce/storefront-themes";
-import type { ResolvedShopTheme, ShopDisplayFont } from "@guma-commerce/storefront-themes";
+import { Badge, Button, Card } from "@gumakart/ui";
+import { BRAND_PALETTES } from "@gumakart/storefront-themes";
+import type { ResolvedShopTheme, ShopDisplayFont } from "@gumakart/storefront-themes";
 import { modelStoreUrl } from "@/lib/utils";
 
 const FONT_OPTIONS: Array<{ id: ShopDisplayFont; label: string; hint: string }> = [

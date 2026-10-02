@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createAiGenerator } from "@guma-commerce/ai";
+import { createAiGenerator } from "@gumakart/ai";
 import {
   getTenantIdBySlug,
   getTenantStorefrontBySlug,
@@ -9,9 +9,9 @@ import {
   resolveShopAssistantSettings,
   resolveTenantPaymentsSettings,
   saveShopChatMessage,
-} from "@guma-commerce/db";
-import { resolveShopTheme } from "@guma-commerce/storefront-themes";
-import { clientIpFrom, rateLimit } from "@guma-commerce/services";
+} from "@gumakart/db";
+import { resolveShopTheme } from "@gumakart/storefront-themes";
+import { clientIpFrom, rateLimit } from "@gumakart/services";
 import { assertAiQuota } from "@/lib/ai-quota";
 
 const postSchema = z.object({

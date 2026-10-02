@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { ResolvedShopTheme } from "@guma-commerce/storefront-themes";
+import type { ResolvedShopTheme } from "@gumakart/storefront-themes";
 import {
   normalizeStorePlan,
   planAtLeast,

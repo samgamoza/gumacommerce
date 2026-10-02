@@ -5,7 +5,7 @@ import {
   emojiForGuideCategory,
   groupCategoriesForOnboarding,
   matchBusinessCategories,
-} from "@guma-commerce/storefront-themes";
+} from "@gumakart/storefront-themes";
 
 /** Most common FB / Shopee / Lazada seller starts — short shortcuts only. */
 const QUICK_PICKS = [

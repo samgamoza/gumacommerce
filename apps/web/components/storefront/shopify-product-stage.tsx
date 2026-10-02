@@ -5,7 +5,7 @@ import type { DemoProduct, DemoTenant } from "@/lib/demo-data";
 import { solidCtaColor } from "@/lib/color-contrast";
 import { formatPhpMoney, productCardPricing } from "@/lib/product-price-display";
 import { adminUrl } from "@/lib/utils";
-import { resolveCommerceChrome } from "@guma-commerce/storefront-themes";
+import { resolveCommerceChrome } from "@gumakart/storefront-themes";
 import { AddToCartButton } from "./add-to-cart";
 import { ShopifyRelatedProducts } from "./shopify-catalog";
 

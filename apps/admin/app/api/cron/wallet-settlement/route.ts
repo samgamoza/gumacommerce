@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { runWalletSettlement } from "@guma-commerce/db";
+import { runWalletSettlement } from "@gumakart/db";
 
 function isAuthorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET;

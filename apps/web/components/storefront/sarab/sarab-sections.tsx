@@ -6,8 +6,8 @@ import type { DemoTenant } from "@/lib/demo-data";
 import { useCart } from "@/lib/cart";
 import { SarabHeroImage } from "./sarab-hero-image";
 import { splitSarabBrand } from "./sarab-utils";
-import type { StoreLook } from "@guma-commerce/storefront-themes";
-import { isFoodBusinessCategory, normalizeStoreLook } from "@guma-commerce/storefront-themes";
+import type { StoreLook } from "@gumakart/storefront-themes";
+import { isFoodBusinessCategory, normalizeStoreLook } from "@gumakart/storefront-themes";
 
 function sarabIsFoodShop(tenant: DemoTenant): boolean {
   return isFoodBusinessCategory(tenant.category || "Food & Beverage");

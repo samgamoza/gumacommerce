@@ -7,9 +7,9 @@ export type Database = PostgresJsDatabase<typeof schema>;
 
 declare global {
   // eslint-disable-next-line no-var
-  var __gumaCommerceDb: Database | undefined;
+  var __gumaKartDb: Database | undefined;
   // eslint-disable-next-line no-var
-  var __gumaCommerceSql: ReturnType<typeof postgres> | undefined;
+  var __gumaKartSql: ReturnType<typeof postgres> | undefined;
 }
 
 function createClient() {
@@ -35,21 +35,21 @@ function createClient() {
  */
 export function getDb(): Database {
   if (isProduction()) {
-    if (!globalThis.__gumaCommerceDb) {
+    if (!globalThis.__gumaKartDb) {
       const { db, sql } = createClient();
-      globalThis.__gumaCommerceDb = db;
-      globalThis.__gumaCommerceSql = sql;
+      globalThis.__gumaKartDb = db;
+      globalThis.__gumaKartSql = sql;
     }
-    return globalThis.__gumaCommerceDb;
+    return globalThis.__gumaKartDb;
   }
 
-  if (!globalThis.__gumaCommerceDb) {
+  if (!globalThis.__gumaKartDb) {
     const { db, sql } = createClient();
-    globalThis.__gumaCommerceDb = db;
-    globalThis.__gumaCommerceSql = sql;
+    globalThis.__gumaKartDb = db;
+    globalThis.__gumaKartSql = sql;
   }
 
-  return globalThis.__gumaCommerceDb;
+  return globalThis.__gumaKartDb;
 }
 
 /** @deprecated Use getDb() — kept for backwards compatibility during migration */
@@ -60,9 +60,9 @@ export const db = new Proxy({} as Database, {
 });
 
 export async function closeDb(): Promise<void> {
-  if (globalThis.__gumaCommerceSql) {
-    await globalThis.__gumaCommerceSql.end();
-    globalThis.__gumaCommerceSql = undefined;
-    globalThis.__gumaCommerceDb = undefined;
+  if (globalThis.__gumaKartSql) {
+    await globalThis.__gumaKartSql.end();
+    globalThis.__gumaKartSql = undefined;
+    globalThis.__gumaKartDb = undefined;
   }
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { clearSessionCookieHeader, getSessionFromRequest, revokeAllSessions } from "@guma-commerce/auth";
+import { clearSessionCookieHeader, getSessionFromRequest, revokeAllSessions } from "@gumakart/auth";
 
 export async function POST(request: Request) {
   // { allDevices: true } bumps the user's session version so every token

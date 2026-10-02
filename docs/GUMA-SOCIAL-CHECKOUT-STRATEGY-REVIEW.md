@@ -1,8 +1,8 @@
 
-# Guma Commerce — Social-Commerce Checkout & AI Storefront Strategy Review
+# Guma Kart — Social-Commerce Checkout & AI Storefront Strategy Review
 
 **Revision:** Full re-audit (2026-08-20), superseding both prior drafts of this document.
-**Repository audited:** `D:\All Apps\gumacommerce` — this is the correction from the prior drafts, which audited a stale clone at `C:\Users\samga\gumacommerce` (same GitHub remote, `samgamoza/gumacommerce`, but six weeks behind: no CI, no `change_requests` governance table, no event bus, no delivery orchestrator, no Brand Guard, no suspend enforcement — all of which exist in this repo). Every finding below was re-derived from this repository; nothing from the prior drafts was carried forward without re-verification.
+**Repository audited:** `D:\All Apps\gumakart` — this is the correction from the prior drafts, which audited a stale clone at `C:\Users\samga\gumacommerce` (same GitHub remote, `samgamoza/gumakart`, but six weeks behind: no CI, no `change_requests` governance table, no event bus, no delivery orchestrator, no Brand Guard, no suspend enforcement — all of which exist in this repo). Every finding below was re-derived from this repository; nothing from the prior drafts was carried forward without re-verification.
 **Status:** Review and recommendation only. No application code, schema, dependencies, Git history, deployment, or external services were modified in this pass. No commands were run against any database, local or production.
 
 ---
@@ -32,7 +32,7 @@ The real repository turned out to be substantially more mature than either prior
 2. **The concurrent-checkout stock race is real and unfixed** — and, unlike the coupon cap below it, is *not* acknowledged anywhere in the code. In `packages/db/src/queries/orders.ts`, the stock check is a plain unlocked read at line 209 (`(row.stockQty ?? 0) < quantity`), while the decrement happens much later at line ~380 and is unconditional: `set({ stockQty: sql\`greatest(${productVariants.stockQty} - ${line.quantity}, 0)\` })`. Two checkouts can pass the same check and both decrement; `greatest(…, 0)` then *masks* the result by flooring at zero, so an oversell produces no error anywhere. **Correction (2026-08-20):** earlier drafts of this document cited line 250's `// row locked FOR UPDATE (deferred — see review remediation).` comment as evidence the team had acknowledged this. That was a misattribution by this reviewer — that comment belongs to the **coupon redemption cap** (lines 243–250), a separate and deliberately-accepted soft limit. The stock race is unacknowledged, which makes it more dangerous than originally reported, not less. `checkout_sessions` (§2) does not mitigate it — its own code comment states its purpose is abandoned-checkout *detection*, not inventory reservation.
 3. **A very large, long-uncommitted working tree** (571 modified files at this review's snapshot, plus a dirty embedded repo `simply-sweet-source`) that the repo's own Chief Engineer review already flags as a "High (ops)" risk ("commit/PR in slices before production cut") — a risk that compounds every day it's deferred, independent of anything else in this document.
 
-**What should not be rebuilt.** The event bus (Inngest + `packages/events`), the `change_requests` governance table, the delivery orchestrator, the anti-slop linter, the plan catalog (`@guma-commerce/plans`), and the three-app/shared-packages topology are all sound, already-adopted-by-ADR, and should be extended, not replaced or duplicated. In particular: **do not build a second "content versioning" table or a second event/outbox system** — both already exist and are more thoroughly designed than what either prior draft of this review proposed.
+**What should not be rebuilt.** The event bus (Inngest + `packages/events`), the `change_requests` governance table, the delivery orchestrator, the anti-slop linter, the plan catalog (`@gumakart/plans`), and the three-app/shared-packages topology are all sound, already-adopted-by-ADR, and should be extended, not replaced or duplicated. In particular: **do not build a second "content versioning" table or a second event/outbox system** — both already exist and are more thoroughly designed than what either prior draft of this review proposed.
 
 ---
 
@@ -258,7 +258,7 @@ Unchanged in structure from the prior correction pass, re-scoped to this reposit
 
 - Inventory and classify the **571 modified files** and the dirty `simply-sweet-source` embedded repo (no `.gitmodules` found — confirm whether this should be a real submodule, a subtree, or ignored entirely, before deciding how to checkpoint it).
 - Confirm which storefront path is actually intended as default — this mission should explicitly surface the §1 fork as a founder decision item, not resolve it.
-- Repair dependencies and run the *actual* declared toolchain (`pnpm --filter @guma-commerce/{db,web,admin,platform} exec tsc --noEmit`, per `docs/AGENT-HANDOFF.md`'s own "should be green" command list) on the real development machine — this reviewer's sandbox cannot do this (§0).
+- Repair dependencies and run the *actual* declared toolchain (`pnpm --filter @gumakart/{db,web,admin,platform} exec tsc --noEmit`, per `docs/AGENT-HANDOFF.md`'s own "should be green" command list) on the real development machine — this reviewer's sandbox cannot do this (§0).
 - Reconcile the `0002` journal gap via read-only inspection against live Neon.
 - Confirm the `PAYMENTS_MODE` and integration-health boundary in the actual deployed environment, not just the doc claim.
 - Propose (do not execute without approval) a checkpoint/commit strategy for the 571-file delta.

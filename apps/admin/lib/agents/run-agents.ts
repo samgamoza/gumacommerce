@@ -1,4 +1,4 @@
-import { createAiGenerator } from "@guma-commerce/ai";
+import { createAiGenerator } from "@gumakart/ai";
 import {
   createContentQueueItem,
   finishAgentRun,
@@ -8,8 +8,8 @@ import {
   recordAiUsage,
   startAgentRun,
   type AgentSettings,
-} from "@guma-commerce/db";
-import { resolveShopTheme } from "@guma-commerce/storefront-themes";
+} from "@gumakart/db";
+import { resolveShopTheme } from "@gumakart/storefront-themes";
 import { getUsageSnapshot } from "@/lib/agents/usage-gate";
 
 type TenantContext = {

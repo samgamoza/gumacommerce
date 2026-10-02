@@ -2,7 +2,7 @@ import {
   resolveCommerceChrome,
   resolveProductPriceDisplay,
   type ProductPricingMeta,
-} from "@guma-commerce/storefront-themes";
+} from "@gumakart/storefront-themes";
 
 const php = new Intl.NumberFormat("en-PH", {
   style: "currency",

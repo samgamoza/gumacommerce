@@ -5,7 +5,7 @@ import {
   normalizePlanId,
   upgradeHref as catalogUpgradeHref,
   type SubscriptionPlanId,
-} from "@guma-commerce/plans";
+} from "@gumakart/plans";
 
 export type SubscriptionPlan = SubscriptionPlanId;
 

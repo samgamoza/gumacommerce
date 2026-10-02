@@ -5,14 +5,14 @@ import {
   getTenantStorefrontSettings,
   tryAutoActivateTenant,
   updateTenantStorefront,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import {
   canUseTemplate,
   isShopTemplateId,
   matchStorePattern,
   resolveShopTheme,
   resolveStorePattern,
-} from "@guma-commerce/storefront-themes";
+} from "@gumakart/storefront-themes";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 import { storefrontBaseUrl } from "@/lib/utils";
 

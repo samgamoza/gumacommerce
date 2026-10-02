@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import {
   advanceOrderStatusFromDelivery,
   updateDeliveryByProviderOrderId,
-} from "@guma-commerce/db";
-import { createLogger, verifyTimestampedHmacSignature } from "@guma-commerce/services";
+} from "@gumakart/db";
+import { createLogger, verifyTimestampedHmacSignature } from "@gumakart/services";
 
 const log = createLogger("webhook:grab");
 

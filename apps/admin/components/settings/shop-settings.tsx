@@ -30,7 +30,7 @@ import {
   getShopTemplate,
   isShopTemplateId,
   SHOP_BUSINESS_CATEGORIES,
-} from "@guma-commerce/storefront-themes";
+} from "@gumakart/storefront-themes";
 
 
 

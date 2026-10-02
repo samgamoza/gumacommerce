@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Button, Card, formatPrice } from "@guma-commerce/ui";
+import { Button, Card, formatPrice } from "@gumakart/ui";
 
 type OrderStatus =
   | "pending_payment"

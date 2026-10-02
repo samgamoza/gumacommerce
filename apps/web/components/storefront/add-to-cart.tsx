@@ -6,7 +6,7 @@ import { Check, Minus, Plus, MessageCircle, ShoppingBag } from "lucide-react";
 import type { DemoProduct } from "@/lib/demo-data";
 import { useCart } from "@/lib/cart";
 import { ctaTextColor, solidCtaColor } from "@/lib/color-contrast";
-import { resolveCommerceChrome } from "@guma-commerce/storefront-themes";
+import { resolveCommerceChrome } from "@gumakart/storefront-themes";
 
 export function AddToCartButton({
   tenantSlug,

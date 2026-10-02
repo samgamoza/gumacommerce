@@ -56,7 +56,7 @@ export async function setPlatformSetting(key: string, value: string): Promise<vo
     .onConflictDoUpdate({ target: platformSettings.key, set: { value, updatedAt: new Date() } });
 }
 
-/** Active landing, defaulting to frontend1 (GumaCommerce) when unset. */
+/** Active landing, defaulting to frontend1 (GumaKart) when unset. */
 export async function getActiveLanding(): Promise<ActiveLanding> {
   const value = await getPlatformSetting(ACTIVE_LANDING_KEY);
   return value === "frontend2" ? "frontend2" : "frontend1";

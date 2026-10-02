@@ -1,4 +1,4 @@
-import { getShopTemplate } from "@guma-commerce/storefront-themes";
+import { getShopTemplate } from "@gumakart/storefront-themes";
 import type { DemoProduct, DemoTenant } from "@/lib/demo-data";
 import { DEFAULT_STOREFRONT_SETTINGS } from "@/lib/storefront-settings";
 

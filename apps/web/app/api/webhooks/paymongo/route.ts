@@ -8,14 +8,14 @@ import {
   markPaymentFailedByIntent,
   markPlanPaymentPaidByIntent,
   type MarkOrderPaidResult,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import {
   createPayMongoClient,
   createSemaphoreClient,
   formatPhp,
   isPushConfigured,
   sendPushNotifications,
-} from "@guma-commerce/services";
+} from "@gumakart/services";
 
 /** Browser push to every device the seller enabled notifications on. */
 async function pushSellerPaymentReceived(result: MarkOrderPaidResult): Promise<void> {
@@ -113,7 +113,7 @@ export async function POST(request: Request) {
           if (planResult.tenantId && planResult.plan) {
             const { ensureEventsWired } = await import("@/lib/events-bootstrap");
             ensureEventsWired();
-            const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+            const { emitDomainEvent, EVENT_NAMES } = await import("@gumakart/events");
             await emitDomainEvent({
               name: EVENT_NAMES.MERCHANT_UPGRADED,
               data: {
@@ -131,7 +131,7 @@ export async function POST(request: Request) {
         if (result.tenantId && result.orderNumber) {
           const { ensureEventsWired } = await import("@/lib/events-bootstrap");
           ensureEventsWired();
-          const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+          const { emitDomainEvent, EVENT_NAMES } = await import("@gumakart/events");
           await emitDomainEvent({
             name: EVENT_NAMES.ORDER_PAYMENT_SUCCEEDED,
             data: {

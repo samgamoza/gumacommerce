@@ -19,7 +19,7 @@ export type EventHandlerFn = (event: {
 let persistFn: PersistEventFn | null = null;
 let localHandlers: EventHandlerFn[] = [];
 
-/** Register DB persistence (wired from apps that have @guma-commerce/db). */
+/** Register DB persistence (wired from apps that have @gumakart/db). */
 export function registerEventPersistence(fn: PersistEventFn): void {
   persistFn = fn;
 }

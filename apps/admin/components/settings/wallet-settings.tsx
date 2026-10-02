@@ -8,7 +8,7 @@ import type {
   TenantWalletSettings,
   TenantWalletSummary,
   WalletLedgerItem,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import { SettingsPageLayout } from "@/components/settings/settings-shell";
 import { SettingsCard } from "@/components/settings/settings-forms";
 

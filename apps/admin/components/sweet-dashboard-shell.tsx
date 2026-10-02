@@ -15,8 +15,8 @@ import {
   Store,
   Users,
 } from "lucide-react";
-import { resolveStorePattern } from "@guma-commerce/storefront-themes";
-import type { StorePatternId } from "@guma-commerce/storefront-themes";
+import { resolveStorePattern } from "@gumakart/storefront-themes";
+import type { StorePatternId } from "@gumakart/storefront-themes";
 import { SuspendedShopNotice } from "@/components/suspended-shop-notice";
 import { SupportAccessBanner } from "@/components/support-access-banner";
 

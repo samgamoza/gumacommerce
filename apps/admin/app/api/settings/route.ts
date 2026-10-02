@@ -6,8 +6,8 @@ import {
   PAYMENTS_MODE_KEY,
   resolveTenantPaymentsSettings,
   updateTenantSettings,
-} from "@guma-commerce/db";
-import { resolvePaymentsMode } from "@guma-commerce/services";
+} from "@gumakart/db";
+import { resolvePaymentsMode } from "@gumakart/services";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 const patchSchema = z.object({

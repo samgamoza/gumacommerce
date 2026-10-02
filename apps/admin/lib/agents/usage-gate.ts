@@ -1,4 +1,4 @@
-import { getRawAiUsageCounts } from "@guma-commerce/db";
+import { getRawAiUsageCounts } from "@gumakart/db";
 import {
   checkQuota,
   normalizePlan,
@@ -6,7 +6,7 @@ import {
   type AiTaskType,
   type AiUsageSnapshot,
   type QuotaCheckResult,
-} from "@guma-commerce/ai";
+} from "@gumakart/ai";
 
 export async function getUsageSnapshot(tenantId: string): Promise<AiUsageSnapshot> {
   const raw = await getRawAiUsageCounts(tenantId);

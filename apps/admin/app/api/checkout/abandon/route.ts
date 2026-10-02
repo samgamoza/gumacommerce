@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import {
   abandonStaleCheckoutSessions,
   getTenantCheckoutState,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 /**
@@ -25,7 +25,7 @@ export async function POST() {
     if (abandoned.length > 0) {
       const { ensureEventsWired } = await import("@/lib/events-bootstrap");
       ensureEventsWired();
-      const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+      const { emitDomainEvent, EVENT_NAMES } = await import("@gumakart/events");
       for (const row of abandoned) {
         const cart = Array.isArray(row.cartJson) ? row.cartJson : [];
         await emitDomainEvent({

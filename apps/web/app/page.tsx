@@ -1,4 +1,4 @@
-import { getActiveLanding } from "@guma-commerce/db";
+import { getActiveLanding } from "@gumakart/db";
 import { Frontend1Landing } from "@/components/marketing/Frontend1Landing";
 import { Frontend2Landing } from "@/components/marketing/Frontend2Landing";
 

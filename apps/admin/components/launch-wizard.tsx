@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { PatternAdminShell } from "@/components/pattern-admin-shell";
-import { Button, Card, fieldClassName } from "@guma-commerce/ui";
+import { Button, Card, fieldClassName } from "@gumakart/ui";
 import {
   BRAND_PALETTES,
   emojiForGuideCategory,
@@ -14,7 +14,7 @@ import {
   type RankedTemplate,
   type StoreGoal,
   type SellingChannel,
-} from "@guma-commerce/storefront-themes";
+} from "@gumakart/storefront-themes";
 import { upgradeHref, PLAN_DISPLAY, type SubscriptionPlan } from "@/lib/plan-access";
 
 /** Dark-console chips — selected stays vivid; idle stays readable. */

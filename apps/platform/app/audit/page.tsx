@@ -7,7 +7,7 @@ import {
   Store,
   UserCog,
 } from "lucide-react";
-import { listAuditLog } from "@guma-commerce/db";
+import { listAuditLog } from "@gumakart/db";
 import { requireSuperAdmin } from "@/lib/session";
 import { PlatformShell } from "@/components/platform-shell";
 import { EmptyState, Panel } from "@/components/ui";

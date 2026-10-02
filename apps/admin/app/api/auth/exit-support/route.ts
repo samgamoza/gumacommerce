@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { clearSessionCookieHeader, getSessionFromRequest } from "@guma-commerce/auth";
+import { clearSessionCookieHeader, getSessionFromRequest } from "@gumakart/auth";
 
 /** End Support access on admin.* and return to Platform Console. */
 export async function POST(request: Request) {

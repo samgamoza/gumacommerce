@@ -5,8 +5,8 @@ import {
   getUserSessionById,
   sessionCookieHeader,
   verifySupportAccessGrantToken,
-} from "@guma-commerce/auth";
-import { getTenantStatusById } from "@guma-commerce/db";
+} from "@gumakart/auth";
+import { getTenantStatusById } from "@gumakart/db";
 
 /**
  * Exchange a short-lived Platform grant for an admin-host session cookie.

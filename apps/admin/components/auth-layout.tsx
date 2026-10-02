@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GumaMark } from "@guma-commerce/ui";
+import { GumaMark } from "@gumakart/ui";
 
 export function AuthLayout({
   title,

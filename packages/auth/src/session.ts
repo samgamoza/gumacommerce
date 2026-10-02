@@ -22,7 +22,7 @@ function getAuthSecret(): Uint8Array {
   const secret =
     process.env.AUTH_SECRET ??
     (process.env.NODE_ENV === "development"
-      ? "dev-only-guma-commerce-auth-secret-min-32-chars"
+      ? "dev-only-gumakart-auth-secret-min-32-chars"
       : undefined);
   if (!secret || secret.length < 32) {
     throw new Error(

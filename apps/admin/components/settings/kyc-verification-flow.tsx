@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import QRCode from "react-qr-code";
-import type { KycIdPath, KycSessionRecord } from "@guma-commerce/db";
+import type { KycIdPath, KycSessionRecord } from "@gumakart/db";
 import { KycDocumentSlot } from "@/components/settings/kyc-document-slot";
 import { PH_PRIMARY_IDS, PH_SECONDARY_IDS, getPhIdType } from "@/lib/kyc-id-types";
 import { useHasCamera, useIsMobileViewport } from "@/lib/use-device-camera";

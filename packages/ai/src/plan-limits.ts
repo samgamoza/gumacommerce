@@ -1,6 +1,6 @@
 /**
- * @deprecated Prefer `@guma-commerce/plans` for catalog + limits.
- * Re-exports kept for existing `@guma-commerce/ai` import sites.
+ * @deprecated Prefer `@gumakart/plans` for catalog + limits.
+ * Re-exports kept for existing `@gumakart/ai` import sites.
  */
 export {
   MAX_TOKENS_BY_TASK,
@@ -16,4 +16,4 @@ export {
   type PlanAiLimits,
   type QuotaCheckResult,
   type SubscriptionPlan,
-} from "@guma-commerce/plans";
+} from "@gumakart/plans";

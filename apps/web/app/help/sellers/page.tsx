@@ -31,7 +31,7 @@ export default function SellerGuidePage() {
             seller signup page
           </Link>
           . Verify your email and phone number. Choose your shop slug (e.g., haloqueen →
-          haloqueen.gumacommerce.ph).
+          kart.guma.one/haloqueen).
         </p>
 
         <h2>Step 2: Add your products</h2>

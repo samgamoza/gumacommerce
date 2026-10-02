@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Badge, Button, Card } from "@guma-commerce/ui";
+import { Badge, Button, Card } from "@gumakart/ui";
 
 interface CategoryRow {
   id: string;

@@ -1,6 +1,6 @@
 /**
- * @deprecated Import from `@guma-commerce/plans` directly.
- * Re-export kept so existing `@guma-commerce/db` consumers keep working.
+ * @deprecated Import from `@gumakart/plans` directly.
+ * Re-export kept so existing `@gumakart/db` consumers keep working.
  */
 export {
   SELLER_PLANS,
@@ -12,4 +12,4 @@ export {
   planPriceMonthly,
   type PlanDefinition,
   type SubscriptionPlanId,
-} from "@guma-commerce/plans";
+} from "@gumakart/plans";

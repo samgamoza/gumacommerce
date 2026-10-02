@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { deleteProductForTenant, markChangeRequestPublished, updateProductForTenant } from "@guma-commerce/db";
+import { deleteProductForTenant, markChangeRequestPublished, updateProductForTenant } from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 const patchSchema = z.object({
@@ -67,7 +67,7 @@ export async function PATCH(
       try {
         const { ensureEventsWired } = await import("@/lib/events-bootstrap");
         ensureEventsWired();
-        const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+        const { emitDomainEvent, EVENT_NAMES } = await import("@gumakart/events");
         await emitDomainEvent({
           name: EVENT_NAMES.PRICING_CHANGE_APPROVED,
           data: {

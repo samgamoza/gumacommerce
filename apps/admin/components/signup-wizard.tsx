@@ -15,7 +15,7 @@ import { AuthDivider, GoogleSignInButton } from "@/components/google-sign-in-but
 import { BusinessCategoryPicker } from "@/components/business-category-picker";
 import { VibePicker } from "@/components/vibe-picker";
 import { shopUrlDisplayPrefix } from "@/lib/utils";
-import { SHOP_BUSINESS_CATEGORIES } from "@guma-commerce/storefront-themes";
+import { SHOP_BUSINESS_CATEGORIES } from "@gumakart/storefront-themes";
 
 function slugify(value: string): string {
   return value

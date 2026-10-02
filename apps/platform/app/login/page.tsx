@@ -1,4 +1,4 @@
-import { GumaMark } from "@guma-commerce/ui";
+import { GumaMark } from "@gumakart/ui";
 import { ShieldCheck } from "lucide-react";
 import { LoginForm } from "@/components/login-form";
 

@@ -5,7 +5,7 @@ import {
   getGoogleProfileFromCode,
   isGoogleAuthConfigured,
   sessionCookieHeader,
-} from "@guma-commerce/auth";
+} from "@gumakart/auth";
 import {
   clearGoogleOAuthStateCookieHeader,
   parseGoogleOAuthState,

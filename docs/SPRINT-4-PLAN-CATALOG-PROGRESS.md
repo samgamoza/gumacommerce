@@ -20,7 +20,7 @@ One canonical plan catalog. Do **not** invent Free/Starter/Growth/Pro as DB IDs.
 
 | Area | What landed |
 |------|-------------|
-| Package | `@guma-commerce/plans` — `SELLER_PLANS`, prices, `normalizePlanId`, `planAtLeast`, `PLAN_AI_LIMITS`, client-safe |
+| Package | `@gumakart/plans` — `SELLER_PLANS`, prices, `normalizePlanId`, `planAtLeast`, `PLAN_AI_LIMITS`, client-safe |
 | Compat re-exports | `packages/db/src/plans.ts`, `packages/ai/src/plan-limits.ts` |
 | Consumers | admin `plan-access` / subscription UI, web storefront + landing, platform `CLIENT_PLANS` |
 | Copy alignment | Free/Pro/Advance on feature gates, upgrade banners, FAQ, shop-builder, refunds, platform tenant filters |
@@ -36,9 +36,9 @@ One canonical plan catalog. Do **not** invent Free/Starter/Growth/Pro as DB IDs.
 
 ```bash
 pnpm install
-pnpm --filter @guma-commerce/plans test
-pnpm --filter @guma-commerce/db exec tsc --noEmit
-pnpm --filter @guma-commerce/ai exec tsc --noEmit
+pnpm --filter @gumakart/plans test
+pnpm --filter @gumakart/db exec tsc --noEmit
+pnpm --filter @gumakart/ai exec tsc --noEmit
 ```
 
 ## Next

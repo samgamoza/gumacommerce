@@ -7,8 +7,8 @@ import {
   HELPDESK_NOTIFY_EMAIL_KEY,
   listSupportTickets,
   addSupportTicketMessage,
-} from "@guma-commerce/db";
-import { notifyHelpdeskTicketCreated } from "@guma-commerce/services";
+} from "@gumakart/db";
+import { notifyHelpdeskTicketCreated } from "@gumakart/services";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 const createSchema = z.object({

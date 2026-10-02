@@ -132,7 +132,7 @@ export async function captureError(error: unknown, context?: LogContext): Promis
       method: "POST",
       headers: {
         "Content-Type": "application/x-sentry-envelope",
-        "X-Sentry-Auth": `Sentry sentry_version=7, sentry_key=${parsed.publicKey}, sentry_client=guma-commerce/1.0`,
+        "X-Sentry-Auth": `Sentry sentry_version=7, sentry_key=${parsed.publicKey}, sentry_client=gumakart/1.0`,
       },
       body: envelope,
       signal: AbortSignal.timeout(3000),

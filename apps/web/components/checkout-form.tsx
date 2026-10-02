@@ -28,7 +28,7 @@ import {
 import {
   computeCheckoutTotals,
   isPaymentMethodEnabled,
-} from "@guma-commerce/db/checkout";
+} from "@gumakart/db/checkout";
 import {
   PhAddressFields,
   composePhDeliveryAddress,

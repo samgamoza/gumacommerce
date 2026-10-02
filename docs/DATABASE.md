@@ -1,6 +1,6 @@
 # Database Setup — Production-Ready PostgreSQL
 
-Guma Commerce uses **PostgreSQL** with **Drizzle ORM**. For deployment, we recommend **[Neon](https://neon.tech)** — serverless Postgres with a free tier, connection pooling, and first-class Vercel integration.
+Guma Kart uses **PostgreSQL** with **Drizzle ORM**. For deployment, we recommend **[Neon](https://neon.tech)** — serverless Postgres with a free tier, connection pooling, and first-class Vercel integration.
 
 ## Why Neon?
 
@@ -25,7 +25,7 @@ If you connected Neon to Vercel + GitHub, **Vercel already has your DB credentia
 | `DATABASE_URL` | **Pooled** (`-pooler` in host) | App at runtime |
 | `DATABASE_URL_UNPOOLED` | **Direct** (no `-pooler`) | Migrations, seed |
 
-Guma Commerce supports both this and manual `.env` naming. **You don't need to paste strings into Vercel manually.**
+Guma Kart supports both this and manual `.env` naming. **You don't need to paste strings into Vercel manually.**
 
 To run migrations from your PC, copy `DATABASE_URL_UNPOOLED` from Vercel → Settings → Environment Variables into a local `.env`, then run `pnpm db:migrate`.
 
@@ -35,7 +35,7 @@ To run migrations from your PC, copy `DATABASE_URL_UNPOOLED` from Vercel → Set
 
 1. Sign up at [console.neon.tech](https://console.neon.tech)
 2. Click **New Project**
-3. Name: `guma-commerce`
+3. Name: `gumakart`
 4. Region: **AWS Singapore (`ap-southeast-1`)** — closest to Philippines
 5. Postgres version: **16**
 
@@ -98,8 +98,8 @@ For rapid local-only prototyping you can still use `pnpm db:push`, but **use mig
 
 1. Push repo to GitHub
 2. Import both apps in Vercel:
-   - `apps/web` → `gumacommerce.ph` storefront
-   - `apps/admin` → `app.gumacommerce.ph` dashboard
+   - `apps/web` → `kart.guma.one` storefront
+   - `apps/admin` → `app.kart.guma.one` dashboard
 3. Add environment variables to **both** projects:
 
 ```
@@ -150,9 +150,9 @@ pnpm db:up
 Uses port **5434** (avoids conflict with existing Postgres on 5432/5433):
 
 ```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5434/guma_commerce
+DATABASE_URL=postgresql://postgres:postgres@localhost:5434/gumakart
 # DATABASE_URL_POOLED can be the same for local
-DATABASE_URL_POOLED=postgresql://postgres:postgres@localhost:5434/guma_commerce
+DATABASE_URL_POOLED=postgresql://postgres:postgres@localhost:5434/gumakart
 ```
 
 ---

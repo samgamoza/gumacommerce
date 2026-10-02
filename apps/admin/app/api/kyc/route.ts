@@ -3,7 +3,7 @@ import {
   getLatestKycSession,
   getOrCreateActiveKycSession,
   getTenantSettings,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 import { adminBaseUrl, kycMobileUrl } from "@/lib/kyc-url";
 

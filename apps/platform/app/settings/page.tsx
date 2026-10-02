@@ -1,5 +1,5 @@
-import { getPlatformOpsSettings } from "@guma-commerce/db";
-import { getIntegrationReport } from "@guma-commerce/services";
+import { getPlatformOpsSettings } from "@gumakart/db";
+import { getIntegrationReport } from "@gumakart/services";
 import { requireSuperAdmin } from "@/lib/session";
 import { PlatformShell } from "@/components/platform-shell";
 import { SettingsPanel } from "@/components/settings-panel";
@@ -80,7 +80,7 @@ export default async function SettingsPage() {
           severity: c.severity,
         }))}
         activeLandingLabel={
-          ops.activeLanding === "frontend2" ? "Guma One.ai" : "GumaCommerce"
+          ops.activeLanding === "frontend2" ? "Guma One.ai" : "GumaKart"
         }
       />
     </PlatformShell>

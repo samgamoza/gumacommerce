@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { PlatformAttention } from "@guma-commerce/db";
+import type { PlatformAttention } from "@gumakart/db";
 
 type Item = {
   href: string;

@@ -6,7 +6,7 @@ import { Check, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { DemoProduct, DemoTenant } from "@/lib/demo-data";
 import { useCart } from "@/lib/cart";
-import { isFoodBusinessCategory } from "@guma-commerce/storefront-themes";
+import { isFoodBusinessCategory } from "@gumakart/storefront-themes";
 import { formatSarabPrice, splitSarabBrand } from "./sarab-utils";
 
 function SarabMenuCard({

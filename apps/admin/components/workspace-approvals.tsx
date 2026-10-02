@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Button, Card } from "@guma-commerce/ui";
+import { Button, Card } from "@gumakart/ui";
 
 interface ChangeRequest {
   id: string;

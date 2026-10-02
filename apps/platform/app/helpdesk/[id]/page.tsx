@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { getSupportTicketById } from "@guma-commerce/db";
+import { getSupportTicketById } from "@gumakart/db";
 import { requireSuperAdmin } from "@/lib/session";
 import { PlatformShell } from "@/components/platform-shell";
 import { HelpdeskTicketActions } from "@/components/helpdesk-ticket-actions";

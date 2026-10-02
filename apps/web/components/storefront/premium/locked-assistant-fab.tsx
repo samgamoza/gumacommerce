@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
-import type { ResolvedShopTheme } from "@guma-commerce/storefront-themes";
+import type { ResolvedShopTheme } from "@gumakart/storefront-themes";
 import { upgradeUrl } from "@/lib/storefront-plans";
 import { PlanTierBadge } from "./plan-tier-badge";
 

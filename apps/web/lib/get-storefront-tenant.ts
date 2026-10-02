@@ -1,11 +1,11 @@
-import { resolveShopThemeForPlan, resolveStorePattern, emojiForShopCategory } from "@guma-commerce/storefront-themes";
+import { resolveShopThemeForPlan, resolveStorePattern, emojiForShopCategory } from "@gumakart/storefront-themes";
 import {
   classifyTenantPublicAccess,
   getPendingTenantBySlug,
   getTenantAvailabilityBySlug,
   getTenantStorefrontBySlug,
   getTenantStorefrontPreviewBySlug,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import {
   DEMO_TENANT,
   type DemoProduct,

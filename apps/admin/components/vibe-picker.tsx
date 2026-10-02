@@ -1,6 +1,6 @@
 "use client";
 
-import { SHOP_VIBES } from "@guma-commerce/storefront-themes";
+import { SHOP_VIBES } from "@gumakart/storefront-themes";
 
 export function VibePicker({
   value,

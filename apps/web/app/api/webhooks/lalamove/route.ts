@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 import {
   advanceOrderStatusFromDelivery,
   updateDeliveryByProviderOrderId,
-} from "@guma-commerce/db";
-import { createLogger } from "@guma-commerce/services";
+} from "@gumakart/db";
+import { createLogger } from "@gumakart/services";
 
 const log = createLogger("webhook:lalamove");
 

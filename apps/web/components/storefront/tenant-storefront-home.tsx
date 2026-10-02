@@ -1,5 +1,5 @@
 import dynamic from "next/dynamic";
-import { resolveStorePattern, getStorePattern } from "@guma-commerce/storefront-themes";
+import { resolveStorePattern, getStorePattern } from "@gumakart/storefront-themes";
 import { ThemedStorefrontHome } from "@/components/storefront/themed-home";
 import type { DemoTenant } from "@/lib/demo-data";
 

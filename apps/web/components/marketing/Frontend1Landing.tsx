@@ -16,7 +16,7 @@ const stats = [
   { value: "24/7", label: "Orders while you sleep" },
 ];
 
-/** frontend1 — the GumaCommerce marketing landing. */
+/** frontend1 — the GumaKart marketing landing. */
 export function Frontend1Landing() {
   return (
     <div className="min-h-screen">

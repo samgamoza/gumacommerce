@@ -17,7 +17,7 @@ import {
   PAYMENTS_MODE_KEY,
   resolveTenantPaymentsSettings,
   upsertCheckoutSession,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import {
   buildManualEwalletInstructions,
   clientIpFrom,
@@ -34,7 +34,7 @@ import {
   sendPushNotifications,
   startOnlinePayment,
   type CheckoutPaymentMethod,
-} from "@guma-commerce/services";
+} from "@gumakart/services";
 
 const log = createLogger("checkout");
 import { getTenant as getDemoTenant } from "@/lib/demo-data";
@@ -117,7 +117,7 @@ async function emitOrderEvents(input: {
   try {
     const { ensureEventsWired } = await import("@/lib/events-bootstrap");
     ensureEventsWired();
-    const { emitDomainEvent, EVENT_NAMES } = await import("@guma-commerce/events");
+    const { emitDomainEvent, EVENT_NAMES } = await import("@gumakart/events");
     await emitDomainEvent({
       name: EVENT_NAMES.ORDER_CREATED,
       data: {

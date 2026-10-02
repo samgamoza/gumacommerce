@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Check, Loader2, ExternalLink } from "lucide-react";
-import type { ActiveLanding } from "@guma-commerce/db";
+import type { ActiveLanding } from "@gumakart/db";
 import { setActiveLandingAction } from "@/app/actions";
 
 const OPTIONS: {
@@ -13,8 +13,8 @@ const OPTIONS: {
 }[] = [
   {
     id: "frontend1",
-    name: "GumaCommerce",
-    desc: "The GumaCommerce marketing landing — emerald theme, storefront & checkout focus.",
+    name: "GumaKart",
+    desc: "The GumaKart marketing landing — emerald theme, storefront & checkout focus.",
     previewPath: "/frontend1",
   },
   {

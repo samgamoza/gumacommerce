@@ -9,8 +9,8 @@ import {
 import { company } from "@/lib/site-content";
 
 export const metadata: Metadata = {
-  title: "Contact — Guma Commerce",
-  description: "Get in touch with the Guma Commerce team for sales, support, and partnerships.",
+  title: "Contact — Guma Kart",
+  description: "Get in touch with the Guma Kart team for sales, support, and partnerships.",
 };
 
 export default function ContactPage() {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { AUTH_COOKIE_NAME, readSessionCookie, verifySessionToken } from "@guma-commerce/auth/session";
+import { AUTH_COOKIE_NAME, readSessionCookie, verifySessionToken } from "@gumakart/auth/session";
 
 const PUBLIC_PATHS = ["/login", "/signup", "/verify-email", "/kyc/mobile"];
 

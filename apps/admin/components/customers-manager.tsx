@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Card, formatPrice } from "@guma-commerce/ui";
+import { Card, formatPrice } from "@gumakart/ui";
 
 interface CustomerRow {
   id: string;

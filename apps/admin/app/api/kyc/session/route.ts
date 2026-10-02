@@ -4,7 +4,7 @@ import {
   getKycSessionByToken,
   updateKycSession,
   type KycIdPath,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 import { isPrimaryId, isSecondaryId } from "@/lib/kyc-id-types";
 

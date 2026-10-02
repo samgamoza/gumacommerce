@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
-import { listPlatformOrders } from "@guma-commerce/db";
+import { listPlatformOrders } from "@gumakart/db";
 import { requireSuperAdmin } from "@/lib/session";
 import { PlatformShell } from "@/components/platform-shell";
 import { FilterBar } from "@/components/filter-bar";

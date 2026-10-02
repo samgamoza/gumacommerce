@@ -4,8 +4,8 @@ import {
   getOrderForTracking,
   getTenantIdBySlug,
   submitManualPaymentReference,
-} from "@guma-commerce/db";
-import { clientIpFrom, rateLimit } from "@guma-commerce/services";
+} from "@gumakart/db";
+import { clientIpFrom, rateLimit } from "@gumakart/services";
 
 const schema = z
   .object({

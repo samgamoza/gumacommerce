@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { AuthLayout } from "@/components/auth-layout";
-import { Button } from "@guma-commerce/ui";
+import { Button } from "@gumakart/ui";
 
 function VerifyEmailContent() {
   const router = useRouter();

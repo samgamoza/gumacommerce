@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { PatternAdminShell } from "@/components/pattern-admin-shell";
-import { Button, Card } from "@guma-commerce/ui";
+import { Button, Card } from "@gumakart/ui";
 
 interface SessionUser {
   tenantSlug: string;

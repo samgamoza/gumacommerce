@@ -1,7 +1,7 @@
-/* Guma Commerce seller push notifications */
+/* Guma Kart seller push notifications */
 
 self.addEventListener("push", (event) => {
-  let payload = { title: "Guma Commerce", body: "You have a new notification.", url: "/orders" };
+  let payload = { title: "Guma Kart", body: "You have a new notification.", url: "/orders" };
   try {
     payload = { ...payload, ...event.data.json() };
   } catch (e) {
@@ -11,7 +11,7 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(payload.title, {
       body: payload.body,
-      tag: payload.tag || "guma-commerce",
+      tag: payload.tag || "gumakart",
       icon: "/icon-192.png",
       badge: "/icon-192.png",
       data: { url: payload.url || "/orders" },

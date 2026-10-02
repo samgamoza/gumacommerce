@@ -30,11 +30,11 @@ Adopt the Handbook's contexts as **folder/interface boundaries and documentation
 - Canonical plan ids: **`free` · `growth` · `pro`** (stable forever in DB / billing). Platform legacy rows may still store `starter`; normalize via `normalizePlanId`.
 - Handbook mapping (use everywhere the Handbook names appear): **FREE → `free`, PRO → `growth`, ADVANCE → `pro`.**
 - Constitution / seller-facing labels: **Free · Pro · Advance** (not Sulit / Growth / Pro).
-- **Single module:** `@guma-commerce/plans` (`packages/plans`) — prices, features, AI limits, aliases. Thin re-exports remain on `@guma-commerce/db` (`plans`) and `@guma-commerce/ai` (`plan-limits`) for compat. No feature may hardcode plan prices/limits elsewhere.
+- **Single module:** `@gumakart/plans` (`packages/plans`) — prices, features, AI limits, aliases. Thin re-exports remain on `@gumakart/db` (`plans`) and `@gumakart/ai` (`plan-limits`) for compat. No feature may hardcode plan prices/limits elsewhere.
 - Aliases: `starter`→`growth`, `advance`→`pro`, `sulit`→`free`.
 - This is **prerequisite work** — it blocks correct billing/MRR (handoff §15, High severity).
 
-**Amendment 2026-07-13:** Sprint 4 landed `@guma-commerce/plans` as the canonical catalog. Do not invent Free/Starter/Growth/Pro as DB IDs.
+**Amendment 2026-07-13:** Sprint 4 landed `@gumakart/plans` as the canonical catalog. Do not invent Free/Starter/Growth/Pro as DB IDs.
 
 ### D5 — Crown jewel first: AI permissions + draft→approve→publish + audit
 This is the top Handbook feature to implement, and it must **reuse existing patterns** for uniformity:
@@ -57,7 +57,7 @@ Until then, **do not add these dependencies.** Postgres FTS is the sanctioned MV
 ### D7 — Uniform audit shape
 All audit entries (platform, seller, AI) share the `platform_audit_log` column vocabulary: `actorId`, `actorEmail`, `action`, `entityType`, `entityId`, `entityLabel`, `metadataJson`, `createdAt`. Tenant-scoped entries add `tenantId` and an `actorType` (`user` | `ai` | `system`). Prefer **extending** the existing table (add `tenantId`, `actorType`) over a second audit table, unless retention/volume forces a split.
 
-### D8 — Resolve the Guma Commerce ↔ Guma OS boundary before dual event buses
+### D8 — Resolve the Guma Kart ↔ Guma OS boundary before dual event buses
 There is a parallel "Guma OS" initiative with its own Redis-Streams bus and constitution. **Before** `packages/events` grows beyond commerce side-effects, confirm the source-of-truth and the seam between the two systems (owner decision, not an implementation detail). Until resolved, `packages/events` stays **commerce-scoped** and does not attempt to be the org-wide bus.
 
 ---

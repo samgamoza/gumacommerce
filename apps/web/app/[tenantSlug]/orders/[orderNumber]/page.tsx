@@ -5,9 +5,9 @@ import {
   getTenantStorefrontBySlug,
   resolveTenantPaymentsSettings,
   type OrderStatus,
-} from "@guma-commerce/db";
-import { buildManualEwalletInstructions } from "@guma-commerce/services";
-import { Badge, Button, Card } from "@guma-commerce/ui";
+} from "@gumakart/db";
+import { buildManualEwalletInstructions } from "@gumakart/services";
+import { Badge, Button, Card } from "@gumakart/ui";
 import { getTenant as getDemoTenant } from "@/lib/demo-data";
 import { OrderAutoRefresh } from "@/components/order-auto-refresh";
 import { ManualPaymentPanel } from "@/components/manual-payment-panel";

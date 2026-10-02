@@ -5,7 +5,7 @@ import {
   getKycSessionByToken,
   KycValidationError,
   submitKycSession,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 const bodySchema = z.object({

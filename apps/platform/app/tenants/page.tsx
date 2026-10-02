@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ChevronRight, Store } from "lucide-react";
-import { listTenants } from "@guma-commerce/db";
+import { listTenants } from "@gumakart/db";
 import { requireSuperAdmin } from "@/lib/session";
 import { PlatformShell } from "@/components/platform-shell";
 import { FilterBar } from "@/components/filter-bar";

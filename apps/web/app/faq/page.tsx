@@ -29,7 +29,7 @@ export default function FaqPage() {
       <PageHeader
         eyebrow="Support"
         title="Frequently asked questions"
-        description="Payments, delivery, plans, and compliance — answered for how Guma Commerce actually works in soft launch."
+        description="Payments, delivery, plans, and compliance — answered for how Guma Kart actually works in soft launch."
       />
 
       <ContentSection>

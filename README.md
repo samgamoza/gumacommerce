@@ -1,11 +1,11 @@
-# Guma Commerce
+# Guma Kart
 
 AI-powered social commerce platform for Philippine sellers. Replace fragmented Messenger chats with branded mobile storefronts, local payments, and delivery integration.
 
 ## Monorepo structure
 
 ```
-guma-commerce/
+gumakart/
 ├── apps/
 │   ├── web/          # Customer storefront (port 3010 in dev)
 │   └── admin/        # Seller dashboard + AI studio (port 3001)

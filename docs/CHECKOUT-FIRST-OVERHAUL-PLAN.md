@@ -6,7 +6,7 @@
 
 ## 1. Product thesis (the correction)
 
-**Gumacommerce _is_ Guma One.** It is a **unified smart checkout-automation system** for
+**Gumakart _is_ Guma One.** It is a **unified smart checkout-automation system** for
 sellers who already have an audience on Facebook / TikTok / Instagram and today sell through
 manual **"PM me / DM me"** chat threads.
 

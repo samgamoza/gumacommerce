@@ -8,11 +8,11 @@ import {
   resolveAgentSettings,
   resolveShopAssistantSettings,
   updateTenantSettings,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 import { buildDailyBriefing, groupQueueByDay } from "@/lib/agents/briefing";
 import { getUsageSnapshot } from "@/lib/agents/usage-gate";
-import { normalizePlan, resolveModelForTask } from "@guma-commerce/ai";
+import { normalizePlan, resolveModelForTask } from "@gumakart/ai";
 
 export async function GET() {
   try {

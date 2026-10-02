@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import {
   integrationHealthPayload,
   logIntegrationStatusOnce,
-} from "@guma-commerce/services";
+} from "@gumakart/services";
 
 export const dynamic = "force-dynamic";
 

@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createAiGenerator, resolveApprovalLevel } from "@guma-commerce/ai";
+import { createAiGenerator, resolveApprovalLevel } from "@gumakart/ai";
 import {
   createChangeRequest,
   getTenantDashboard,
   recordAiUsage,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 import { assertAiQuota } from "@/lib/agents/usage-gate";
 

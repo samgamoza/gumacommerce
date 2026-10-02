@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createPlanPayment, PLAN_PRICES_PHP } from "@guma-commerce/db";
+import { createPlanPayment, PLAN_PRICES_PHP } from "@gumakart/db";
 import {
   createLogger,
   createPayMongoClient,
   type PayMongoMethod,
-} from "@guma-commerce/services";
+} from "@gumakart/services";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 const log = createLogger("billing:upgrade");

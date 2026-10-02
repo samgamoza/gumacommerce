@@ -4,7 +4,7 @@ import {
   AUTH_COOKIE_NAME,
   readSessionCookie,
   verifySessionToken,
-} from "@guma-commerce/auth/session";
+} from "@gumakart/auth/session";
 
 const PUBLIC_PATHS = ["/login"];
 const PUBLIC_API_PREFIXES = ["/api/auth/login", "/api/auth/session"];

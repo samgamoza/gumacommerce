@@ -1,5 +1,5 @@
-import type { ResolvedShopTheme } from "@guma-commerce/storefront-themes";
-import { PLAN_PRICES_PHP, planDisplayName } from "@guma-commerce/plans";
+import type { ResolvedShopTheme } from "@gumakart/storefront-themes";
+import { PLAN_PRICES_PHP, planDisplayName } from "@gumakart/plans";
 import { hasGrowthFeatures, hasProFeatures, upgradeUrl } from "@/lib/storefront-plans";
 import { PlanTierBadge } from "./plan-tier-badge";
 

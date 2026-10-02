@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { listOrdersForTenant } from "@guma-commerce/db";
+import { listOrdersForTenant } from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 export async function GET() {

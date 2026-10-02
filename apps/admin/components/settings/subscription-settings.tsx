@@ -2,8 +2,8 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Badge, Button, Card } from "@guma-commerce/ui";
-import { SELLER_PLANS, normalizePlanId, planDisplayName } from "@guma-commerce/plans";
+import { Badge, Button, Card } from "@gumakart/ui";
+import { SELLER_PLANS, normalizePlanId, planDisplayName } from "@gumakart/plans";
 import { SettingsShell } from "@/components/settings/settings-shell";
 import { useTenantSettings } from "@/components/settings/settings-forms";
 import { modelStoreUrl } from "@/lib/utils";
@@ -21,7 +21,7 @@ const PAY_METHODS = [
   { id: "card", label: "Card" },
 ] as const;
 
-const SUPPORT_EMAIL = "support@gumacommerce.ph";
+const SUPPORT_EMAIL = "support@guma.one";
 
 export function SubscriptionSettingsPage() {
   const searchParams = useSearchParams();

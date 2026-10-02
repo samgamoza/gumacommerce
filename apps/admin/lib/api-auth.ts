@@ -1,8 +1,8 @@
-import { getUserSessionById, isSessionCurrent } from "@guma-commerce/auth";
+import { getUserSessionById, isSessionCurrent } from "@gumakart/auth";
 import {
   getTenantStatusById,
   sellerWriteHttpRejectionForStatus,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import { getSession, type Session } from "@/lib/session";
 
 export type RequireTenantSessionOptions = {

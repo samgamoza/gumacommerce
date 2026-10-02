@@ -9,8 +9,8 @@ import {
 import { company } from "@/lib/site-content";
 
 export const metadata: Metadata = {
-  title: "Refund & Return Policy — Guma Commerce",
-  description: "Refund and return policies for Guma Commerce platform fees and seller storefronts.",
+  title: "Refund & Return Policy — Guma Kart",
+  description: "Refund and return policies for Guma Kart platform fees and seller storefronts.",
 };
 
 const toc = [
@@ -35,7 +35,7 @@ export default function RefundsPage() {
       <LegalDocLayout toc={toc}>
         <h2 id="subscription">Platform subscription refunds</h2>
         <p>
-          Guma Commerce subscription fees (Pro, Advance) are non-refundable for the current billing
+          Guma Kart subscription fees (Pro, Advance) are non-refundable for the current billing
           period. You may cancel anytime to prevent future charges. If you were charged in error,
           contact{" "}
           <a href={`mailto:${company.support}`}>{company.support}</a> within 7 days.
@@ -79,7 +79,7 @@ export default function RefundsPage() {
           <a href="https://www.dti.gov.ph" target="_blank" rel="noopener noreferrer">
             www.dti.gov.ph
           </a>{" "}
-          or contact Guma Commerce support at{" "}
+          or contact Guma Kart support at{" "}
           <a href={`mailto:${company.support}`}>{company.support}</a> for platform assistance.
         </p>
 

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createSupportTicket, getPlatformSetting, HELPDESK_NOTIFY_EMAIL_KEY } from "@guma-commerce/db";
+import { createSupportTicket, getPlatformSetting, HELPDESK_NOTIFY_EMAIL_KEY } from "@gumakart/db";
 import {
   clientIpFrom,
   createLogger,
   notifyHelpdeskTicketCreated,
   rateLimit,
-} from "@guma-commerce/services";
+} from "@gumakart/services";
 
 const log = createLogger("support:public");
 

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getTemplateStockByKey } from "@guma-commerce/db";
-import { isShopTemplateId, normalizeStoreLook, resolveStockSkin } from "@guma-commerce/storefront-themes";
+import { getTemplateStockByKey } from "@gumakart/db";
+import { isShopTemplateId, normalizeStoreLook, resolveStockSkin } from "@gumakart/storefront-themes";
 import { TenantStorefrontHome } from "@/components/storefront/tenant-storefront-home";
 import { getOpsStockPreviewTenant } from "@/lib/demo-data";
 

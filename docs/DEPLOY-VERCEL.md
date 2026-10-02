@@ -31,17 +31,17 @@ See [DATABASE.md](./DATABASE.md) for troubleshooting.
 | Admin | `apps/admin` | `app.guma.ph` or `*-admin.vercel.app` |
 | Platform | `apps/platform` | `ops.guma.ph` or `*-platform.vercel.app` |
 
-**Observability:** set `SENTRY_DSN` on **all three** Vercel projects. `@guma-commerce/services` `createLogger` / `captureError` forward exceptions when present (no separate Sentry SDK required). Confirm via each app’s `/api/health/integrations` (web/admin) that `sentry` shows `configured`.
+**Observability:** set `SENTRY_DSN` on **all three** Vercel projects. `@gumakart/services` `createLogger` / `captureError` forward exceptions when present (no separate Sentry SDK required). Confirm via each app’s `/api/health/integrations` (web/admin) that `sentry` shows `configured`.
 
 **Framework:** Next.js (auto-detected)
 
 **Build command (both):**
 
 ```bash
-cd ../.. && pnpm install && pnpm turbo build --filter=@guma-commerce/web
+cd ../.. && pnpm install && pnpm turbo build --filter=@gumakart/web
 ```
 
-Replace filter with `@guma-commerce/admin` for the admin project.
+Replace filter with `@gumakart/admin` for the admin project.
 
 **Install command:** `pnpm install` (run from repo root via `cd ../..` in build if needed)
 

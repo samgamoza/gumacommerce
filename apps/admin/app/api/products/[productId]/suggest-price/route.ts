@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { resolveApprovalLevel } from "@guma-commerce/ai";
+import { resolveApprovalLevel } from "@gumakart/ai";
 import {
   createChangeRequest,
   getProductForTenant,
   getTenantDashboard,
   recordAiUsage,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 import { assertAiQuota } from "@/lib/agents/usage-gate";
 import { suggestNearbyMarketPrice } from "@/lib/suggest-market-price";

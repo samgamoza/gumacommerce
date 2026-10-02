@@ -11,14 +11,14 @@ import {
   Sparkles,
 } from "lucide-react";
 import { PatternAdminShell } from "@/components/pattern-admin-shell";
-import { Button, Card } from "@guma-commerce/ui";
+import { Button, Card } from "@gumakart/ui";
 import type {
   AgentSettings,
   ContentQueueItem,
   OrderInsights7d,
   ShopAssistantSettings,
-} from "@guma-commerce/db";
-import type { AiUsageSnapshot } from "@guma-commerce/ai";
+} from "@gumakart/db";
+import type { AiUsageSnapshot } from "@gumakart/ai";
 
 const PLATFORM_LABEL: Record<string, string> = {
   instagram: "Instagram",

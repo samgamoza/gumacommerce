@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { KycSessionRecord } from "@guma-commerce/db";
+import type { KycSessionRecord } from "@gumakart/db";
 import { KycVerificationFlow } from "@/components/settings/kyc-verification-flow";
 
 export default function KycMobileClient({ token }: { token: string }) {

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { AuthError, loginUser, sessionCookieHeader } from "@guma-commerce/auth";
-import { resolveSellerHomePath } from "@guma-commerce/db";
-import { clientIpFrom, rateLimit } from "@guma-commerce/services";
+import { AuthError, loginUser, sessionCookieHeader } from "@gumakart/auth";
+import { resolveSellerHomePath } from "@gumakart/db";
+import { clientIpFrom, rateLimit } from "@gumakart/services";
 
 const loginSchema = z.object({
   email: z.string().email(),

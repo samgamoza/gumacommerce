@@ -1,7 +1,7 @@
 # Mission 000 — Repository Preservation and Executable Baseline
 
 **Status:** Investigation complete. Checkpoint/commit NOT yet executed — awaiting one further explicit go-ahead (see §6).
-**Repository:** `D:\All Apps\gumacommerce`, branch `wip/uncommitted-work-2026-08-01`.
+**Repository:** `D:\All Apps\gumakart`, branch `wip/uncommitted-work-2026-08-01`.
 **Date:** 2026-08-20.
 **What this pass did:** read-only inventory, classification, and root-cause analysis of the dirty working tree; a read-only secret/generated-file scan; an attempted toolchain run (with its failure modes precisely documented); a read-only migration/journal reconciliation; and direct code verification of the fail-closed integration posture and the active storefront default. **No file was modified, no command was executed against a database (local or live), and nothing was committed, staged, or pushed.**
 
@@ -16,7 +16,7 @@ git diff --shortstat        →  572 files changed, 69272 insertions(+), 69195 d
 git diff --shortstat -w     →    5 files changed,     92 insertions(+),    15 deletions(-)
 ```
 
-`-w` (ignore whitespace) collapses the diff from 572 files to 5. Spot-checking individual files (`docs/CONSTITUTION.md`, `docs/ARCHITECTURE.md`) confirmed the pattern directly: every line of the file is reported changed, insertions exactly equal deletions, and the diff disappears entirely under `-w`. That signature means **line-ending conversion (CRLF vs. LF), not content edits**. Root cause, confirmed: `git show HEAD:docs/CONSTITUTION.md | file -` reports plain `UTF-8 text`; the working-tree copy reports `UTF-8 text, with CRLF line terminators`. There is no `.gitattributes` file in the repository and no `core.autocrlf` set — so Windows tooling (the working checkout is at `D:\All Apps\gumacommerce`) has re-saved files with CRLF line endings against LF-committed blobs, and git faithfully reports the entire file as changed on every line.
+`-w` (ignore whitespace) collapses the diff from 572 files to 5. Spot-checking individual files (`docs/CONSTITUTION.md`, `docs/ARCHITECTURE.md`) confirmed the pattern directly: every line of the file is reported changed, insertions exactly equal deletions, and the diff disappears entirely under `-w`. That signature means **line-ending conversion (CRLF vs. LF), not content edits**. Root cause, confirmed: `git show HEAD:docs/CONSTITUTION.md | file -` reports plain `UTF-8 text`; the working-tree copy reports `UTF-8 text, with CRLF line terminators`. There is no `.gitattributes` file in the repository and no `core.autocrlf` set — so Windows tooling (the working checkout is at `D:\All Apps\gumakart`) has re-saved files with CRLF line endings against LF-committed blobs, and git faithfully reports the entire file as changed on every line.
 
 **The five files with genuine content changes:**
 

@@ -1,4 +1,4 @@
-import type { ShopTemplateId, StorePatternId } from "@guma-commerce/storefront-themes";
+import type { ShopTemplateId, StorePatternId } from "@gumakart/storefront-themes";
 
 export interface StorefrontTemplateRegistryEntry {
   id: ShopTemplateId;

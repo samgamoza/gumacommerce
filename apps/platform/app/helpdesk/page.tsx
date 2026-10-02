@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AlertTriangle, Headphones } from "lucide-react";
-import { getSupportTicketCounts, listSupportTickets } from "@guma-commerce/db";
+import { getSupportTicketCounts, listSupportTickets } from "@gumakart/db";
 import { requireSuperAdmin } from "@/lib/session";
 import { PlatformShell } from "@/components/platform-shell";
 import { FilterBar } from "@/components/filter-bar";

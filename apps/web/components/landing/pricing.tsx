@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Check, ShieldCheck, Sparkles, Zap } from "lucide-react";
-import { SELLER_PLANS, PLAN_AI_LIMITS } from "@guma-commerce/plans";
+import { SELLER_PLANS, PLAN_AI_LIMITS } from "@gumakart/plans";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

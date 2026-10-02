@@ -2,7 +2,7 @@ import {
   checkoutFromLegacySettings,
   normalizeCheckoutJson,
   type TenantCheckoutJson,
-} from "@guma-commerce/db/checkout";
+} from "@gumakart/db/checkout";
 import {
   isPickupEnabled,
   legacyDeliveryFromShipping,
@@ -10,7 +10,7 @@ import {
   resolveShippingFee,
   shippingFromLegacyDelivery,
   type TenantShippingJson,
-} from "@guma-commerce/db/shipping";
+} from "@gumakart/db/shipping";
 
 export interface StorefrontStoreSettings {
   codEnabled: boolean;

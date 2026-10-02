@@ -4,7 +4,7 @@ import {
   AUTH_COOKIE_NAME,
   verifySessionToken,
   type SessionPayload,
-} from "@guma-commerce/auth";
+} from "@gumakart/auth";
 
 export type { SessionPayload };
 

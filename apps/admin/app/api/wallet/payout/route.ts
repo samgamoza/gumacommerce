@@ -7,7 +7,7 @@ import {
   getTenantSettings,
   WalletError,
   processQueuedPayouts,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import { ApiAuthError, requireTenantSession } from "@/lib/api-auth";
 
 const payoutSchema = z.object({

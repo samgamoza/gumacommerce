@@ -10,8 +10,8 @@ import {
   type CuratedTemplateCard,
   type ShopTemplateId,
   type StockSkin,
-} from "@guma-commerce/storefront-themes";
-import type { TemplateStockRow } from "@guma-commerce/db";
+} from "@gumakart/storefront-themes";
+import type { TemplateStockRow } from "@gumakart/db";
 
 function hashString(value: string): number {
   let hash = 0x811c9dc5;

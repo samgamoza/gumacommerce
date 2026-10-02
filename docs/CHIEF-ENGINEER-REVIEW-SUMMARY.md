@@ -1,8 +1,8 @@
-# Guma Commerce — Chief Engineer Review Summary
+# Guma Kart — Chief Engineer Review Summary
 
 **Date:** 2026-08-06  
 **Audience:** Chief Engineer / final architecture & launch readiness review  
-**Repo:** `D:\All Apps\gumacommerce` (`@guma-commerce/*`)  
+**Repo:** `D:\All Apps\gumakart` (`@gumakart/*`)  
 **Branch snapshot:** `wip/uncommitted-work-2026-08-01` (large uncommitted delta — treat working tree as source of truth until committed)  
 **Companion docs:** `COMPREHENSIVE-HANDOFF-2026-07-12.md`, `DELIVERY-AND-HELPDESK.md`, `MVP-MANUAL-EWALLET-CHAT.md`, `ADR-0001-handbook-adoption.md`
 
@@ -16,7 +16,7 @@
 
 ## 2. What the product is
 
-Guma Commerce turns Facebook / TikTok / IG social selling into a branded mobile storefront with:
+Guma Kart turns Facebook / TikTok / IG social selling into a branded mobile storefront with:
 
 - Guest checkout (GCash / Maya / COD; **manual e-wallet** path for MVP)
 - Seller Launch → products → orders → optional AI content
@@ -47,9 +47,9 @@ Neon Postgres | PayMongo* | Lalamove* | Grab* | Semaphore* | optional Upstash/Bl
 (* degrade to mocks / manual when keys missing — see MVP hardening docs)
 ```
 
-**Shared auth:** JWT cookie `gumacommerce_session` (`packages/auth`).  
-**Plans:** single catalog `@guma-commerce/plans` — Free / Pro / Advance (`free` / `growth` / `pro`).  
-**Hard rules:** never `db:push` on live Neon; never import `@guma-commerce/db` from `"use client"`.
+**Shared auth:** JWT cookie `gumakart_session` (`packages/auth`).  
+**Plans:** single catalog `@gumakart/plans` — Free / Pro / Advance (`free` / `growth` / `pro`).  
+**Hard rules:** never `db:push` on live Neon; never import `@gumakart/db` from `"use client"`.
 
 ---
 
@@ -64,7 +64,7 @@ Neon Postgres | PayMongo* | Lalamove* | Grab* | Semaphore* | optional Upstash/Bl
 | Seller UX | **Good enough** | Launch, products (manual-first + AI enhance), orders book/assign, messages inbox |
 | Buyer chat | **MVP Beta** | Owner-led inbox + AI FAQ; polling; WhatsApp overflow — no websockets / Messenger |
 | Helpdesk | **New / usable** | Tickets + SLA clocks; intake on web + admin; agent console on platform |
-| Marketing | **Two skins, one backend** | `frontend1` (GumaCommerce) wired CTAs; `frontend2` (Guma One.ai) more aspirational |
+| Marketing | **Two skins, one backend** | `frontend1` (GumaKart) wired CTAs; `frontend2` (Guma One.ai) more aspirational |
 | Templates | **Strong portfolio** | 18 live HTML→React ports + token themes; Free Bundle catalogued |
 | AI / CR rails | **Partial handbook** | Crown-jewel draft→approve→publish for theme/catalog/pricing/SEO/checkout/shipping; no unified Workstation |
 | Platform ops | **Useful** | Tenants/users/plans/moderation/helpdesk/frontends/audit |
@@ -130,7 +130,7 @@ Neon Postgres | PayMongo* | Lalamove* | Grab* | Semaphore* | optional Upstash/Bl
 | Nominatim geocode rate/reliability | Medium | Cache or paid geocoder later; flat fee fallback exists |
 | Helpdesk without email/push notify | Medium | Agents poll platform queue; add email later |
 | Schema/journal history quirks | Medium | Prefer migrate/reconcile; never `db:push` |
-| Client importing `@guma-commerce/db` | High if violated | Established pitfall — keep packages split |
+| Client importing `@gumakart/db` | High if violated | Established pitfall — keep packages split |
 
 ---
 
@@ -149,13 +149,13 @@ Neon Postgres | PayMongo* | Lalamove* | Grab* | Semaphore* | optional Upstash/Bl
 ## 9. How to verify locally (15 minutes)
 
 ```powershell
-cd "D:\All Apps\gumacommerce"
+cd "D:\All Apps\gumakart"
 pnpm install
 pnpm db:migrate
 
-pnpm --filter @guma-commerce/web run dev        # :3010
-pnpm --filter @guma-commerce/admin run dev      # :3001
-pnpm --filter @guma-commerce/platform run dev   # :3002
+pnpm --filter @gumakart/web run dev        # :3010
+pnpm --filter @gumakart/admin run dev      # :3001
+pnpm --filter @gumakart/platform run dev   # :3002
 ```
 
 | Check | URL |
@@ -169,7 +169,7 @@ pnpm --filter @guma-commerce/platform run dev   # :3002
 | Contact ticket | http://localhost:3010/contact |
 
 Typecheck (known clean after 2026-08-06 delivery/helpdesk pass):  
-`pnpm --filter @guma-commerce/{db,web,admin,platform} exec tsc --noEmit`
+`pnpm --filter @gumakart/{db,web,admin,platform} exec tsc --noEmit`
 
 ---
 

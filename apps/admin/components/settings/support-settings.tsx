@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { SettingsPageLayout } from "@/components/settings/settings-shell";
 import { SettingsCard, inputClassName, textareaClassName } from "@/components/settings/settings-forms";
 
-const SUPPORT_EMAIL = "support@gumacommerce.ph";
+const SUPPORT_EMAIL = "support@guma.one";
 
 interface TicketRow {
   id: string;

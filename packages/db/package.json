@@ -1,5 +1,5 @@
 {
-  "name": "@guma-commerce/db",
+  "name": "@gumakart/db",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -24,7 +24,7 @@
     "test:integration": "tsx --test src/orders-concurrency.test.ts"
   },
   "dependencies": {
-    "@guma-commerce/plans": "workspace:*",
+    "@gumakart/plans": "workspace:*",
     "@jobuntux/psgc": "^0.2.1",
     "drizzle-orm": "^0.38.3",
     "postgres": "^3.4.5"

@@ -11,7 +11,7 @@
 param([switch]$Force)
 $ErrorActionPreference = "Stop"
 
-$repo = "D:\All Apps\gumacommerce"
+$repo = "D:\All Apps\gumakart"
 $pve  = "root@192.168.1.15"
 $ct   = 106
 $tmp  = "$env:TEMP\guma-deploy.tar.gz"

@@ -15,7 +15,7 @@ import {
   getSignupSeries,
   listAuditLog,
   listTenants,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import { requireSuperAdmin } from "@/lib/session";
 import { PlatformShell } from "@/components/platform-shell";
 import { AttentionStrip } from "@/components/attention-strip";

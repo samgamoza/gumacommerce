@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { searchPhLocations, type PhLocationKind } from "@guma-commerce/db";
+import { searchPhLocations, type PhLocationKind } from "@gumakart/db";
 
 const KINDS = new Set<PhLocationKind>(["province", "city", "barangay"]);
 

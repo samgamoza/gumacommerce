@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { DemoProduct } from "@/lib/demo-data";
-import type { ResolvedShopTheme } from "@guma-commerce/storefront-themes";
+import type { ResolvedShopTheme } from "@gumakart/storefront-themes";
 
 function formatPrice(amount: number): string {
   return new Intl.NumberFormat("en-PH", {

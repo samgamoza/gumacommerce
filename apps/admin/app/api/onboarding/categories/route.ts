@@ -2,12 +2,12 @@ import { NextResponse } from "next/server";
 import {
   listOnboardingCategoryGroups,
   listOnboardingCategoryLabels,
-} from "@guma-commerce/db";
+} from "@gumakart/db";
 import {
   SHOP_BUSINESS_CATEGORIES,
   SHOP_CATEGORY_GUIDE,
   popularCategoryLabels,
-} from "@guma-commerce/storefront-themes";
+} from "@gumakart/storefront-themes";
 
 /** Public list of business categories for seller signup / Launch DNA. */
 export async function GET() {

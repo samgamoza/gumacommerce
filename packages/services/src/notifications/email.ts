@@ -33,7 +33,7 @@ function emailFrom(): string {
   return (
     process.env.EMAIL_FROM?.trim() ||
     process.env.RESEND_FROM?.trim() ||
-    "Guma Commerce <onboarding@resend.dev>"
+    "Guma Kart <onboarding@resend.dev>"
   );
 }
 

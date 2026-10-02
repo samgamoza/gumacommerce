@@ -1,4 +1,4 @@
-# Guma Commerce — Agent Handoff Document
+# Guma Kart — Agent Handoff Document
 
 **Last updated:** 2026-08-20 (Full re-audit against this repo + Mission 000 executable baseline)  
 **Purpose:** Hands-off context for the next agent or developer. Read this before making changes.
@@ -39,11 +39,11 @@ Regression guards added to `packages/db/src/migration-journal.test.ts`: every `.
 ### Verify locally
 ```powershell
 docker run -d --name guma-test-pg -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres `
-  -e POSTGRES_DB=guma_commerce -p 5435:5432 postgres:16-alpine
-$env:DATABASE_URL="postgres://postgres:postgres@localhost:5435/guma_commerce"
-pnpm --filter @guma-commerce/db exec drizzle-kit migrate      # must apply all 18 cleanly
-pnpm --filter @guma-commerce/db exec tsx --test src/migration-journal.test.ts
-pnpm --filter @guma-commerce/db exec tsx --test src/orders-concurrency.test.ts
+  -e POSTGRES_DB=gumakart -p 5435:5432 postgres:16-alpine
+$env:DATABASE_URL="postgres://postgres:postgres@localhost:5435/gumakart"
+pnpm --filter @gumakart/db exec drizzle-kit migrate      # must apply all 18 cleanly
+pnpm --filter @gumakart/db exec tsx --test src/migration-journal.test.ts
+pnpm --filter @gumakart/db exec tsx --test src/orders-concurrency.test.ts
 docker rm -f guma-test-pg
 ```
 Note: the repo's `docker-compose.yml` binds host port **5434**, which was already occupied on this machine — hence the ad-hoc container on 5435 above.
@@ -95,7 +95,7 @@ Note: the repo's `docker-compose.yml` binds host port **5434**, which was alread
 | Verification | Read-only check of `drizzle.__drizzle_migrations` on the live DB for whether the `0002` hash is recorded |
 
 ### Recommended next prompt
-> Read `docs/AGENT-HANDOFF.md` (Session 2026-08-20) and `docs/GUMA-SOCIAL-CHECKOUT-STRATEGY-REVIEW.md`. Push the 3 pending local commits first. Then either (a) resolve the `simply-sweet-source` housekeeping decision, or (b) start Mission 001 (concurrent-checkout stock race: unlocked read `orders.ts:209` + unconditional decrement ~380) — confirm which with the founder before touching `orders.ts`. Constraints unchanged: never `db:push`; never `@guma-commerce/db` from `"use client"`; fail-closed integrations; ADR-0001.
+> Read `docs/AGENT-HANDOFF.md` (Session 2026-08-20) and `docs/GUMA-SOCIAL-CHECKOUT-STRATEGY-REVIEW.md`. Push the 3 pending local commits first. Then either (a) resolve the `simply-sweet-source` housekeeping decision, or (b) start Mission 001 (concurrent-checkout stock race: unlocked read `orders.ts:209` + unconditional decrement ~380) — confirm which with the founder before touching `orders.ts`. Constraints unchanged: never `db:push`; never `@gumakart/db` from `"use client"`; fail-closed integrations; ADR-0001.
 
 ---
 
@@ -171,7 +171,7 @@ NEXT_PUBLIC_PLATFORM_URL=https://ops.guma.one
 | Housekeeping | `*.tsbuildinfo` / dirty `simply-sweet-source` — still uncommitted by design |
 
 ### Recommended next prompt
-> Read `docs/AGENT-HANDOFF.md` (Session 2026-08-07→08). Platform has Settings, Support access, Template Intel AI skins, PayMongo Platform-only. Soft-launch on CT 106. Next: KYC/payout ops queues or order intervention — not Workstation. Constraints: never `db:push`; never `@guma-commerce/db` from `"use client"`; fail-closed integrations; ADR-0001.
+> Read `docs/AGENT-HANDOFF.md` (Session 2026-08-07→08). Platform has Settings, Support access, Template Intel AI skins, PayMongo Platform-only. Soft-launch on CT 106. Next: KYC/payout ops queues or order intervention — not Workstation. Constraints: never `db:push`; never `@gumakart/db` from `"use client"`; fail-closed integrations; ADR-0001.
 
 ---
 
@@ -209,13 +209,13 @@ PAYMENTS_MODE=manual_ewallet
 
 ### Commands that should be green
 ```powershell
-pnpm --filter @guma-commerce/db exec tsc --noEmit
-pnpm --filter @guma-commerce/web exec tsc --noEmit
-pnpm --filter @guma-commerce/admin exec tsc --noEmit
-pnpm --filter @guma-commerce/platform exec tsc --noEmit
-pnpm --filter @guma-commerce/db test
-pnpm --filter @guma-commerce/services test
-pnpm --filter @guma-commerce/storefront-themes test
+pnpm --filter @gumakart/db exec tsc --noEmit
+pnpm --filter @gumakart/web exec tsc --noEmit
+pnpm --filter @gumakart/admin exec tsc --noEmit
+pnpm --filter @gumakart/platform exec tsc --noEmit
+pnpm --filter @gumakart/db test
+pnpm --filter @gumakart/services test
+pnpm --filter @gumakart/storefront-themes test
 pnpm brand-guard:scan
 ```
 
@@ -230,7 +230,7 @@ pnpm brand-guard:scan
 | **Do not** | Workstation convergence / Meta Messenger / 100-template push without new directive |
 
 ### Recommended next prompt
-> Read `docs/AGENT-HANDOFF.md` (this file) + `docs/CHIEF-ENGINEER-REVIEW-SUMMARY.md`. Branch `wip/uncommitted-work-2026-08-01` is pushed through Phases 1–6 + marketing legal UX. Next: prod cutover checklist / PR review — not Workstation. Constraints: never `db:push`; never `@guma-commerce/db` from `"use client"`; fail-closed integrations; ADR-0001.
+> Read `docs/AGENT-HANDOFF.md` (this file) + `docs/CHIEF-ENGINEER-REVIEW-SUMMARY.md`. Branch `wip/uncommitted-work-2026-08-01` is pushed through Phases 1–6 + marketing legal UX. Next: prod cutover checklist / PR review — not Workstation. Constraints: never `db:push`; never `@gumakart/db` from `"use client"`; fail-closed integrations; ADR-0001.
 
 ---
 
@@ -254,15 +254,15 @@ pnpm brand-guard:scan
 ### Quick verify
 ```powershell
 pnpm db:migrate
-pnpm --filter @guma-commerce/web run dev
-pnpm --filter @guma-commerce/admin run dev
-pnpm --filter @guma-commerce/platform run dev
+pnpm --filter @gumakart/web run dev
+pnpm --filter @gumakart/admin run dev
+pnpm --filter @gumakart/platform run dev
 # :3010/frontend1 · :3010/contact · :3001/messages · :3002/helpdesk
 ```
 
 ### Constraints (unchanged)
-- Never `db:push`; never `@guma-commerce/db` from `"use client"`
-- Never hardcode plan prices outside `@guma-commerce/plans`
+- Never `db:push`; never `@gumakart/db` from `"use client"`
+- Never hardcode plan prices outside `@gumakart/plans`
 - Production mocks refused — see `MVP-HARDENING-P1-INTEGRATION-MOCKS.md`
 
 ### Status note
@@ -281,7 +281,7 @@ Three Next.js 15 (App Router, React 19) apps now exist in the `pnpm`+Turbo monor
 | Seller admin | `apps/admin` | 3001 | Per-tenant dashboard (one shop) |
 | **Platform console (NEW)** | `apps/platform` | 3002 | **Super-admin over ALL tenants** |
 
-Stack unchanged: TypeScript, Tailwind v3, Drizzle ORM → **Neon Postgres** (live, Singapore), JWT cookie auth (`jose`, cookie `gumacommerce_session`) in `packages/auth`, `bcryptjs` passwords. AI providers + PayMongo/Lalamove/Semaphore unchanged. Deployment target: Vercel (one project per app).
+Stack unchanged: TypeScript, Tailwind v3, Drizzle ORM → **Neon Postgres** (live, Singapore), JWT cookie auth (`jose`, cookie `gumakart_session`) in `packages/auth`, `bcryptjs` passwords. AI providers + PayMongo/Lalamove/Semaphore unchanged. Deployment target: Vercel (one project per app).
 
 ### 2. What was built this session
 1. **Guma brand system ported into `apps/admin`** — the emerald/amber HSL design tokens, Bricolage Grotesque + Plus Jakarta Sans fonts, `hero-glow`/grid utilities, and animations from `apps/web` (landing redesign, commit `5facdd1`). Admin sidebar/header/dashboard redesigned with lucide icons (replacing violet theme + emoji nav).
@@ -319,12 +319,12 @@ Added:
 
 ### 5. Auth for the platform console
 - Login: **`admin@guma.ph` / `GumaAdmin2026!`** (seeded super_admin; change before any shared/prod use).
-- Only `role === 'super_admin'` may enter — enforced in `apps/platform/middleware.ts` AND `app/api/auth/login/route.ts`. Reuses the shared `gumacommerce_session` cookie + `packages/auth` token helpers (no changes to `packages/auth`).
+- Only `role === 'super_admin'` may enter — enforced in `apps/platform/middleware.ts` AND `app/api/auth/login/route.ts`. Reuses the shared `gumakart_session` cookie + `packages/auth` token helpers (no changes to `packages/auth`).
 - All mutations run through **server actions** in `app/actions.ts`, each guarded by `requireSuperAdminApi()` and writing a `platform_audit_log` row + `revalidatePath`.
 
 ### 6. Critical pitfalls / decisions
-- **Client components must NOT import from `@guma-commerce/db`.** The package barrel pulls `client.ts` → `postgres` → node `net`, which breaks the browser bundle (`Can't resolve 'net'`) and 500s *every* page. Client-safe plan list: `apps/platform/lib/plans.ts` re-exports `@guma-commerce/plans` (`CLIENT_PLANS`). Server components/actions may still import from `@guma-commerce/db`.
-- **~~Plan catalog inconsistency~~ → resolved (Sprint 4 / ADR D4).** Single source: `@guma-commerce/plans` (₱0 / ₱499 / ₱999; labels Free / Pro / Advance). Thin re-exports remain on db/ai for compat. Legacy `starter` rows normalize to `growth`.
+- **Client components must NOT import from `@gumakart/db`.** The package barrel pulls `client.ts` → `postgres` → node `net`, which breaks the browser bundle (`Can't resolve 'net'`) and 500s *every* page. Client-safe plan list: `apps/platform/lib/plans.ts` re-exports `@gumakart/plans` (`CLIENT_PLANS`). Server components/actions may still import from `@gumakart/db`.
+- **~~Plan catalog inconsistency~~ → resolved (Sprint 4 / ADR D4).** Single source: `@gumakart/plans` (₱0 / ₱499 / ₱999; labels Free / Pro / Advance). Thin re-exports remain on db/ai for compat. Legacy `starter` rows normalize to `growth`.
 - Charts are dependency-free inline SVG (`AreaChart`, `BarMeter` in `components/ui.tsx`) — no chart lib added.
 - Pages are **server components** (direct query calls, no client fetch/loading states) + server actions for writes — the modern idiom, differs from `apps/admin`'s client-fetch+API-route pattern.
 
@@ -336,7 +336,7 @@ Added:
 
 ### 8. Pending / recommended next steps (this session's scope)
 - **High:** `pnpm db:generate` to create the migration file for the schema additions (DB is ahead of `drizzle/`).
-- ~~**High:** Reconcile the 3 plan-price sources~~ — **done** (`@guma-commerce/plans`).
+- ~~**High:** Reconcile the 3 plan-price sources~~ — **done** (`@gumakart/plans`).
 - **Medium:** `next build` the platform app; add it to CI/Vercel (new project, port 3002, same monorepo build command, needs `AUTH_SECRET` + `DATABASE_URL*`).
 - ~~**Medium:** Enforce suspended user/tenant on seller + storefront~~ — **done** (2026-08-06 Phase 2; see top session).
 - **Low:** Moderation currently only covers `content_queue`; extend to products if needed. Add pagination to platform tables (currently limit 200–500).
@@ -349,16 +349,16 @@ pnpm install
 pnpm --dir apps/platform exec next dev   # → http://localhost:3002, login admin@guma.ph / GumaAdmin2026!
 pnpm --dir apps/platform exec tsc --noEmit
 ```
-Inspect first: `apps/platform/app/actions.ts`, `packages/db/src/queries/platform.ts`, `apps/platform/components/platform-shell.tsx`, `apps/platform/lib/plans.ts`. **Warning:** never import `@guma-commerce/db` from a `"use client"` file; never run `db:push`.
+Inspect first: `apps/platform/app/actions.ts`, `packages/db/src/queries/platform.ts`, `apps/platform/components/platform-shell.tsx`, `apps/platform/lib/plans.ts`. **Warning:** never import `@gumakart/db` from a `"use client"` file; never run `db:push`.
 
 ### 10. Recommended next prompt (paste to continue)
-> You're working in the `guma-commerce` pnpm+Turbo monorepo at `D:\All Apps\gumacommerce`. Read `docs/AGENT-HANDOFF.md` (top session 2026-08-06) + `docs/CHIEF-ENGINEER-REVIEW-SUMMARY.md`. Branch `wip/uncommitted-work-2026-08-01` is pushed through Chief Engineer Phases 1–6 + marketing legal UX. Apps: `web` (:3010), `admin` (:3001), `platform` (:3002). **Open:** prod cutover / secrets / demo flag; real SEC/TIN then Trust page; tsbuildinfo/submodule housekeeping; Brand Guard Slice C + Inngest fill-out later. **Do not** start Workstation without a new directive. Constraints: never import `@guma-commerce/db` from `"use client"`; never `db:push`; never hardcode plan prices outside `@guma-commerce/plans`; fail-closed integrations.
+> You're working in the `gumakart` pnpm+Turbo monorepo at `D:\All Apps\gumakart`. Read `docs/AGENT-HANDOFF.md` (top session 2026-08-06) + `docs/CHIEF-ENGINEER-REVIEW-SUMMARY.md`. Branch `wip/uncommitted-work-2026-08-01` is pushed through Chief Engineer Phases 1–6 + marketing legal UX. Apps: `web` (:3010), `admin` (:3001), `platform` (:3002). **Open:** prod cutover / secrets / demo flag; real SEC/TIN then Trust page; tsbuildinfo/submodule housekeeping; Brand Guard Slice C + Inngest fill-out later. **Do not** start Workstation without a new directive. Constraints: never import `@gumakart/db` from `"use client"`; never `db:push`; never hardcode plan prices outside `@gumakart/plans`; fail-closed integrations.
 
 ---
 
 ## 1. Product summary
 
-**Guma Commerce** is an AI-powered social commerce platform for Philippine sellers.
+**Guma Kart** is an AI-powered social commerce platform for Philippine sellers.
 
 | Surface | Path | Port | Role |
 |---------|------|------|------|
@@ -377,10 +377,10 @@ Inspect first: `apps/platform/app/actions.ts`, `packages/db/src/queries/platform
 
 | Item | Status |
 |------|--------|
-| **Local folder** | `D:\All Apps\gumacommerce` (active repo) |
+| **Local folder** | `D:\All Apps\gumakart` (active repo) |
 | **Git** | Branch `wip/uncommitted-work-2026-08-01` pushed through `5989648` (see Session 2026-08-07→08). Prefer that section over older commit refs below. |
-| **npm scope** | `@guma-commerce/*` |
-| **Root package name** | `guma-commerce` |
+| **npm scope** | `@gumakart/*` |
+| **Root package name** | `gumakart` |
 | **Soft-launch deploy** | Proxmox CT 106 via `.\deploy.ps1` + Cloudflare (`commerce` / `admin` / `ops`.guma.one). Vercel path still documented in `DEPLOY-VERCEL.md`. |
 | **DB** | Neon + migrations through Template Intel / soft-launch era (incl. `0017` category parent). Never `db:push`. |
 | **Intentionally uncommitted** | `apps/*/tsconfig.tsbuildinfo`, dirty `simply-sweet-source` — ask before deciding |
@@ -390,23 +390,23 @@ Inspect first: `apps/platform/app/actions.ts`, `packages/db/src/queries/platform
 ## 3. Monorepo layout
 
 ```
-guma-commerce/                    
+gumakart/                    
 ├── apps/
-│   ├── web/                     @guma-commerce/web
-│   └── admin/                   @guma-commerce/admin
+│   ├── web/                     @gumakart/web
+│   └── admin/                   @gumakart/admin
 ├── packages/
-│   ├── ai/                      @guma-commerce/ai      — prompts, generator, plan limits, LLM router
-│   ├── auth/                    @guma-commerce/auth     — sessions, Google OAuth, signup
-│   ├── db/                      @guma-commerce/db       — Drizzle schema, migrations, queries
-│   ├── services/                @guma-commerce/services — PayMongo, Lalamove, Semaphore SMS
-│   ├── storefront-themes/       @guma-commerce/storefront-themes
-│   ├── ui/                      @guma-commerce/ui       — shared Button, Card, Badge, etc.
-│   └── media/                   @guma-commerce/media    — (minimal / stub)
+│   ├── ai/                      @gumakart/ai      — prompts, generator, plan limits, LLM router
+│   ├── auth/                    @gumakart/auth     — sessions, Google OAuth, signup
+│   ├── db/                      @gumakart/db       — Drizzle schema, migrations, queries
+│   ├── services/                @gumakart/services — PayMongo, Lalamove, Semaphore SMS
+│   ├── storefront-themes/       @gumakart/storefront-themes
+│   ├── ui/                      @gumakart/ui       — shared Button, Card, Badge, etc.
+│   └── media/                   @gumakart/media    — (minimal / stub)
 ├── docs/
 │   ├── AGENT-HANDOFF.md         ← this file
 │   ├── DATABASE.md
 │   └── DEPLOY-VERCEL.md
-├── docker-compose.yml           — local Postgres on port 5434, DB name `guma_commerce`
+├── docker-compose.yml           — local Postgres on port 5434, DB name `gumakart`
 ├── .env.example
 └── turbo.json
 ```
@@ -417,21 +417,21 @@ guma-commerce/
 
 | Context | Use |
 |---------|-----|
-| User-facing product | **Guma Commerce** |
-| Company | Guma Commerce Technologies (`apps/web/lib/site-content.ts`) |
-| npm packages | `@guma-commerce/*` |
+| User-facing product | **Guma Kart** |
+| Company | Guma Kart Technologies (`apps/web/lib/site-content.ts`) |
+| npm packages | `@gumakart/*` |
 | Subscription plan IDs (DB / billing) | `free`, `growth`, `pro` (stable forever) |
-| Marketing / UI plan names | **Free**, **Pro**, **Advance** (constitution) — from `@guma-commerce/plans` |
+| Marketing / UI plan names | **Free**, **Pro**, **Advance** (constitution) — from `@gumakart/plans` |
 | Handbook mapping | FREE→`free`, PRO→`growth`, ADVANCE→`pro` |
 | Aliases (normalize at read) | `starter`→`growth`, `advance`→`pro`, `sulit`→`free` |
-| Shop URL display | `{NEXT_PUBLIC_ROOT_DOMAIN}/{slug}` — default host `gumacommerce.ph` |
-| Emails | `hello@gumacommerce.ph`, `support@gumacommerce.ph`, `privacy@gumacommerce.ph` |
+| Shop URL display | `{NEXT_PUBLIC_ROOT_DOMAIN}/{slug}` — default host `kart.guma.one` |
+| Emails | `hello@guma.one`, `support@guma.one`, `privacy@guma.one` |
 
-**Do not reintroduce** Sulit / Growth / Pro as seller-facing labels, or invent Free/Starter/Growth/Pro as DB IDs. Canonical module: `@guma-commerce/plans` (ADR D4).
+**Do not reintroduce** Sulit / Growth / Pro as seller-facing labels, or invent Free/Starter/Growth/Pro as DB IDs. Canonical module: `@gumakart/plans` (ADR D4).
 
-**Do not reintroduce** any legacy pre-rebrand brand names, domains, or package scopes. The brand is **Guma Commerce** (`gumacommerce`) everywhere.
+**Do not reintroduce** any legacy pre-rebrand brand names, domains, or package scopes. The brand is **Guma Kart** (`gumakart`) everywhere.
 
-**Internal globals (DB client):** `__gumaCommerceDb`, `__gumaCommerceSql` in `packages/db/src/client.ts`.
+**Internal globals (DB client):** `__gumaKartDb`, `__gumaKartSql` in `packages/db/src/client.ts`.
 
 ---
 
@@ -454,10 +454,10 @@ flowchart TB
   end
 
   subgraph packages [packages]
-    AI["@guma-commerce/ai"]
-    DB["@guma-commerce/db"]
-    Auth["@guma-commerce/auth"]
-    Svc["@guma-commerce/services"]
+    AI["@gumakart/ai"]
+    DB["@gumakart/db"]
+    Auth["@gumakart/auth"]
+    Svc["@gumakart/services"]
   end
 
   Neon[(Neon Postgres)]
@@ -571,8 +571,8 @@ Requires `CRON_SECRET` on admin Vercel project. Cron routes also enforce plan qu
 
 | File | Role |
 |------|------|
-| `@guma-commerce/plans` (`packages/plans`) | Canonical `PLAN_AI_LIMITS`, catalog, `normalizePlanId` |
-| `src/plan-limits.ts` | Thin re-export of `@guma-commerce/plans` (compat) |
+| `@gumakart/plans` (`packages/plans`) | Canonical `PLAN_AI_LIMITS`, catalog, `normalizePlanId` |
+| `src/plan-limits.ts` | Thin re-export of `@gumakart/plans` (compat) |
 | `src/permissions.ts` | `SCOPE_MATRIX` + approval levels |
 | `src/providers/llm.ts` | OpenAI, Gemini, Groq, mock fallback |
 | `src/generator.ts` | Template-based generation with plan routing |
@@ -647,7 +647,7 @@ DATABASE_URL_POOLED=...             # optional local; Neon uses DATABASE_URL as 
 AUTH_SECRET=...
 NEXT_PUBLIC_STOREFRONT_URL=http://localhost:3010
 NEXT_PUBLIC_ADMIN_URL=http://localhost:3001
-NEXT_PUBLIC_ROOT_DOMAIN=gumacommerce.ph
+NEXT_PUBLIC_ROOT_DOMAIN=kart.guma.one
 GEMINI_API_KEY=...                  # recommended for free-tier agents
 ```
 
@@ -671,11 +671,11 @@ Both Next apps load root `.env` via `next.config.ts` (`loadRootEnv()`).
 pnpm install
 
 # Dev (prefer dev:clean after build or CSS issues)
-pnpm --filter @guma-commerce/web dev
-pnpm --filter @guma-commerce/admin dev:clean
+pnpm --filter @gumakart/web dev
+pnpm --filter @gumakart/admin dev:clean
 
 # Typecheck / build
-pnpm turbo build --filter=@guma-commerce/web --filter=@guma-commerce/admin
+pnpm turbo build --filter=@gumakart/web --filter=@gumakart/admin
 
 # Database
 pnpm db:migrate
@@ -698,8 +698,8 @@ pnpm db:up
 | `db:push` primary key errors | Use `db:migrate` + `db:reconcile` instead |
 | `relation "content_queue" does not exist` | Run `pnpm db:migrate` against connected DB |
 | Admin 500 after deleting `.next` while dev running | Restart dev server |
-| Package not found after rebrand | `pnpm install`; scope is `@guma-commerce/*` |
-| Plan shows `free` in DB but UI says Free | Always resolve via `@guma-commerce/plans` (`planDisplayName` / `SELLER_PLANS`) |
+| Package not found after rebrand | `pnpm install`; scope is `@gumakart/*` |
+| Plan shows `free` in DB but UI says Free | Always resolve via `@gumakart/plans` (`planDisplayName` / `SELLER_PLANS`) |
 
 ---
 
@@ -709,7 +709,7 @@ pnpm db:up
 
 - Navbar `/#features`, `/#how-it-works`
 - FAQ anchors: `#payments`, `#delivery`, `#ai`
-- Pricing: Free / Pro / Advance aligned with admin (₱0 / ₱499 / ₱999) via `@guma-commerce/plans`
+- Pricing: Free / Pro / Advance aligned with admin (₱0 / ₱499 / ₱999) via `@gumakart/plans`
 - Removed all legacy pre-rebrand brand names and domains
 - Blog: removed broken `#` read-more links
 - Footer: removed placeholder social `href="#"`
@@ -743,8 +743,8 @@ See **`docs/DEPLOY-VERCEL.md`**.
 **Build command (each app):**
 
 ```bash
-cd ../.. && pnpm install && pnpm turbo build --filter=@guma-commerce/web
-# or @guma-commerce/admin
+cd ../.. && pnpm install && pnpm turbo build --filter=@gumakart/web
+# or @gumakart/admin
 ```
 
 ---
@@ -792,13 +792,13 @@ apps/admin/middleware.ts
 Chronological summary for context:
 
 1. **Settings menu** — wired saves to DB; storefront applies checkout/delivery/tracking/WhatsApp
-2. **Rebrand** — user-facing copy → Guma Commerce; bulk rebrand once broke `client.ts` with invalid identifiers (fixed)
+2. **Rebrand** — user-facing copy → Guma Kart; bulk rebrand once broke `client.ts` with invalid identifiers (fixed)
 3. **AI Studio** — Guma Campaign Studio UI; Pixury → Guma
 4. **Agents roadmap** — plan limits, model routing, order-aware agents, daily briefing UI, SMS reminders, shop assistant chatbot
 5. **DB** — migration 0001 for agent tables; `db:reconcile` for push drift
 6. **Vercel prep** — `vercel.json` crons, DEPLOY-VERCEL.md, `.env.example` expansion
 7. **CSS incident** — corrupted `.next` from build+ddev overlap; fixed with `dev:clean`
-8. **Full rebrand pass** — legacy npm scope → `@guma-commerce`, pricing/plan alignment, link fixes, production build verified
+8. **Full rebrand pass** — legacy npm scope → `@gumakart`, pricing/plan alignment, link fixes, production build verified
 
 **User preference:** No git commits unless explicitly requested (repo still uncommitted at handoff).
 
@@ -809,9 +809,9 @@ Chronological summary for context:
 After any major change, run:
 
 ```cmd
-pnpm --filter @guma-commerce/admin typecheck
-pnpm --filter @guma-commerce/web typecheck
-pnpm turbo build --filter=@guma-commerce/web --filter=@guma-commerce/admin
+pnpm --filter @gumakart/admin typecheck
+pnpm --filter @gumakart/web typecheck
+pnpm turbo build --filter=@gumakart/web --filter=@gumakart/admin
 pnpm db:migrate
 ```
 

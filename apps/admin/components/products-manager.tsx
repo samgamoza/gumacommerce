@@ -1,14 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Badge, Button, Card, formatPrice } from "@guma-commerce/ui";
+import { Badge, Button, Card, formatPrice } from "@gumakart/ui";
 import {
   formatProductPriceLine,
   productPricingKindForCategory,
   type ProductPricingMeta,
   type ProductUnitType,
   type ServicePriceStyle,
-} from "@guma-commerce/storefront-themes";
+} from "@gumakart/storefront-themes";
 
 const PRODUCT_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp,image/gif,image/avif,.avif";
 const PRODUCT_IMAGE_TYPES = new Set([

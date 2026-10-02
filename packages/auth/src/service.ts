@@ -4,8 +4,8 @@ import {
   needsGumaLaunch,
   tenants,
   users,
-} from "@guma-commerce/db";
-import { deriveBrandKit, buildStoreDNA } from "@guma-commerce/storefront-themes";
+} from "@gumakart/db";
+import { deriveBrandKit, buildStoreDNA } from "@gumakart/storefront-themes";
 import { hashPassword, validatePasswordStrength, verifyPassword } from "./password";
 import {
   createEmailVerificationToken,

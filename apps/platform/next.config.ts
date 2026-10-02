@@ -34,9 +34,9 @@ loadRootEnv();
 
 const nextConfig: NextConfig = {
   transpilePackages: [
-    "@guma-commerce/ui",
-    "@guma-commerce/db",
-    "@guma-commerce/auth",
+    "@gumakart/ui",
+    "@gumakart/db",
+    "@gumakart/auth",
   ],
   outputFileTracingRoot: monorepoRoot,
 };

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowRight, Menu, X } from "lucide-react";
-import { GumaMark } from "@guma-commerce/ui";
+import { GumaMark } from "@gumakart/ui";
 import { Button } from "@/components/ui/button";
 import { adminUrl } from "@/lib/utils";
 

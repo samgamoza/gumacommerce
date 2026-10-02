@@ -1,5 +1,5 @@
 import { getSession } from "@/lib/session";
-import type { SessionPayload } from "@guma-commerce/auth";
+import type { SessionPayload } from "@gumakart/auth";
 
 export class ApiAuthError extends Error {
   constructor(

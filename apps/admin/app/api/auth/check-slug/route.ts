@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { isSlugAvailable, normalizeSlug, validateSlug } from "@guma-commerce/auth";
-import { clientIpFrom, rateLimit } from "@guma-commerce/services";
+import { isSlugAvailable, normalizeSlug, validateSlug } from "@gumakart/auth";
+import { clientIpFrom, rateLimit } from "@gumakart/services";
 
 export async function GET(request: Request) {
   const limited = await rateLimit(`check-slug:${clientIpFrom(request)}`, {

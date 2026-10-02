@@ -3,7 +3,7 @@
 **From:** Chief Engineer
 **To:** Cursor (coding agent)
 **Date:** 2026-08-06
-**Repo:** `D:\All Apps\gumacommerce` (`@guma-commerce/*`)
+**Repo:** `D:\All Apps\gumakart` (`@gumakart/*`)
 **Read first:** `docs/CHIEF-ENGINEER-REVIEW-SUMMARY.md`, `docs/ADR-0001-handbook-adoption.md` — both are binding. If anything below conflicts with ADR-0001, ADR-0001 wins; flag the conflict instead of silently resolving it.
 
 ---
@@ -14,10 +14,10 @@
 - Three apps: `apps/web` (:3010, marketing + storefront + checkout), `apps/admin` (:3001, seller), `apps/platform` (:3002, super-admin). Shared packages under `packages/*`.
 - Hard rules (non-negotiable, from existing docs — do not violate even if it looks convenient):
   1. Never run `db:push` against live Neon. Use migrations (`pnpm db:migrate`).
-  2. Never import `@guma-commerce/db` from a `"use client"` component.
+  2. Never import `@gumakart/db` from a `"use client"` component.
   3. Never add silent mock fallbacks in production. Follow the fail-closed pattern already established in `packages/services/src/config/runtime-mode.ts` and `integrations.ts` (`docs/MVP-HARDENING-P1-INTEGRATION-MOCKS.md`) — extend it, don't bypass it.
   4. Do not invent new "draft" or "audit" tables — reuse `content_queue` and `platform_audit_log` shapes (ADR-0001 D5/D7).
-  5. Do not hardcode plan prices/limits outside `@guma-commerce/plans` (ADR-0001 D4).
+  5. Do not hardcode plan prices/limits outside `@gumakart/plans` (ADR-0001 D4).
   6. Do not add Prisma, RLS, ClickHouse, Meili/Typesense, Vault, or a plugin marketplace — all explicitly deferred (ADR-0001 D1/D6).
   7. Event names must be `Domain.Event.Vn` PascalCase (ADR-0001 D2) if you touch `packages/events`.
   8. No per-merchant coding agent, no killaislop.com SaaS dependency (`docs/PRIORITY-SCOPE-BRAND-GUARD.md` §3).
@@ -60,7 +60,7 @@ The review summary's sign-off questions are answered. Build to these defaults:
 3. Do **not** squash into one commit. Do **not** force-push. Do **not** rewrite already-shared history.
 4. Open the branch for review (or note that it's ready) once all slices are committed — do not merge to `main` yourself without explicit sign-off.
 
-**DoD:** `git status --porcelain` is empty (or only contains genuinely new work-in-progress you flag explicitly), history is slice-committed, `pnpm --filter @guma-commerce/{db,web,admin,platform} exec tsc --noEmit` is clean after each commit.
+**DoD:** `git status --porcelain` is empty (or only contains genuinely new work-in-progress you flag explicitly), history is slice-committed, `pnpm --filter @gumakart/{db,web,admin,platform} exec tsc --noEmit` is clean after each commit.
 
 ---
 
@@ -157,17 +157,17 @@ For each phase, report back with:
 ## 5. Verification commands
 
 ```powershell
-cd "D:\All Apps\gumacommerce"
+cd "D:\All Apps\gumakart"
 pnpm install
 pnpm db:migrate
 
-pnpm --filter @guma-commerce/{db,web,admin,platform} exec tsc --noEmit
-pnpm --filter @guma-commerce/services test
-pnpm --filter @guma-commerce/plans test
+pnpm --filter @gumakart/{db,web,admin,platform} exec tsc --noEmit
+pnpm --filter @gumakart/services test
+pnpm --filter @gumakart/plans test
 
-pnpm --filter @guma-commerce/web run dev        # :3010
-pnpm --filter @guma-commerce/admin run dev      # :3001
-pnpm --filter @guma-commerce/platform run dev   # :3002
+pnpm --filter @gumakart/web run dev        # :3010
+pnpm --filter @gumakart/admin run dev      # :3001
+pnpm --filter @gumakart/platform run dev   # :3002
 ```
 
 Manual production-mode integration check (per `docs/MVP-HARDENING-P1-INTEGRATION-MOCKS.md`):

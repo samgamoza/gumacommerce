@@ -16,8 +16,8 @@ import {
   ShoppingBag,
   Wallet,
 } from "lucide-react";
-import { Badge, Button, Card, formatPrice } from "@guma-commerce/ui";
-import type { SetupStep, TenantDashboardData } from "@guma-commerce/db";
+import { Badge, Button, Card, formatPrice } from "@gumakart/ui";
+import type { SetupStep, TenantDashboardData } from "@gumakart/db";
 import { DashboardModulesGrid } from "@/components/dashboard-modules-grid";
 
 interface ShopResponse {

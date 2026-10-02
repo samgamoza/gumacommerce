@@ -19,7 +19,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { GumaMark } from "@guma-commerce/ui";
+import { GumaMark } from "@gumakart/ui";
 
 type NavItem = {
   href: string;
