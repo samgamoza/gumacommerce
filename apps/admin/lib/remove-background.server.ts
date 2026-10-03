@@ -1,20 +1,18 @@
 import { randomUUID } from "node:crypto";
-import { spawn } from "node:child_process";
-import { unlink, writeFile, readFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import path from "node:path";
-
-const SCRIPT_PATH = path.join(process.cwd(), "scripts", "remove-bg.mjs");
 
 /**
  * Production path: remove.bg API (serverless-safe, no model download).
  * Requires REMOVE_BG_API_KEY.
  */
-async function removeBackgroundViaApi(input: Buffer, apiKey: string): Promise<Buffer> {
+async function removeBackgroundViaApi(
+  input: Buffer,
+  apiKey: string,
+  options: Record<string, string> = { format: "png" }
+): Promise<Buffer> {
   const form = new FormData();
-  form.append("image_file", new Blob([new Uint8Array(input)], { type: "image/png" }), "input.png");
+  form.append("image_file", new Blob([new Uint8Array(input)]), "input");
   form.append("size", "auto");
-  form.append("format", "png");
+  for (const [key, value] of Object.entries(options)) form.append(key, value);
 
   const res = await fetch("https://api.remove.bg/v1.0/removebg", {
     method: "POST",
@@ -34,7 +32,23 @@ async function removeBackgroundViaApi(input: Buffer, apiKey: string): Promise<Bu
  * subprocess so the heavy model never gets bundled into the Next.js server.
  * Not suitable for serverless deploys — set REMOVE_BG_API_KEY there.
  */
+/** Cutout on a white backdrop, cropped to the product with a margin, as JPEG — no local image library needed. */
+export async function removeBackgroundToWhiteJpeg(input: Buffer, apiKey: string): Promise<Buffer> {
+  return removeBackgroundViaApi(input, apiKey, {
+    format: "jpg",
+    bg_color: "ffffff",
+    crop: "true",
+    crop_margin: "8%",
+  });
+}
+
 async function removeBackgroundViaLocalModel(input: Buffer): Promise<Buffer> {
+  // Dev only — Node built-ins loaded lazily so the Workers bundle never needs them.
+  const { spawn } = await import("node:child_process");
+  const { unlink, writeFile, readFile } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const path = (await import("node:path")).default;
+  const SCRIPT_PATH = path.join(process.cwd(), "scripts", "remove-bg.mjs");
   const id = randomUUID();
   const inputPath = path.join(tmpdir(), `guma-bg-${id}-in.png`);
   const outputPath = path.join(tmpdir(), `guma-bg-${id}-out.png`);

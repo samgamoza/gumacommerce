@@ -1,6 +1,6 @@
 # Guma Kart — Agent Handoff Document
 
-**Last updated:** 2026-10-03 (Phase 1 + Phase 2 of the V1 plan shipped to branch `wip/uncommitted-work-2026-08-01`; PayMongo on hold; work paused for another venture)  
+**Last updated:** 2026-10-03 (Cloudflare Workers setup for all three apps; Phase 1 + Phase 2 of the V1 plan shipped to branch `wip/uncommitted-work-2026-08-01`; PayMongo on hold; work paused for another venture)  
 **Purpose:** Hands-off context for the next agent or developer. Read this before making changes.
 
 > **Strategy re-audit (external review):** [`GUMA-SOCIAL-CHECKOUT-STRATEGY-REVIEW.md`](./GUMA-SOCIAL-CHECKOUT-STRATEGY-REVIEW.md)  
@@ -20,7 +20,7 @@
 
 ## Session 2026-10-02 → 2026-10-03 — Rebrand, V1 plan, Phase 1, Phase 2 (PAUSED here)
 
-**Status when paused:** all work committed and **pushed** to `origin/wip/uncommitted-work-2026-08-01` (head `60e9f4b`). Not merged to `main`, **not deployed**. Owner ran `pnpm --filter @gumakart/db migrate` successfully (migrations through **0022** applied to the DB in that shell's `DATABASE_URL` — confirm it was Neon production and run the verify SQL below). Work paused for another Guma venture.
+**Status when paused:** all work committed and **pushed** to `origin/wip/uncommitted-work-2026-08-01` (head `60e9f4b`). Not merged to `main`, **not deployed**. **Neon production is migrated through 0022 and verified** (2026-10-03: V1–V5 all 0). Note the first `migrate` went to a different DB because `.env`'s `DATABASE_URL_UNPOOLED` wins over `DATABASE_URL` in `drizzle.config.ts`; for production set `$env:DATABASE_URL_UNPOOLED` in the shell. Work paused for another Guma venture.
 
 ### Commits (oldest → newest)
 | Commit | What |
@@ -44,10 +44,10 @@ Also committed in **veyron-pos-saas** (`999833a`, branch `feature/ci-locations-p
 - Phase 2 decisions D1–D5: accept = timestamp; STOP blocks reminders not order updates; STOP is platform-wide; unpaid expiry per shop (1–72 h, default 24); drop legacy columns one release after a clean week.
 
 ### To finish the deploy (in order)
-1. Confirm the migrate ran against **Neon production**; then run `packages/db/drizzle-pending/phase2-verify.sql` → V1–V5 must return **0 rows**.
-2. Merge `wip/uncommitted-work-2026-08-01` → `main` (or deploy that branch) and deploy admin + web + platform.
-3. Env: `STOREFRONT_PREVIEW_SECRET`, `SMS_OPT_OUT_SECRET` (≥32 chars, web + admin), `WALLET_PAYOUTS_ENABLED=false`, `NEXT_PUBLIC_PLAN_BILLING_ENABLED=false`, `CRON_SECRET`, `BAYANGO_ENABLED=false` until BayanGo passes its gate.
-4. Crons (Bearer `CRON_SECRET`): `/api/cron/outbox` every minute if possible, `/api/cron/expire-orders` hourly. `apps/admin/vercel.json` only has daily runs (Vercel Hobby limit).
+1. ~~Migrate Neon production + verify~~ — done 2026-10-03.
+2. **All three apps → Cloudflare Workers** (decided 2026-10-03, see [`DEPLOY-CLOUDFLARE.md`](./DEPLOY-CLOUDFLARE.md)): create `.env.cloudflare` with the production **pooled** `DATABASE_URL_POOLED`, then `.\scripts\deploy-cloudflare.ps1`. It cuts admin/ops (and kart) over from the CT 106 tunnel, generates `CRON_SECRET` / `STOREFRONT_PREVIEW_SECRET` / `SMS_OPT_OUT_SECRET`, and sets `WALLET_PAYOUTS_ENABLED=false`, `NEXT_PUBLIC_PLAN_BILLING_ENABLED=false`, `BAYANGO_ENABLED=false`. Copy existing photos from the CT to R2 first (doc has the loop).
+3. Env checks: `REMOVE_BG_API_KEY` if photo enhance should work on Workers.
+4. Crons: handled by the admin Worker (`apps/admin/cron-worker.ts`, one `*/5` trigger): outbox every 5 min, expire-orders hourly, wallet-settlement hourly, agents as before. `apps/admin/vercel.json` is unused.
 5. Smoke test: COD order; manual GCash order (proof → confirm / "Not received"); book + assign rider; deliver; cancel unpaid; buyer order page via SMS link; draft Preview from admin.
 6. Lalamove: `pnpm --filter @gumakart/services lalamove:check -- https://<web>/api/webhooks/lalamove` with sandbox keys → set `LALAMOVE_WEBHOOK_VARIANT` from the log.
 7. After a clean week of verify queries: move `drizzle-pending/0023_phase2_constrain.sql` into `drizzle/` (journal idx 23) and migrate. Later: 0024 drops legacy columns.
@@ -55,7 +55,7 @@ Also committed in **veyron-pos-saas** (`999833a`, branch `feature/ci-locations-p
 ### Next work when resuming (plan §11)
 - **Phase 3 — Checkout Links** (entity, merchant UI, production checkout from the `/kart` components, abandonment capture, source tracking).
 - Phase 4 SMS recipes (consume outbox events via Inngest; every reminder must use `withOptOutFooter`, enforced by `sendWithLog`), Phase 5 POS Lite, Phase 6 nav/onboarding.
-- Parallel: Cloudflare move for admin/platform; PayMongo go-live when registration is done.
+- Parallel: PayMongo go-live when registration is done.
 
 ### Pitfalls learned this session
 - **drizzle 0.38** renders `.for("update", { noWait: true })` as invalid `for update no wait` — use raw `FOR UPDATE NOWAIT` (see `refundOrder`).
@@ -63,6 +63,7 @@ Also committed in **veyron-pos-saas** (`999833a`, branch `feature/ci-locations-p
 - Integration tests need local Postgres (`DATABASE_URL=postgres://postgres:postgres@localhost:5434/gumakart`) and refuse Neon. Veyron's `.env` points at Neon — run its tests with `DATABASE_URL=""` (SQLite).
 - Semaphore is send-only; STOP must be a link. A marketing SMS without `/stop/` link throws.
 - `drizzle-pending/` holds SQL that must not auto-apply (not in the journal).
+- **Cloudflare Workers:** never keep a DB socket in a global across requests (the next request hangs and gets cancelled) — `getDb()` is per-request on Workers. No disk: uploads go to R2 (`gumakart-uploads`). No `sharp`/`child_process` at runtime. Free plan = 5 cron triggers per account and 10 ms CPU per request (Workers Paid $5/mo if error 1102 shows up).
 - Commits use the repo-local identity `mateenforjob-max`; `simply-sweet-source` submodule pointer and `docs/Guma_Kart_V1_Implementation_Plan.md` were intentionally left uncommitted.
 
 ---

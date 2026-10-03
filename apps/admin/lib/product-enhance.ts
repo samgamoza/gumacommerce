@@ -1,10 +1,35 @@
-import sharp from "sharp";
-import { removeProductBackground } from "./remove-background.server";
+import { removeBackgroundToWhiteJpeg, removeProductBackground } from "./remove-background.server";
 
 const OUTPUT_SIZE = 1024;
 const PRODUCT_PADDING = 64;
 
+/** True inside a Cloudflare Worker (admin.guma.one), where sharp and child processes don't exist. */
+function onWorkers(): boolean {
+  return typeof navigator !== "undefined" && navigator.userAgent === "Cloudflare-Workers";
+}
+
+/**
+ * Product photo → product on a clean white background, as JPEG.
+ *
+ * With REMOVE_BG_API_KEY (production, incl. Cloudflare Workers) remove.bg does
+ * the whole job — cutout, white backdrop, crop with margin — so no native image
+ * library is needed. Without a key, local dev uses the ONNX model + sharp and
+ * composites a 1024×1024 square like before.
+ */
 export async function enhanceProductPhoto(inputBuffer: Buffer): Promise<Buffer> {
+  const apiKey = process.env.REMOVE_BG_API_KEY;
+  if (apiKey) return removeBackgroundToWhiteJpeg(inputBuffer, apiKey);
+  if (onWorkers() || process.env.VERCEL) {
+    throw new Error("Photo enhance isn't set up yet (REMOVE_BG_API_KEY is missing). Upload the photo as-is for now.");
+  }
+  return enhanceLocally(inputBuffer);
+}
+
+async function enhanceLocally(inputBuffer: Buffer): Promise<Buffer> {
+  // Loaded only in local dev; kept out of the Workers bundle.
+  const sharpModule = "sharp";
+  const sharp = (await import(/* webpackIgnore: true */ sharpModule)).default as typeof import("sharp");
+
   const normalized = await sharp(inputBuffer).rotate().png().toBuffer();
   const cutout = await removeProductBackground(normalized);
 

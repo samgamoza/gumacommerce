@@ -13,6 +13,8 @@ out
 .env
 .env.local
 .env.*.local
+.env.cloudflare
+.dev.vars
 
 # Credentials (OAuth, API keys, etc. - never commit)
 client_secret*.json
@@ -56,3 +58,4 @@ v0-import/
 # OpenNext / wrangler build output
 .open-next/
 .wrangler/
+.transfer/

@@ -1,0 +1,24 @@
+{
+  // Guma Kart seller admin (apps/admin) on Cloudflare Workers via OpenNext.
+  // Deploy with scripts/deploy-cloudflare.ps1 from the repo root.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "gumakart-admin",
+  // cron-worker.ts wraps the OpenNext worker (.open-next/worker.js) and adds scheduled().
+  "main": "cron-worker.ts",
+  "compatibility_date": "2025-09-15",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "observability": { "enabled": true },
+  "routes": [{ "pattern": "admin.guma.one", "custom_domain": true }],
+  // Same bucket as the storefront: product photos (public, served by kart.guma.one) + KYC (private).
+  "r2_buckets": [{ "binding": "UPLOADS", "bucket_name": "gumakart-uploads" }],
+  // One trigger (free plan allows 5 per account); cron-worker.ts decides which jobs are due.
+  "triggers": { "crons": ["*/5 * * * *"] },
+  "vars": {
+    "NODE_ENV": "production",
+    "NEXT_PUBLIC_STOREFRONT_URL": "https://kart.guma.one",
+    "NEXT_PUBLIC_ADMIN_URL": "https://admin.guma.one",
+    "NEXT_PUBLIC_PLATFORM_URL": "https://ops.guma.one",
+    "NEXT_PUBLIC_ROOT_DOMAIN": "guma.one"
+  }
+}

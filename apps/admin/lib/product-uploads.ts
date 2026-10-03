@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { put } from "@vercel/blob";
+import { r2Get, r2Put } from "./r2-uploads";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
@@ -31,9 +32,11 @@ function resolveImageMime(file: File): string | null {
 }
 
 /**
- * Object storage (Vercel Blob) is used whenever BLOB_READ_WRITE_TOKEN is set.
- * Local disk under apps/web/public is only a dev fallback — serverless
- * filesystems are ephemeral, so production must use Blob.
+ * Where photos go, in order:
+ *   1. Vercel Blob when BLOB_READ_WRITE_TOKEN is set (absolute URL),
+ *   2. R2 on Cloudflare Workers (binding UPLOADS) — stored as products/<tenant>/<file>
+ *      and addressed by the same relative /uploads/products/... URL the storefront serves,
+ *   3. local disk under apps/web/public (dev only).
  */
 function blobEnabled(): boolean {
   return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
@@ -81,6 +84,10 @@ async function storeBuffer(
       addRandomSuffix: false,
     });
     return { url: blob.url, filename };
+  }
+
+  if (await r2Put(blobPathname(tenantId, filename), buffer, contentType)) {
+    return { filename, url: getProductUploadPublicUrl(tenantId, filename) };
   }
 
   const dir = getProductUploadDir(tenantId);
@@ -145,7 +152,28 @@ export async function readProductImageBuffer(
     if (!res.ok) throw new Error("Could not load the original image.");
     return Buffer.from(await res.arrayBuffer());
   }
-  return readFile(resolveProductUploadPath(tenantId, imageUrl));
+  const stored = await readProductUpload(tenantId, imageUrl);
+  if (!stored) throw new Error("Could not load the original image.");
+  return stored.buffer;
+}
+
+/** Read a relative /uploads/products/<tenant>/<file> photo from R2, or disk off Workers. */
+export async function readProductUpload(
+  tenantId: string,
+  relativeUrl: string
+): Promise<{ buffer: Buffer; contentType?: string } | null> {
+  const prefix = `/uploads/products/${tenantId}/`;
+  const filename = relativeUrl.startsWith(prefix) ? relativeUrl.slice(prefix.length) : "";
+  if (!filename || filename.includes("..") || filename.includes("/") || filename.includes("\\")) {
+    throw new Error("Image must belong to your shop.");
+  }
+  const object = await r2Get(blobPathname(tenantId, filename));
+  if (object) return { buffer: Buffer.from(object.body), contentType: object.contentType };
+  try {
+    return { buffer: await readFile(resolveProductUploadPath(tenantId, relativeUrl)) };
+  } catch {
+    return null;
+  }
 }
 
 export async function saveEnhancedProductImage(

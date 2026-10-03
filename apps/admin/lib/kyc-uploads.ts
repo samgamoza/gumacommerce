@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { getDownloadUrl, put } from "@vercel/blob";
+import { r2Get, r2Put } from "./r2-uploads";
 
 const MAX_BYTES = 8 * 1024 * 1024;
 
@@ -49,6 +50,12 @@ export async function saveKycImage(
     return { storageKey: blob.url, mimeType: file.type };
   }
 
+  // Cloudflare Workers: private R2 object, only streamed by /api/kyc/document.
+  const r2Key = blobPathname(tenantId, filename);
+  if (await r2Put(r2Key, buffer, file.type)) {
+    return { storageKey: `r2:${r2Key}`, mimeType: file.type };
+  }
+
   const dir = localKycDir(tenantId);
   await mkdir(dir, { recursive: true });
   await writeFile(path.join(dir, filename), buffer);
@@ -56,6 +63,14 @@ export async function saveKycImage(
 }
 
 export async function readKycImageBuffer(storageKey: string): Promise<Buffer> {
+  if (storageKey.startsWith("r2:")) {
+    const key = storageKey.slice("r2:".length);
+    if (!key.startsWith("kyc/") || key.includes("..")) throw new Error("Invalid storage key.");
+    const object = await r2Get(key);
+    if (!object) throw new Error("KYC document not found.");
+    return Buffer.from(object.body);
+  }
+
   if (storageKey.startsWith("local:")) {
     const relative = storageKey.slice("local:".length);
     const [tenantId, ...rest] = relative.split("/");

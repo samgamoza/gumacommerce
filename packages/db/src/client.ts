@@ -31,9 +31,34 @@ function createClient() {
 }
 
 /**
+ * Cloudflare Workers forbid reusing a socket opened by one request in another
+ * (the second request just hangs and gets cancelled). OpenNext gives every
+ * request its own context object (`globalThis[Symbol.for("__cloudflare-context__")]`),
+ * so on Workers we keep one client per request context instead of a global.
+ */
+const workerClients = new WeakMap<object, { db: Database; sql: ReturnType<typeof postgres> }>();
+
+function currentWorkerRequestContext(): object | null {
+  if (typeof navigator === "undefined" || navigator.userAgent !== "Cloudflare-Workers") return null;
+  const store = (globalThis as Record<symbol, unknown>)[Symbol.for("__cloudflare-context__")];
+  return store && typeof store === "object" ? store : null;
+}
+
+/**
  * Lazy singleton — safe for Next.js hot reload and serverless reuse.
+ * On Cloudflare Workers: one client per request (see above).
  */
 export function getDb(): Database {
+  const requestContext = currentWorkerRequestContext();
+  if (requestContext) {
+    let client = workerClients.get(requestContext);
+    if (!client) {
+      client = createClient();
+      workerClients.set(requestContext, client);
+    }
+    return client.db;
+  }
+
   if (isProduction()) {
     if (!globalThis.__gumaKartDb) {
       const { db, sql } = createClient();
