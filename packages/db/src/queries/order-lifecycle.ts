@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, lt, notExists, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, lt, sql } from "drizzle-orm";
 import { getDb } from "../client";
 import {
   orderItems,
@@ -7,71 +7,137 @@ import {
   paymentTransactions,
   productVariants,
   products,
+  tenants,
 } from "../schema/index";
 import {
   creditSaleForOrder,
   releaseOrderSaleCredit,
   reverseSaleCreditForOrder,
 } from "./wallet";
-import { ORDER_STATUS_TRANSITIONS, OrderError, type OrderStatus } from "./order-status";
+import { OrderError } from "./order-status";
 import { recordStockMovement } from "./stock-ledger";
+import { insertOutboxEvent } from "./outbox";
+import {
+  describeStates,
+  invariantViolation,
+  legacyPaymentStatusOf,
+  legacyStatusOf,
+  planOrderAction,
+  type ActionSource,
+  type FulfillmentState,
+  type OrderAction,
+  type OrderFacts,
+  type OrderState,
+  type PaymentState,
+} from "./order-state";
 
 /**
- * The one place an order's status changes after checkout.
+ * The order service — the one place an order changes after checkout
+ * (docs/PHASE-2-MIGRATION-SPEC.md §2.2).
  *
- * Every transition runs in a transaction that row-locks the order
- * (SELECT … FOR UPDATE), validates the move for the caller, writes the status
- * history, and applies the stock side effects in the same transaction. Wallet
- * side effects run right after commit; they are idempotent (unique ledger
- * entries), so a retry after a crash between the two is safe.
+ * applyOrderAction() runs one transaction that:
+ *   1. row-locks the order (SELECT … FOR UPDATE),
+ *   2. asks the pure state machine (order-state.ts) whether the action is allowed,
+ *   3. writes the three new statuses AND the legacy status/payment_status
+ *      (dual-write until migration 0024),
+ *   4. updates the order's payment row, restocks exactly once when needed,
+ *   5. writes order_status_history and an outbox event.
+ * Wallet side effects run right after commit; they're idempotent.
  *
- * Callers:
- *  - seller  → admin PATCH /api/orders/[id] (accept, prepare, ship, deliver, cancel)
- *  - courier → Lalamove / Grab / BayanGo webhooks (forward-only)
- *  - system  → unpaid-order expiry cron (pending_payment → cancelled)
- * Payment confirmation and refunds have their own functions below/next door
- * because they also touch payment_transactions.
+ * Callers: seller (admin order actions), buyer (payment proof), courier
+ * (Lalamove/Grab/BayanGo webhooks), gateway (PayMongo webhook), system
+ * (unpaid expiry).
  */
 
 type Db = ReturnType<typeof getDb>;
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 type OrderRow = typeof orders.$inferSelect;
 
-export type TransitionSource = "seller" | "courier" | "system";
+export type { ActionSource, OrderAction, OrderFacts } from "./order-state";
 
-/** Statuses a seller may set directly. Paid → payment confirm; refunded → refund flow. */
-export const SELLER_SETTABLE_STATUSES = [
-  "accepted",
-  "preparing",
-  "ready_for_pickup",
-  "out_for_delivery",
-  "delivered",
-  "cancelled",
-] as const satisfies readonly OrderStatus[];
+export interface ApplyOrderActionInput {
+  orderId: string;
+  /** Required for seller actions: scopes the lock to the seller's shop. */
+  tenantId?: string;
+  action: OrderAction;
+  source: ActionSource;
+  actorId?: string | null;
+  note?: string;
+  cancelReason?: string;
+  /** Payment-row details for payment actions. */
+  payment?: {
+    reference?: string | null;
+    proofUrl?: string | null;
+    gatewayPaymentId?: string | null;
+    refundId?: string | null;
+    /** The caller already updated the payment row (e.g. the PayMongo webhook). */
+    rowHandled?: boolean;
+    /** Set only by refundOrder(), which handles the gateway call and locking. */
+    viaRefundFlow?: boolean;
+  };
+}
 
-const TERMINAL: ReadonlySet<OrderStatus> = new Set(["cancelled", "refunded"]);
-
-/** Physical progress order, used for courier updates (forward-only). */
-const PROGRESS_RANK: Record<OrderStatus, number> = {
-  pending_payment: 0,
-  paid: 1,
-  accepted: 2,
-  preparing: 3,
-  ready_for_pickup: 4,
-  out_for_delivery: 5,
-  delivered: 6,
-  cancelled: 99,
-  refunded: 99,
-};
-
-/** Restock only makes sense while the goods are still with the seller. */
-const GOODS_LEFT_SHOP: ReadonlySet<OrderStatus> = new Set(["out_for_delivery", "delivered"]);
-
-export interface TransitionResult {
+export interface ApplyOrderActionResult {
   changed: boolean;
-  from: OrderStatus;
-  to: OrderStatus;
+  orderId: string;
+  orderNumber: string;
+  tenantId: string;
+  total: string;
+  paymentMethod: string;
+  before: OrderFacts;
+  after: OrderFacts;
   restocked: boolean;
+  codCollected: boolean;
+  /** A courier booking is live and has to be cancelled with the provider. */
+  cancelCourierBooking: boolean;
+}
+
+// ─── Reading the current facts ──────────────────────────────────────────────
+
+/** Rows written before migration 0022 have no states yet — derive them like the back-fill does. */
+function factsFromLegacy(row: OrderRow): OrderFacts {
+  const status = row.status;
+  const cod = row.paymentMethod === "cod";
+  const paymentState: PaymentState =
+    status === "refunded" || row.paymentStatus === "refunded"
+      ? "refunded"
+      : status === "delivered" || row.paymentStatus === "paid"
+        ? "paid"
+        : row.paymentStatus === "failed"
+          ? "failed"
+          : status === "cancelled"
+            ? "unpaid"
+            : cod
+              ? "cod_due"
+              : "unpaid";
+  const fulfillmentState: FulfillmentState =
+    status === "ready_for_pickup"
+      ? "ready"
+      : status === "out_for_delivery"
+        ? "out_for_delivery"
+        : status === "delivered"
+          ? "delivered"
+          : "unfulfilled";
+  const orderState: OrderState =
+    status === "cancelled" || status === "refunded" ? "cancelled" : status === "delivered" ? "completed" : "open";
+  return {
+    orderState,
+    paymentState,
+    fulfillmentState,
+    accepted: ["accepted", "preparing", "ready_for_pickup", "out_for_delivery", "delivered"].includes(status),
+    paymentMethod: row.paymentMethod ?? "",
+  };
+}
+
+export function factsOf(row: OrderRow): OrderFacts {
+  if (!row.orderState || !row.paymentState || !row.fulfillmentState) return factsFromLegacy(row);
+  return {
+    orderState: row.orderState,
+    paymentState: row.paymentState,
+    fulfillmentState: row.fulfillmentState,
+    accepted: row.acceptedAt != null,
+    paymentMethod: row.paymentMethod ?? "",
+  };
 }
 
 async function lockOrder(tx: Tx, orderId: string, tenantId?: string): Promise<OrderRow | null> {
@@ -84,12 +150,14 @@ async function lockOrder(tx: Tx, orderId: string, tenantId?: string): Promise<Or
   return order ?? null;
 }
 
-/**
- * Puts reserved stock back, exactly once per order. Mirrors the checkout
- * decrement: only variants of products that track inventory.
- */
+// ─── Stock ──────────────────────────────────────────────────────────────────
+
 export type RestockReason = "restock_cancel" | "restock_refund" | "restock_expiry";
 
+/**
+ * Puts reserved stock back, exactly once per order (claims stock_restored_at).
+ * Mirrors the checkout decrement: only variants of products that track inventory.
+ */
 export async function restockOrderInTx(
   tx: Tx,
   orderId: string,
@@ -100,7 +168,7 @@ export async function restockOrderInTx(
     .update(orders)
     .set({ stockRestoredAt: new Date() })
     .where(and(eq(orders.id, orderId), isNull(orders.stockRestoredAt)))
-    .returning({ id: orders.id, tenantId: orders.tenantId });
+    .returning({ id: orders.id, tenantId: orders.tenantId, locationId: orders.locationId });
   if (!claimed) return false;
 
   const lines = await tx
@@ -135,135 +203,331 @@ export async function restockOrderInTx(
       delta: quantity,
       balanceAfter: updated.stockQty,
       actorId,
+      locationId: claimed.locationId,
     });
   }
   return true;
 }
 
-function defaultNote(to: OrderStatus, source: TransitionSource, codCollected: boolean): string | undefined {
-  if (codCollected) return "Delivered — COD collected";
-  if (source === "system" && to === "cancelled") return "Not paid in time — cancelled and stock released";
-  if (to === "cancelled") return "Cancelled by seller — stock released";
-  return undefined;
+// ─── Events ─────────────────────────────────────────────────────────────────
+
+const FULFILLMENT_EVENT: Record<FulfillmentState, string> = {
+  unfulfilled: "Fulfillment.Reset.V1",
+  ready: "Fulfillment.Ready.V1",
+  booked: "Fulfillment.Booked.V1",
+  picked_up: "Fulfillment.PickedUp.V1",
+  out_for_delivery: "Fulfillment.OutForDelivery.V1",
+  delivered: "Fulfillment.Delivered.V1",
+  failed_delivery: "Fulfillment.Failed.V1",
+  returned: "Fulfillment.Returned.V1",
+};
+
+function eventNameFor(action: OrderAction): string {
+  switch (action.type) {
+    case "submit_payment_proof":
+      return "Order.PaymentSubmitted.V1";
+    case "confirm_payment":
+      return "Order.PaymentConfirmed.V1";
+    case "reject_payment_proof":
+      return "Order.PaymentRejected.V1";
+    case "accept":
+      return "Order.Accepted.V1";
+    case "mark_ready":
+      return "Fulfillment.Ready.V1";
+    case "fulfillment_update":
+      return FULFILLMENT_EVENT[action.to];
+    case "booking_cancelled":
+      return "Fulfillment.BookingCancelled.V1";
+    case "cancel":
+      return "Order.Cancelled.V1";
+    case "expire":
+      return "Order.Expired.V1";
+    case "refund":
+      return "Order.Refunded.V1";
+  }
 }
 
-export async function transitionOrderStatus(input: {
-  orderId: string;
-  to: OrderStatus;
-  source: TransitionSource;
-  /** Required for seller transitions: scopes the lock to the seller's shop. */
-  tenantId?: string;
-  actorId?: string;
-  note?: string;
-}): Promise<TransitionResult> {
-  if (input.source === "seller" && !input.tenantId) {
-    throw new Error("transitionOrderStatus: seller transitions must be tenant-scoped.");
+function historyEventFor(action: OrderAction): string {
+  return action.type === "fulfillment_update" ? `fulfillment_${action.to}` : action.type;
+}
+
+function defaultNote(action: OrderAction, source: ActionSource, codCollected: boolean): string | undefined {
+  if (codCollected) return "Delivered — COD collected";
+  switch (action.type) {
+    case "expire":
+      return "Not paid in time — cancelled and stock released";
+    case "cancel":
+      return source === "seller" ? "Cancelled by seller" : "Cancelled";
+    case "confirm_payment":
+      return source === "gateway" ? "Payment confirmed via PayMongo" : "Payment confirmed by seller";
+    case "submit_payment_proof":
+      return "Buyer sent payment details";
+    case "reject_payment_proof":
+      return "Payment not received — buyer asked to pay again";
+    case "booking_cancelled":
+      return "Courier booking was cancelled — rebook the delivery";
+    default:
+      return undefined;
+  }
+}
+
+// ─── Payment row side effects ───────────────────────────────────────────────
+
+async function liveChargeRow(tx: Tx, orderId: string) {
+  const [row] = await tx
+    .select()
+    .from(paymentTransactions)
+    .where(
+      and(
+        eq(paymentTransactions.orderId, orderId),
+        inArray(paymentTransactions.status, ["pending", "processing", "failed", "paid"])
+      )
+    )
+    .orderBy(desc(paymentTransactions.createdAt))
+    .limit(1)
+    .for("update");
+  return row ?? null;
+}
+
+async function applyPaymentRow(
+  tx: Tx,
+  order: OrderRow,
+  input: ApplyOrderActionInput,
+  codCollected: boolean,
+  now: Date
+): Promise<void> {
+  if (input.payment?.rowHandled) return;
+  const type = input.action.type;
+  if (!codCollected && !["confirm_payment", "submit_payment_proof", "reject_payment_proof", "refund"].includes(type)) {
+    return;
   }
 
-  const db = getDb();
-  const outcome = await db.transaction(async (tx) => {
-    const order = await lockOrder(tx, input.orderId, input.tenantId);
-    if (!order) throw new OrderError("Order not found.", "ORDER_NOT_FOUND");
-
-    const from = order.status as OrderStatus;
-    const to = input.to;
-    const unchanged = { changed: false, from, to, restocked: false, codCollected: false };
-
-    if (input.source === "seller") {
-      if (!(SELLER_SETTABLE_STATUSES as readonly string[]).includes(to)) {
-        throw new OrderError(
-          to === "paid"
-            ? "Use “Confirm payment” to mark an order paid."
-            : "Use “Refund” to refund an order.",
-          "INVALID_TRANSITION"
-        );
-      }
-      if (!(ORDER_STATUS_TRANSITIONS[from] ?? []).includes(to)) {
-        throw new OrderError(`Cannot move an order from "${from}" to "${to}".`, "INVALID_TRANSITION");
-      }
-      if (to === "cancelled" && order.paymentStatus === "paid") {
-        throw new OrderError(
-          "This order is already paid. Use “Refund” instead of cancel so the buyer gets their money back.",
-          "INVALID_TRANSITION"
-        );
-      }
-    } else if (input.source === "courier") {
-      if (to !== "out_for_delivery" && to !== "delivered") {
-        throw new Error(`Courier updates can only move orders forward, not to "${to}".`);
-      }
-      if (TERMINAL.has(from) || PROGRESS_RANK[to] <= PROGRESS_RANK[from]) return unchanged;
-    } else {
-      // system: only unpaid expiry
-      if (!(from === "pending_payment" && to === "cancelled")) return unchanged;
-      if (order.paymentStatus === "paid") return unchanged;
-    }
-
-    const now = new Date();
-    const delivered = to === "delivered";
-    const codCollected =
-      delivered && order.paymentMethod === "cod" && order.paymentStatus !== "paid";
-
+  if (type === "refund") {
     await tx
-      .update(orders)
-      .set({
-        status: to,
-        ...(delivered ? { completedAt: now } : {}),
-        ...(codCollected ? { paymentStatus: "paid" as const, paidAt: now } : {}),
-      })
-      .where(eq(orders.id, order.id));
+      .update(paymentTransactions)
+      .set({ status: "refunded", refundedAt: now, refundId: input.payment?.refundId ?? null })
+      .where(and(eq(paymentTransactions.orderId, order.id), eq(paymentTransactions.status, "paid")));
+    return;
+  }
 
-    if (codCollected) {
-      // COD has no payment row yet; record the cash the rider collected.
-      await tx
-        .insert(paymentTransactions)
-        .values({
-          orderId: order.id,
-          tenantId: order.tenantId,
-          gateway: "cod",
-          gatewayIntentId: `cod_${order.id}`,
-          amount: order.total,
-          status: "paid",
-          methodType: "cod",
-          paidAt: now,
-          rawWebhookJson: { collectedVia: input.source },
-        })
-        .onConflictDoNothing({ target: paymentTransactions.gatewayIntentId });
-    }
+  const live = await liveChargeRow(tx, order.id);
+  const isCod = order.paymentMethod === "cod";
 
-    let restocked = false;
-    if (to === "cancelled" && !GOODS_LEFT_SHOP.has(from)) {
-      restocked = await restockOrderInTx(
-        tx,
-        order.id,
-        input.source === "system" ? "restock_expiry" : "restock_cancel",
-        input.actorId
-      );
-    }
-
-    await tx.insert(orderStatusHistory).values({
-      orderId: order.id,
-      status: to,
-      note: input.note ?? defaultNote(to, input.source, codCollected),
-      actorId: input.actorId,
-    });
-
-    return { changed: true, from, to, restocked, codCollected };
-  });
-
-  if (outcome.changed && outcome.to === "delivered") {
-    if (outcome.codCollected) {
-      await creditSaleForOrder(input.orderId, { immediateAvailable: true });
+  if (type === "submit_payment_proof") {
+    const fields = {
+      status: "processing" as const,
+      reference: input.payment?.reference ?? live?.reference ?? null,
+      proofUrl: input.payment?.proofUrl ?? live?.proofUrl ?? null,
+      failureReason: null,
+    };
+    if (live) {
+      await tx.update(paymentTransactions).set(fields).where(eq(paymentTransactions.id, live.id));
     } else {
-      await releaseOrderSaleCredit(input.orderId);
+      await tx.insert(paymentTransactions).values({
+        orderId: order.id,
+        tenantId: order.tenantId,
+        gateway: "manual",
+        gatewayIntentId: `manual_${order.id}`,
+        amount: order.total,
+        methodType: order.paymentMethod,
+        ...fields,
+      });
     }
+    return;
+  }
+
+  if (type === "reject_payment_proof") {
+    if (live) {
+      await tx
+        .update(paymentTransactions)
+        .set({ status: "pending", failureReason: "Seller didn't receive this payment" })
+        .where(eq(paymentTransactions.id, live.id));
+    }
+    return;
+  }
+
+  // confirm_payment, or COD collected on delivery.
+  const paidFields = {
+    status: "paid" as const,
+    paidAt: now,
+    ...(input.payment?.gatewayPaymentId ? { gatewayPaymentId: input.payment.gatewayPaymentId } : {}),
+    ...(input.source === "seller" ? { verifiedBy: input.actorId ?? null, verifiedAt: now } : {}),
+  };
+  if (live && live.status !== "paid") {
+    await tx.update(paymentTransactions).set(paidFields).where(eq(paymentTransactions.id, live.id));
+  } else if (!live) {
+    await tx
+      .insert(paymentTransactions)
+      .values({
+        orderId: order.id,
+        tenantId: order.tenantId,
+        gateway: isCod ? "cod" : "manual",
+        gatewayIntentId: `${isCod ? "cod" : "manual"}_${order.id}`,
+        amount: order.total,
+        methodType: order.paymentMethod,
+        rawWebhookJson: codCollected ? { collectedVia: input.source } : null,
+        ...paidFields,
+      })
+      .onConflictDoNothing({ target: paymentTransactions.gatewayIntentId });
+  }
+}
+
+// ─── The service ────────────────────────────────────────────────────────────
+
+/** Applies an action inside the caller's transaction. Wallet effects are the caller's job (see applyOrderAction). */
+export async function applyOrderActionInTx(
+  tx: Tx,
+  input: ApplyOrderActionInput
+): Promise<ApplyOrderActionResult> {
+  if (input.source === "seller" && !input.tenantId) {
+    throw new Error("applyOrderAction: seller actions must be tenant-scoped.");
+  }
+  if (input.action.type === "refund" && !input.payment?.viaRefundFlow) {
+    throw new OrderError("Use “Refund” so the money goes back to the buyer.", "INVALID_TRANSITION");
+  }
+  const order = await lockOrder(tx, input.orderId, input.tenantId);
+  if (!order) throw new OrderError("Order not found.", "ORDER_NOT_FOUND");
+
+  const before = factsOf(order);
+  const plan = planOrderAction(before, input.action, input.source);
+  if (!plan.ok) throw new OrderError(plan.reason, "INVALID_TRANSITION");
+
+  const base = {
+    orderId: order.id,
+    orderNumber: order.orderNumber,
+    tenantId: order.tenantId,
+    total: order.total,
+    paymentMethod: order.paymentMethod ?? "",
+    before,
+  };
+  if (!plan.changed) {
+    return { ...base, changed: false, after: before, restocked: false, codCollected: false, cancelCourierBooking: false };
+  }
+
+  const after = plan.next;
+  const broken = invariantViolation(after);
+  if (broken) throw new Error(`Order state invariant broken (${broken}) — refusing to save.`);
+
+  const now = new Date();
+  const becamePaid = after.paymentState === "paid" && before.paymentState !== "paid";
+  const becameDelivered = after.fulfillmentState === "delivered" && before.fulfillmentState !== "delivered";
+  const becameCancelled = after.orderState === "cancelled" && before.orderState !== "cancelled";
+
+  await tx
+    .update(orders)
+    .set({
+      orderState: after.orderState,
+      paymentState: after.paymentState,
+      fulfillmentState: after.fulfillmentState,
+      ...(after.accepted && !order.acceptedAt ? { acceptedAt: now } : {}),
+      ...(becamePaid ? { paidAt: order.paidAt ?? now } : {}),
+      ...(becameDelivered || (after.orderState === "completed" && !order.completedAt) ? { completedAt: now } : {}),
+      ...(becameCancelled
+        ? { cancelledAt: now, cancelReason: input.cancelReason?.slice(0, 200) ?? null }
+        : {}),
+      // Dual-write: legacy readers keep working until 0024 drops these.
+      status: legacyStatusOf(after),
+      paymentStatus: legacyPaymentStatusOf(after.paymentState),
+    })
+    .where(eq(orders.id, order.id));
+
+  await applyPaymentRow(tx, order, input, plan.codCollected, now);
+
+  let restocked = false;
+  if (plan.restock) {
+    const reason: RestockReason =
+      input.action.type === "expire"
+        ? "restock_expiry"
+        : input.action.type === "refund"
+          ? "restock_refund"
+          : "restock_cancel";
+    restocked = await restockOrderInTx(tx, order.id, reason, input.actorId);
+  }
+
+  let note = input.note ?? defaultNote(input.action, input.source, plan.codCollected);
+  if (plan.cancelCourierBooking) {
+    note = `${note ? `${note}. ` : ""}A rider was booked — cancel it with the courier too.`;
+  }
+
+  const [history] = await tx
+    .insert(orderStatusHistory)
+    .values({
+      orderId: order.id,
+      status: legacyStatusOf(after),
+      event: historyEventFor(input.action),
+      fromState: describeStates(before),
+      toState: describeStates(after),
+      note,
+      actorId: input.actorId ?? null,
+    })
+    .returning({ id: orderStatusHistory.id });
+
+  const eventData = {
+    tenantId: order.tenantId,
+    orderId: order.id,
+    orderNumber: order.orderNumber,
+    source: input.source,
+    orderState: after.orderState,
+    paymentState: after.paymentState,
+    fulfillmentState: after.fulfillmentState,
+    paymentMethod: order.paymentMethod,
+    total: order.total,
+    codCollected: plan.codCollected,
+  };
+  const eventName = eventNameFor(input.action);
+  await insertOutboxEvent(tx, {
+    name: eventName,
+    tenantId: order.tenantId,
+    idempotencyKey: `${eventName}:${order.id}:${history!.id}`,
+    data: eventData,
+  });
+  if (after.orderState === "completed" && before.orderState !== "completed") {
+    await insertOutboxEvent(tx, {
+      name: "Order.Completed.V1",
+      tenantId: order.tenantId,
+      idempotencyKey: `Order.Completed.V1:${order.id}`,
+      data: eventData,
+    });
   }
 
   return {
-    changed: outcome.changed,
-    from: outcome.from,
-    to: outcome.to,
-    restocked: outcome.restocked,
+    ...base,
+    changed: true,
+    after,
+    restocked,
+    codCollected: plan.codCollected,
+    cancelCourierBooking: plan.cancelCourierBooking,
   };
+}
+
+/** Wallet effects after commit. All idempotent (unique ledger entries). */
+export async function applyWalletEffects(result: ApplyOrderActionResult): Promise<void> {
+  if (!result.changed) return;
+  const { before, after } = result;
+  const becamePaid = after.paymentState === "paid" && before.paymentState !== "paid";
+  const becameDelivered = after.fulfillmentState === "delivered" && before.fulfillmentState !== "delivered";
+
+  if (after.paymentState === "refunded" && before.paymentState !== "refunded") {
+    await reverseSaleCreditForOrder(result.orderId);
+    return;
+  }
+  if (becamePaid) {
+    // Cash in hand (COD) or goods already delivered → money is available now.
+    await creditSaleForOrder(result.orderId, {
+      immediateAvailable: result.codCollected || after.fulfillmentState === "delivered",
+    });
+    return;
+  }
+  if (becameDelivered && after.paymentState === "paid") {
+    await releaseOrderSaleCredit(result.orderId);
+  }
+}
+
+export async function applyOrderAction(input: ApplyOrderActionInput): Promise<ApplyOrderActionResult> {
+  const db = getDb();
+  const result = await db.transaction((tx) => applyOrderActionInTx(tx, input));
+  await applyWalletEffects(result);
+  return result;
 }
 
 // ─── Refunds ─────────────────────────────────────────────────────────────────
@@ -289,9 +553,9 @@ const LOCK_NOT_AVAILABLE = "55P03";
  * Refunds a paid order exactly once.
  *
  * The order row is locked with NOWAIT for the whole operation, so a second
- * click (or a retry while the first is running) fails fast instead of issuing a
- * second gateway refund. The gateway call happens inside that lock; if the DB
- * write then fails, the error is raised with the gateway refund id so it can be
+ * click (or a retry while the first is running) fails fast instead of issuing
+ * a second gateway refund. The gateway call happens inside that lock; if the
+ * DB write then fails, the error carries the gateway refund id so it can be
  * reconciled by hand.
  */
 export async function refundOrder(params: {
@@ -305,10 +569,9 @@ export async function refundOrder(params: {
   let gatewayRefundId: string | undefined;
 
   try {
-    const result = await db.transaction(async (tx) => {
+    const { refund, applied } = await db.transaction(async (tx) => {
       // Raw SQL on purpose: drizzle 0.38 renders `{ noWait: true }` as the
-      // invalid "for update no wait". NOWAIT makes a concurrent refund fail
-      // fast (55P03) instead of queueing up for a second gateway call.
+      // invalid "for update no wait".
       await tx.execute(
         sql`select 1 from ${orders} where ${orders.id} = ${params.orderId} and ${orders.tenantId} = ${params.tenantId} for update nowait`
       );
@@ -318,22 +581,15 @@ export async function refundOrder(params: {
         .where(and(eq(orders.id, params.orderId), eq(orders.tenantId, params.tenantId)))
         .limit(1);
       if (!order) throw new OrderError("Order not found.", "ORDER_NOT_FOUND");
-      if (order.status === "refunded" || order.paymentStatus === "refunded") {
-        throw new OrderError("This order has already been refunded.", "INVALID_TRANSITION");
-      }
-      if (order.paymentStatus !== "paid") {
-        throw new OrderError(
-          "Only paid orders can be refunded. Cancel unpaid orders instead.",
-          "INVALID_TRANSITION"
-        );
-      }
+
+      // Check the rules BEFORE any money moves.
+      const plan = planOrderAction(factsOf(order), { type: "refund" }, "seller");
+      if (!plan.ok) throw new OrderError(plan.reason, "INVALID_TRANSITION");
 
       const [txn] = await tx
         .select()
         .from(paymentTransactions)
-        .where(
-          and(eq(paymentTransactions.orderId, order.id), eq(paymentTransactions.status, "paid"))
-        )
+        .where(and(eq(paymentTransactions.orderId, order.id), eq(paymentTransactions.status, "paid")))
         .orderBy(sql`${paymentTransactions.paidAt} desc nulls last`)
         .limit(1);
 
@@ -350,48 +606,37 @@ export async function refundOrder(params: {
         if (!params.refundAtGateway) {
           throw new Error("refundOrder: refundAtGateway is required for PayMongo payments.");
         }
-        const refund = await params.refundAtGateway({
+        const res = await params.refundAtGateway({
           gateway,
           gatewayPaymentId: txn.gatewayPaymentId,
           totalCentavos: Math.round(Number(order.total) * 100),
           orderNumber: order.orderNumber,
         });
-        gatewayRefundId = refund.refundId;
+        gatewayRefundId = res.refundId;
       }
-
-      const from = order.status as OrderStatus;
-      await tx
-        .update(orders)
-        .set({ status: "refunded", paymentStatus: "refunded" })
-        .where(eq(orders.id, order.id));
-      await tx
-        .update(paymentTransactions)
-        .set({ status: "refunded" })
-        .where(
-          and(eq(paymentTransactions.orderId, order.id), eq(paymentTransactions.status, "paid"))
-        );
-
-      const restocked = GOODS_LEFT_SHOP.has(from)
-        ? false
-        : await restockOrderInTx(tx, order.id, "restock_refund", params.actorId);
 
       const baseNote =
         params.note ??
         (refundedOutsidePlatform
           ? "Refunded by seller — money returned to the buyer directly"
           : "Refund issued via PayMongo");
-      await tx.insert(orderStatusHistory).values({
+      const applied = await applyOrderActionInTx(tx, {
         orderId: order.id,
-        status: "refunded",
-        note: gatewayRefundId ? `${baseNote} (${gatewayRefundId})` : baseNote,
+        tenantId: params.tenantId,
+        action: { type: "refund" },
+        source: "seller",
         actorId: params.actorId,
+        note: gatewayRefundId ? `${baseNote} (${gatewayRefundId})` : baseNote,
+        payment: { refundId: gatewayRefundId ?? null, viaRefundFlow: true },
       });
-
-      return { gateway, refundId: gatewayRefundId, restocked, refundedOutsidePlatform };
+      return {
+        applied,
+        refund: { gateway, refundId: gatewayRefundId, restocked: applied.restocked, refundedOutsidePlatform },
+      };
     });
 
-    await reverseSaleCreditForOrder(params.orderId);
-    return result;
+    await applyWalletEffects(applied);
+    return refund;
   } catch (error) {
     // postgres-js puts the SQLSTATE on `code`; newer drizzle wraps it in `cause`.
     const e = error as { code?: string; cause?: { code?: string } } | null;
@@ -402,7 +647,6 @@ export async function refundOrder(params: {
       );
     }
     if (gatewayRefundId) {
-      // Money left the gateway but we could not record it. Surface loudly.
       const wrapped = new Error(
         `Refund ${gatewayRefundId} was issued at the gateway but could not be recorded: ${
           error instanceof Error ? error.message : String(error)
@@ -418,38 +662,41 @@ export async function refundOrder(params: {
 // ─── Unpaid order expiry ─────────────────────────────────────────────────────
 
 export const DEFAULT_UNPAID_EXPIRY_HOURS = 24;
+export const MIN_UNPAID_EXPIRY_HOURS = 1;
+export const MAX_UNPAID_EXPIRY_HOURS = 72;
 
 /**
- * Cancels online/manual orders still unpaid after `olderThanHours`, releasing
- * their stock. Orders where the buyer already submitted a payment reference
- * (transaction "processing") are left for the seller to confirm.
+ * Cancels orders still unpaid after the shop's window (settings
+ * `checkout.unpaidExpiryHours`, 1–72, default 24 — decision D4) and puts the
+ * stock back. Orders where the buyer already sent payment details
+ * (pending_verification) wait for the seller.
+ *
+ * `olderThanHours` overrides every shop's setting (tests / manual runs).
  */
 export async function expireUnpaidOrders(options: {
   olderThanHours?: number;
+  defaultHours?: number;
   limit?: number;
 } = {}): Promise<{ expired: number; orderIds: string[] }> {
-  const hours = options.olderThanHours ?? DEFAULT_UNPAID_EXPIRY_HOURS;
-  const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
   const db = getDb();
+  const fallback = options.defaultHours ?? DEFAULT_UNPAID_EXPIRY_HOURS;
+  const shopHours = sql<number>`least(${MAX_UNPAID_EXPIRY_HOURS}, greatest(${MIN_UNPAID_EXPIRY_HOURS},
+    case when (${tenants.settingsJson} -> 'checkout' ->> 'unpaidExpiryHours') ~ '^[0-9]{1,3}$'
+      then (${tenants.settingsJson} -> 'checkout' ->> 'unpaidExpiryHours')::int
+      else ${fallback} end))`;
+  const hoursExpr =
+    options.olderThanHours !== undefined ? sql<number>`${options.olderThanHours}` : shopHours;
 
   const candidates = await db
     .select({ id: orders.id })
     .from(orders)
+    .innerJoin(tenants, eq(tenants.id, orders.tenantId))
     .where(
       and(
-        eq(orders.status, "pending_payment"),
-        lt(orders.createdAt, cutoff),
-        notExists(
-          db
-            .select({ one: sql`1` })
-            .from(paymentTransactions)
-            .where(
-              and(
-                eq(paymentTransactions.orderId, orders.id),
-                inArray(paymentTransactions.status, ["processing", "paid"])
-              )
-            )
-        )
+        eq(orders.orderState, "open"),
+        eq(orders.paymentState, "unpaid"),
+        eq(orders.fulfillmentState, "unfulfilled"),
+        lt(orders.createdAt, sql`now() - make_interval(hours => (${hoursExpr})::int)`)
       )
     )
     .orderBy(orders.createdAt)
@@ -458,15 +705,14 @@ export async function expireUnpaidOrders(options: {
   const expiredIds: string[] = [];
   for (const candidate of candidates) {
     try {
-      const result = await transitionOrderStatus({
+      const result = await applyOrderAction({
         orderId: candidate.id,
-        to: "cancelled",
+        action: { type: "expire" },
         source: "system",
-        note: `Not paid within ${hours} hours — cancelled and stock released`,
       });
       if (result.changed) expiredIds.push(candidate.id);
     } catch (error) {
-      // Paid (or changed by the seller) between the scan and the lock — skip it.
+      // Changed between the scan and the lock — skip it.
       if (!(error instanceof OrderError)) throw error;
     }
   }

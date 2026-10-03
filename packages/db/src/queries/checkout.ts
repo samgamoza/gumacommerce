@@ -137,6 +137,12 @@ export interface UpsertCheckoutSessionInput {
   customerJson?: unknown;
   addressJson?: unknown;
   couponCode?: string | null;
+  /** Buyer phone, kept for checkout recovery (only messaged with consent). */
+  phone?: string | null;
+  /** "Text me reminders about this order" checkbox. */
+  marketingConsent?: boolean;
+  sourceChannel?: string | null;
+  utmJson?: Record<string, unknown> | null;
 }
 
 export async function upsertCheckoutSession(input: UpsertCheckoutSessionInput) {
@@ -164,6 +170,10 @@ export async function upsertCheckoutSession(input: UpsertCheckoutSessionInput) {
         addressJson:
           (input.addressJson as Record<string, unknown>) ?? existing.addressJson,
         couponCode: input.couponCode !== undefined ? input.couponCode : existing.couponCode,
+        ...(input.phone ? { phone: input.phone.slice(0, 20) } : {}),
+        ...(input.marketingConsent !== undefined ? { marketingConsent: input.marketingConsent } : {}),
+        ...(input.sourceChannel ? { sourceChannel: input.sourceChannel } : {}),
+        ...(input.utmJson ? { utmJson: input.utmJson } : {}),
         status: "active",
         lastActivityAt: now,
         abandonedAt: null,
@@ -182,6 +192,10 @@ export async function upsertCheckoutSession(input: UpsertCheckoutSessionInput) {
       customerJson: (input.customerJson as Record<string, unknown>) ?? null,
       addressJson: (input.addressJson as Record<string, unknown>) ?? null,
       couponCode: input.couponCode ?? null,
+      phone: input.phone?.slice(0, 20) ?? null,
+      marketingConsent: input.marketingConsent ?? false,
+      sourceChannel: input.sourceChannel ?? null,
+      utmJson: input.utmJson ?? null,
       status: "active",
       lastActivityAt: now,
     })

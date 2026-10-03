@@ -11,17 +11,7 @@ interface PageProps {
   searchParams: Promise<{ status?: string; search?: string }>;
 }
 
-const ORDER_STATUSES = [
-  "pending_payment",
-  "paid",
-  "accepted",
-  "preparing",
-  "ready_for_pickup",
-  "out_for_delivery",
-  "delivered",
-  "cancelled",
-  "refunded",
-];
+const ORDER_STATES = ["open", "completed", "cancelled"];
 
 export default async function OrdersPage({ searchParams }: PageProps) {
   const session = await requireSuperAdmin();
@@ -52,8 +42,8 @@ export default async function OrdersPage({ searchParams }: PageProps) {
         selects={[
           {
             name: "status",
-            label: "All statuses",
-            options: ORDER_STATUSES.map((s) => ({
+            label: "All orders",
+            options: ORDER_STATES.map((s) => ({
               value: s,
               label: s.replace(/_/g, " "),
             })),
@@ -78,6 +68,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                   <th className="px-5 py-3 font-semibold">Customer</th>
                   <th className="px-5 py-3 font-semibold">Status</th>
                   <th className="px-5 py-3 font-semibold">Payment</th>
+                  <th className="px-5 py-3 font-semibold">Delivery</th>
                   <th className="px-5 py-3 text-right font-semibold">Total</th>
                   <th className="px-5 py-3 font-semibold">Placed</th>
                 </tr>
@@ -104,6 +95,9 @@ export default async function OrdersPage({ searchParams }: PageProps) {
                     </td>
                     <td className="px-5 py-3">
                       {o.paymentStatus ? <StatusPill status={o.paymentStatus} /> : "—"}
+                    </td>
+                    <td className="px-5 py-3">
+                      {o.fulfillmentStatus ? <StatusPill status={o.fulfillmentStatus} /> : "—"}
                     </td>
                     <td className="px-5 py-3 text-right font-medium tabular-nums">
                       {formatMoney(o.total)}

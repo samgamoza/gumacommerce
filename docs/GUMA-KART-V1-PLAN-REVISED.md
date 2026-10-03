@@ -310,14 +310,14 @@ Durations are rough estimates for a small team (1–2 developers). Re-estimate a
 |---|---|---|---|
 | **0. Audit** | ✅ Done (the three audit docs) | — | — |
 | **1. Stabilize** | ✅ Done 2026-10-03 (§3; see `docs/PHASE-1-NOTES-2026-10-02.md`). Open: Lalamove sandbox signature check; BayanGo fixes with Cursor | Tests prove state, stock and access rules | 1.5–2 wks |
-| **2. Core alignment** | §4 and §6: three statuses and migration, locations (default), stock ledger, payment rows for all methods, outbox relay, message_log, consent fields | Existing store checkout runs on the new core without regressions | 2 wks |
+| **2. Core alignment** | ✅ Done 2026-10-03 (`docs/PHASE-2-NOTES-2026-10-03.md`): three statuses and migration, locations (default), stock ledger, payment rows for all methods, outbox relay, message_log, consent fields | Existing store checkout runs on the new core without regressions | 2 wks |
 | **3. Checkout Links** | §5: entity, merchant UI, production checkout built from the `/kart` components, token order page, abandonment capture, source tracking | A merchant creates a link, a buyer orders, and the order appears with the correct source | 2–3 wks |
 | **4. Automations (SMS)** | §8: Inngest consumers, recipes 1–7, merchant alerts, logs UI | Every recipe fires once, suppression works, and no duplicate sends occur | 1.5–2 wks |
 | **5. POS Lite** | §12: registers and shifts, cashier PIN, POS sale onto the shared order, stock and customers, receipt, PH VAT and senior/PWD | A cashier sale updates stock and the customer, the shift closes balanced, and online and POS stock never double-sell | 3–4 wks |
 | **6. Navigation, onboarding, dashboard** | §9 and §10, including the POS entry point and online/POS split | A new merchant reaches a shareable link in under 5 minutes | 1.5 wks |
 | **7. Beta** | 10–20 merchants: at least one rural or provincial, at least three with a physical shop using POS | Activation, fulfillment and POS metrics tracked weekly | 3–4 wks |
 | **Parallel: BayanGo partner API (Cursor)** | §7 gate, in the BayanGo repo | All 7 gate items pass a sandbox test against the Guma hook | 3–5 wks |
-| **Parallel: PayMongo** | Fix attach (payment method id + `return_url`) and add a return page. Live ₱1 test for GCash, Maya, QRPh and card. Legal/BSP review of collecting on merchants' behalf, then real payouts. | A live test order is paid and reconciled end to end | 1–2 wks of dev, plus review |
+| **Parallel: PayMongo** (⏸ on hold until Guma One business + BIR registration; code ready) | Fix attach (payment method id + `return_url`) and add a return page. Live ₱1 test for GCash, Maya, QRPh and card. Legal/BSP review of collecting on merchants' behalf, then real payouts. | A live test order is paid and reconciled end to end | 1–2 wks of dev, plus review |
 | **Parallel: Cloudflare move** | §19 | admin, platform and crons run on Workers | 1–1.5 wks |
 | **V1.1** | Messenger channel, multi-location, staff roles, POS offline mode, BIR OR/SI | — | — |
 
@@ -433,7 +433,7 @@ Still open:
 2. ✅ Veyron security hotfixes shipped (commit `999833a`). BayanGo ones are in the Cursor partner-API prompt.
 3. ✅ Phase 1 in Guma Kart: KYC lock, order tokens, the order service, stock restore — see `docs/PHASE-1-NOTES-2026-10-02.md` (needs migrations 0018 + 0019 applied).
 4. ✅ PayMongo code moved to hosted checkout with a return page (`docs/PAYMONGO-TRACK-2026-10-03.md`). Left for you: register the webhook, then test-mode and live ₱1 tests.
-5. ✅ Phase 2 migration spec written: `docs/PHASE-2-MIGRATION-SPEC.md`. **Waiting on owner review (decisions D1–D5)** before coding.
+5. ✅ Phase 2 done with the recommended D1–D5 (`docs/PHASE-2-NOTES-2026-10-03.md`). Next: Phase 3 (Checkout Links).
 6. Start the Cloudflare move for `platform`, which is the easiest. Then do `admin` after the upload and image changes (§19).
 
 ---

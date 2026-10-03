@@ -48,11 +48,12 @@ export async function POST(
         { status: 400 }
       );
     }
-    if (!["paid", "accepted", "preparing", "ready_for_pickup", "out_for_delivery"].includes(order.status)) {
-      return NextResponse.json(
-        { ok: false, error: `Cannot assign a rider while the order is "${order.status}".` },
-        { status: 400 }
-      );
+    // Same rule as booking, but the rider's details can still be edited while delivering.
+    const updatingRider =
+      order.facts.orderState === "open" &&
+      ["booked", "picked_up", "out_for_delivery"].includes(order.facts.fulfillmentState);
+    if (order.bookingBlockedReason && !updatingRider) {
+      return NextResponse.json({ ok: false, error: order.bookingBlockedReason }, { status: 400 });
     }
 
     const delivery = await upsertManualDeliveryForOrder({

@@ -28,6 +28,7 @@ export function PaymentsSettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [effectiveMode, setEffectiveMode] = useState<PaymentsMode>("manual_ewallet");
+  const [expiryHours, setExpiryHours] = useState("24");
   const [modeSetByPlatform, setModeSetByPlatform] = useState(false);
   const [receiving, setReceiving] = useState<Receiving>({
     gcashNumber: "",
@@ -49,6 +50,7 @@ export function PaymentsSettingsPage() {
       return;
     }
     const payments = data.settings?.settings?.payments ?? {};
+    setExpiryHours(String(data.settings?.settings?.checkout?.unpaidExpiryHours ?? 24));
     setEffectiveMode(
       (data.effectivePaymentsMode as PaymentsMode) ?? payments.mode ?? "manual_ewallet"
     );
@@ -72,12 +74,15 @@ export function PaymentsSettingsPage() {
     setSaving(true);
     setError(null);
     setMessage(null);
+    const hours = Math.min(72, Math.max(1, Math.round(Number(expiryHours) || 24)));
+    setExpiryHours(String(hours));
     const res = await fetch("/api/settings", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         settings: {
           payments: { receiving },
+          checkout: { unpaidExpiryHours: hours },
         },
       }),
     });
@@ -87,7 +92,7 @@ export function PaymentsSettingsPage() {
       setError(data.error ?? "Save failed.");
       return;
     }
-    setMessage("Payment receiving accounts saved.");
+    setMessage("Payment settings saved.");
   }
 
   if (loading) {
@@ -212,13 +217,34 @@ export function PaymentsSettingsPage() {
         </div>
       </SettingsCard>
 
+      <SettingsCard title="Unpaid orders">
+        <label className="block text-sm">
+          Cancel unpaid orders after
+          <span className="mt-1 flex items-center gap-2">
+            <input
+              type="number"
+              min={1}
+              max={72}
+              className="h-10 w-24 rounded-lg border px-3"
+              value={expiryHours}
+              onChange={(e) => setExpiryHours(e.target.value)}
+            />
+            <span className="text-muted-foreground">hours (1–72)</span>
+          </span>
+        </label>
+        <p className="mt-2 text-xs text-muted-foreground">
+          The items go back into stock. Orders where the buyer already sent a payment reference
+          stay open until you confirm or reject the payment.
+        </p>
+      </SettingsCard>
+
       <button
         type="button"
         onClick={() => void save()}
         disabled={saving}
         className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
       >
-        {saving ? "Saving…" : "Save receiving accounts"}
+        {saving ? "Saving…" : "Save payment settings"}
       </button>
     </SettingsPageLayout>
   );

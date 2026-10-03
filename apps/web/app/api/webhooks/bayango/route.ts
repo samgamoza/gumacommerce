@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import {
-  advanceOrderStatusFromDelivery,
+  applyCourierFulfillmentUpdate,
   updateDeliveryByProviderOrderId,
 } from "@gumakart/db";
 import {
-  BAYANGO_ATTENTION_STATUSES,
-  BAYANGO_STATUS_TO_ORDER,
+  BAYANGO_STATUS_TO_FULFILLMENT,
+  COURIER_NOTES,
   createLogger,
   parseBayanGoWebhook,
   verifyBayanGoWebhook,
@@ -96,24 +96,17 @@ export async function POST(request: Request) {
     }
 
     if (event.type === "delivery.status_changed") {
-      const nextOrderStatus = BAYANGO_STATUS_TO_ORDER[status];
-      if (nextOrderStatus) {
-        await advanceOrderStatusFromDelivery(
+      // 1:1 onto fulfillment (Phase 2). failed_delivery / returned land in the
+      // seller's "Needs attention" tab; a BayanGo cancel sends the order back to
+      // "ready" for rebooking — never an order cancellation.
+      const fulfillment = BAYANGO_STATUS_TO_FULFILLMENT[status];
+      if (fulfillment) {
+        const reason = delivery.failureReason ? ` — ${delivery.failureReason}` : "";
+        await applyCourierFulfillmentUpdate(
           linked.orderId,
-          nextOrderStatus,
-          nextOrderStatus === "delivered"
-            ? "Delivered by BayanGo rider"
-            : "BayanGo rider has your order"
+          fulfillment,
+          `${COURIER_NOTES[fulfillment]} (BayanGo)${fulfillment === "failed_delivery" ? reason : ""}`
         );
-      } else if (BAYANGO_ATTENTION_STATUSES.includes(status)) {
-        // Not an order cancellation — the seller decides (rebook / refund).
-        // Surfaced as "needs attention" once Phase 2 adds fulfillment status.
-        log.warn("BayanGo delivery needs merchant attention", {
-          deliveryId: delivery.deliveryId,
-          orderId: linked.orderId,
-          status,
-          failureReason: delivery.failureReason,
-        });
       }
     }
 

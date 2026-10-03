@@ -16,6 +16,7 @@ import {
   getPlatformSetting,
   PAYMENTS_MODE_KEY,
   resolveTenantPaymentsSettings,
+  sendWithLog,
   upsertCheckoutSession,
 } from "@gumakart/db";
 import {
@@ -23,6 +24,7 @@ import {
   clientIpFrom,
   createLogger,
   createSemaphoreClient,
+  orderConfirmationMessage,
   formatPhp,
   generateOrderNumber,
   IntegrationNotConfiguredError,
@@ -52,6 +54,8 @@ const checkoutSchema = z.object({
   fulfillment: z.enum(["delivery", "pickup"]).default("delivery"),
   sessionKey: z.string().min(8).max(64).optional(),
   couponCode: z.string().trim().max(64).optional(),
+  /** Unticked by default: "Text me reminders about this order". */
+  smsConsent: z.boolean().optional().default(false),
   customer: z.object({
     name: z.string().trim().min(2).max(120),
     phone: z
@@ -88,6 +92,42 @@ function orderPath(tenantSlug: string, orderNumber: string, accessToken: string)
 function trackingUrl(tenantSlug: string, orderNumber: string, accessToken: string): string {
   const base = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? "http://localhost:3010";
   return `${base}${orderPath(tenantSlug, orderNumber, accessToken)}`;
+}
+
+/**
+ * Buyer's "order received" SMS. Logged in message_log with a per-order
+ * idempotency key, so a retried checkout request can't text twice. Never
+ * fails the checkout.
+ */
+async function sendOrderConfirmationSms(
+  order: { id: string; tenantId: string; orderNumber: string; total: string },
+  phone: string,
+  link: string
+): Promise<void> {
+  const message = orderConfirmationMessage({
+    orderNumber: order.orderNumber,
+    total: formatPhp(Number(order.total)),
+    trackingUrl: link,
+  });
+  const sms = createSemaphoreClient();
+  const result = await sendWithLog(
+    {
+      tenantId: order.tenantId,
+      orderId: order.id,
+      channel: "sms",
+      recipient: phone,
+      recipe: "order_created",
+      entityId: order.id,
+      body: message,
+      provider: "semaphore",
+      kind: "transactional",
+    },
+    () => sms.send({ to: phone, message, priority: true })
+  ).catch((error) => {
+    console.error("[checkout] SMS log failed:", error);
+    return null;
+  });
+  if (result?.status === "failed") console.error("[checkout] SMS failed:", result.error);
 }
 
 /** COD orders skip the payment webhook, so notify the seller right away. */
@@ -272,6 +312,9 @@ export async function POST(request: Request) {
           postalCode: body.postalCode,
         },
         couponCode: body.couponCode ?? null,
+        phone: body.customer.phone,
+        marketingConsent: body.smsConsent,
+        sourceChannel: "storefront",
       }).catch((error) => console.error("[checkout] session upsert failed:", error));
     }
 
@@ -324,6 +367,7 @@ export async function POST(request: Request) {
       couponCode: body.couponCode,
       notes: body.notes,
       sourceChannel: "storefront",
+      smsMarketingConsent: body.smsConsent,
     });
 
     if (body.sessionKey) {
@@ -346,7 +390,6 @@ export async function POST(request: Request) {
       }).catch((error) => console.error("[checkout] Failed to record quote:", error));
     }
 
-    const sms = createSemaphoreClient();
     const paymentsSettings = resolveTenantPaymentsSettings(
       tenant.settingsJson as Record<string, unknown>
     );
@@ -369,14 +412,7 @@ export async function POST(request: Request) {
     });
 
     if (adapter === "cod") {
-      await sms
-        .orderConfirmation({
-          to: body.customer.phone,
-          orderNumber: order.orderNumber,
-          total: formatPhp(Number(order.total)),
-          trackingUrl: trackingUrl(body.tenantSlug, order.orderNumber, order.accessToken),
-        })
-        .catch((error) => console.error("[checkout] SMS failed:", error));
+      await sendOrderConfirmationSms(order, body.customer.phone, trackingUrl(body.tenantSlug, order.orderNumber, order.accessToken));
 
       await pushSellerNewCodOrder(order.tenantId, order.orderNumber, order.total).catch(
         (error) => console.error("[checkout] Seller push failed:", error)
@@ -421,14 +457,7 @@ export async function POST(request: Request) {
         receiving: paymentsSettings.receiving,
       });
 
-      await sms
-        .orderConfirmation({
-          to: body.customer.phone,
-          orderNumber: order.orderNumber,
-          total: formatPhp(Number(order.total)),
-          trackingUrl: trackingUrl(body.tenantSlug, order.orderNumber, order.accessToken),
-        })
-        .catch((error) => console.error("[checkout] SMS failed:", error));
+      await sendOrderConfirmationSms(order, body.customer.phone, trackingUrl(body.tenantSlug, order.orderNumber, order.accessToken));
 
       await pushSellerNewCodOrder(order.tenantId, order.orderNumber, order.total).catch(
         (error) => console.error("[checkout] Seller push (manual pay) failed:", error)
@@ -478,14 +507,7 @@ export async function POST(request: Request) {
       checkoutSessionId: started.checkoutSessionId,
     });
 
-    await sms
-      .orderConfirmation({
-        to: body.customer.phone,
-        orderNumber: order.orderNumber,
-        total: formatPhp(Number(order.total)),
-        trackingUrl: trackingUrl(body.tenantSlug, order.orderNumber, order.accessToken),
-      })
-      .catch((error) => console.error("[checkout] SMS failed:", error));
+    await sendOrderConfirmationSms(order, body.customer.phone, trackingUrl(body.tenantSlug, order.orderNumber, order.accessToken));
 
     return NextResponse.json({
       orderNumber: order.orderNumber,

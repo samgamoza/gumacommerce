@@ -53,11 +53,8 @@ export async function POST(
         { status: 409 }
       );
     }
-    if (!["paid", "accepted", "preparing", "ready_for_pickup"].includes(order.status)) {
-      return NextResponse.json(
-        { ok: false, error: `Cannot book a rider while the order is "${order.status}".` },
-        { status: 400 }
-      );
+    if (order.bookingBlockedReason) {
+      return NextResponse.json({ ok: false, error: order.bookingBlockedReason }, { status: 400 });
     }
     if (order.dropoffAddress.trim().length < 10) {
       return NextResponse.json(

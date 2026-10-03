@@ -3,7 +3,6 @@ import {
   getOrderForTracking,
   getTenantStorefrontBySlug,
   resolveTenantPaymentsSettings,
-  type OrderStatus,
 } from "@gumakart/db";
 import { buildManualEwalletInstructions } from "@gumakart/services";
 import { Badge, Button, Card } from "@gumakart/ui";
@@ -70,49 +69,46 @@ const PAYMENT_LABELS: Record<string, string> = {
   cod: "Cash on Delivery",
 };
 
-function buildTimeline(status: OrderStatus, deliveryType: string, paymentMethod: string) {
+type Facts = {
+  orderState: "open" | "completed" | "cancelled";
+  paymentState: string;
+  fulfillmentState: string;
+};
+
+/** Buyer timeline from the three order states (Phase 2). */
+function buildTimeline(f: Facts, deliveryType: string, paymentMethod: string) {
   const isPickup = deliveryType === "pickup";
   const isCod = paymentMethod === "cod";
+  const fulfillmentRank: Record<string, number> = {
+    unfulfilled: 0,
+    ready: 1,
+    booked: 2,
+    picked_up: 3,
+    out_for_delivery: 3,
+    failed_delivery: 3,
+    returned: 1,
+    delivered: 4,
+  };
+  const rank = fulfillmentRank[f.fulfillmentState] ?? 0;
+  const paid = f.paymentState === "paid" || f.paymentState === "refunded";
 
-  const steps: Array<{ key: OrderStatus | "placed"; label: string }> = [
-    { key: "placed", label: "Order placed" },
-    ...(isCod ? [] : [{ key: "paid" as const, label: "Payment confirmed" }]),
-    { key: "accepted", label: "Order accepted" },
-    { key: "preparing", label: "Preparing your order" },
+  const steps: Array<{ label: string; done: boolean }> = [
+    { label: "Order placed", done: true },
+    ...(isCod ? [] : [{ label: "Payment confirmed", done: paid }]),
     ...(isPickup
-      ? [{ key: "ready_for_pickup" as const, label: "Ready for pickup" }]
-      : [{ key: "out_for_delivery" as const, label: "Out for delivery" }]),
-    { key: "delivered", label: isPickup ? "Picked up" : "Delivered" },
+      ? [
+          { label: "Ready for pickup", done: rank >= 1 },
+          { label: "Picked up", done: rank >= 4 },
+        ]
+      : [
+          { label: "Packed", done: rank >= 1 },
+          { label: "Rider booked", done: rank >= 2 },
+          { label: "Out for delivery", done: rank >= 3 },
+          { label: "Delivered", done: rank >= 4 },
+        ]),
   ];
-
-  const statusRank: Record<string, number> = {
-    pending_payment: 0,
-    paid: 1,
-    accepted: 2,
-    preparing: 3,
-    ready_for_pickup: 4,
-    out_for_delivery: 4,
-    delivered: 5,
-  };
-  const stepRank: Record<string, number> = {
-    placed: 0,
-    paid: 1,
-    accepted: 2,
-    preparing: 3,
-    ready_for_pickup: 4,
-    out_for_delivery: 4,
-    delivered: 5,
-  };
-
-  const currentRank = statusRank[status] ?? 0;
-  return steps.map((step) => {
-    const rank = stepRank[step.key] ?? 0;
-    return {
-      label: step.label,
-      done: rank <= currentRank,
-      active: rank === currentRank + 1 || (rank === currentRank && status !== "delivered"),
-    };
-  });
+  const firstOpen = steps.findIndex((step) => !step.done);
+  return steps.map((step, index) => ({ ...step, active: index === firstOpen }));
 }
 
 export default async function OrderTrackingPage({ params, searchParams }: PageProps) {
@@ -161,15 +157,20 @@ export default async function OrderTrackingPage({ params, searchParams }: PagePr
         })
       : null;
 
-  const status: OrderStatus = order?.status ?? "accepted";
-  const isCancelled = status === "cancelled" || status === "refunded";
-  const timeline = buildTimeline(
-    status,
-    order?.deliveryType ?? "delivery",
-    order?.paymentMethod ?? "cod"
-  );
-  const awaitingPayment = status === "pending_payment";
-  const inMotion = !isCancelled && status !== "delivered" && !demoTenant;
+  // Demo shops show a sample in-progress COD order.
+  const facts: Facts = order
+    ? { orderState: order.orderState, paymentState: order.paymentState, fulfillmentState: order.fulfillmentState }
+    : { orderState: "open", paymentState: "cod_due", fulfillmentState: "unfulfilled" };
+  const isCancelled = facts.orderState === "cancelled";
+  const isDone = facts.orderState === "completed";
+  const timeline = buildTimeline(facts, order?.deliveryType ?? "delivery", order?.paymentMethod ?? "cod");
+  const awaitingPayment =
+    facts.orderState === "open" && (facts.paymentState === "unpaid" || facts.paymentState === "failed");
+  const checkingPayment = facts.orderState === "open" && facts.paymentState === "pending_verification";
+  const deliveryProblem =
+    facts.orderState === "open" &&
+    (facts.fulfillmentState === "failed_delivery" || facts.fulfillmentState === "returned");
+  const inMotion = facts.orderState === "open" && !demoTenant;
   const delivery = order?.delivery ?? null;
   const driverMapUrl =
     delivery?.driverLat && delivery.driverLng
@@ -181,14 +182,34 @@ export default async function OrderTrackingPage({ params, searchParams }: PagePr
       <OrderAutoRefresh active={inMotion} />
       <div className="mx-auto max-w-lg space-y-4">
         <Card className="text-center">
-          <div className="text-4xl">{isCancelled ? "❌" : awaitingPayment ? "⏳" : "✅"}</div>
+          <div className="text-4xl">
+            {isCancelled ? "❌" : awaitingPayment || checkingPayment ? "⏳" : deliveryProblem ? "⚠️" : isDone ? "🎉" : "✅"}
+          </div>
           <h1 className="mt-3 text-xl font-bold">
             {isCancelled
-              ? "Order cancelled"
+              ? facts.paymentState === "refunded"
+                ? "Order refunded"
+                : "Order cancelled"
               : awaitingPayment
                 ? "Waiting for payment"
-                : "Order confirmed!"}
+                : checkingPayment
+                  ? "Checking your payment"
+                  : deliveryProblem
+                    ? "There was a problem with the delivery"
+                    : isDone
+                      ? "Order complete — salamat!"
+                      : "Order confirmed!"}
           </h1>
+          {checkingPayment && (
+            <p className="mx-auto mt-2 max-w-xs text-sm text-gray-600">
+              The shop received your payment details and will confirm them shortly.
+            </p>
+          )}
+          {deliveryProblem && (
+            <p className="mx-auto mt-2 max-w-xs text-sm text-gray-600">
+              The shop will contact you to arrange a new delivery.
+            </p>
+          )}
           <p className="mt-1 text-gray-500">Order #{orderNumber}</p>
           {order && (
             <p className="mt-1 text-sm text-gray-400">
@@ -224,7 +245,7 @@ export default async function OrderTrackingPage({ params, searchParams }: PagePr
             instructions={payInstructions}
             shopAssistant={storeSettings.shopAssistant}
             shopName={order.tenantName}
-            alreadyPaid={order.paymentStatus === "paid"}
+            alreadyPaid={order.paymentState === "paid"}
           />
         ) : null}
 
@@ -324,11 +345,15 @@ export default async function OrderTrackingPage({ params, searchParams }: PagePr
               </div>
               <p className="pt-1 text-xs text-gray-400">
                 {PAYMENT_LABELS[order.paymentMethod] ?? order.paymentMethod} ·{" "}
-                {order.paymentStatus === "paid"
+                {order.paymentState === "paid"
                   ? "Paid"
-                  : order.paymentMethod === "cod"
-                    ? "Pay on delivery"
-                    : "Payment pending"}
+                  : order.paymentState === "refunded"
+                    ? "Refunded"
+                    : order.paymentState === "cod_due"
+                      ? "Pay on delivery"
+                      : order.paymentState === "pending_verification"
+                        ? "Being checked by the shop"
+                        : "Payment pending"}
               </p>
             </div>
           </Card>

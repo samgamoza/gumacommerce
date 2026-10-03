@@ -23,6 +23,7 @@ export async function recordStockMovement(
     orderId?: string | null;
     actorId?: string | null;
     note?: string | null;
+    locationId?: string | null;
   }
 ): Promise<void> {
   if (!Number.isInteger(input.delta) || input.delta === 0) return;
@@ -35,6 +36,7 @@ export async function recordStockMovement(
     orderId: input.orderId ?? null,
     actorId: input.actorId ?? null,
     note: input.note?.slice(0, 200) ?? null,
+    locationId: input.locationId ?? null,
   });
 }
 

@@ -13,6 +13,7 @@ const bodySchema = z.object({
   customer: z.record(z.unknown()).optional(),
   address: z.record(z.unknown()).optional(),
   couponCode: z.string().max(64).nullable().optional(),
+  smsConsent: z.boolean().optional(),
 });
 
 /** Persist cart / checkout progress for abandoned-checkout detection. */
@@ -39,6 +40,9 @@ export async function POST(request: Request) {
       customerJson: body.customer,
       addressJson: body.address,
       couponCode: body.couponCode ?? null,
+      phone: typeof body.customer?.phone === "string" ? body.customer.phone : null,
+      marketingConsent: body.smsConsent,
+      sourceChannel: "storefront",
     });
 
     return NextResponse.json({ ok: true, status: session?.status ?? "active" });

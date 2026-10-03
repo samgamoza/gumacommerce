@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import {
-  advanceOrderStatusFromDelivery,
+  applyCourierFulfillmentUpdate,
   updateDeliveryByProviderOrderId,
 } from "@gumakart/db";
-import { createLogger, verifyLalamoveWebhook } from "@gumakart/services";
+import {
+  COURIER_NOTES,
+  createLogger,
+  lalamoveFulfillment,
+  verifyLalamoveWebhook,
+} from "@gumakart/services";
 
 const log = createLogger("webhook:lalamove");
 
@@ -39,12 +44,6 @@ interface LalamoveWebhookBody {
   };
 }
 
-// Courier statuses that map onto our order lifecycle.
-const STATUS_TO_ORDER: Record<string, "out_for_delivery" | "delivered"> = {
-  PICKED_UP: "out_for_delivery",
-  ON_GOING: "out_for_delivery",
-  COMPLETED: "delivered",
-};
 
 export async function POST(request: Request) {
   const rawBody = await request.text();
@@ -101,19 +100,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true });
     }
 
-    const nextOrderStatus = courierStatus ? STATUS_TO_ORDER[courierStatus] : undefined;
-    if (nextOrderStatus) {
-      await advanceOrderStatusFromDelivery(
+    // Forward-only through the order service; a courier cancel sends the
+    // order back to "ready" for rebooking, never cancels it.
+    const fulfillment = lalamoveFulfillment(courierStatus);
+    if (fulfillment) {
+      await applyCourierFulfillmentUpdate(
         linked.orderId,
-        nextOrderStatus,
-        nextOrderStatus === "delivered"
-          ? "Delivered by Lalamove rider"
-          : "Rider picked up your order"
+        fulfillment,
+        `${COURIER_NOTES[fulfillment]} (Lalamove)`
       );
-    } else if (courierStatus === "CANCELED" || courierStatus === "REJECTED") {
-      // Courier cancellation is not an order cancellation — the seller can
-      // rebook. Recorded on the deliveries row above; nothing else to do.
-      log.info("Lalamove delivery cancelled", { providerOrderId, orderId: linked.orderId });
     }
 
     return NextResponse.json({ received: true });

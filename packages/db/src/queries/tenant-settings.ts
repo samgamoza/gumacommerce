@@ -41,6 +41,7 @@ function mergeSettings(
       : current?.shopAssistant,
     agents: patch.agents ? { ...current?.agents, ...patch.agents } : current?.agents,
     wallet: patch.wallet ? { ...current?.wallet, ...patch.wallet } : current?.wallet,
+    checkout: patch.checkout ? { ...current?.checkout, ...patch.checkout } : current?.checkout,
     payments: patch.payments
       ? {
           ...current?.payments,

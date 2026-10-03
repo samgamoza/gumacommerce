@@ -1,8 +1,9 @@
 import { desc, eq } from "drizzle-orm";
 import { getDb } from "../client";
 import { deliveries, deliveryQuotes, orderStatusHistory, orders } from "../schema/index";
-import type { OrderStatus } from "./order-status";
-import { transitionOrderStatus } from "./order-lifecycle";
+import { applyOrderAction, factsOf } from "./order-lifecycle";
+import { getDefaultLocationId } from "./locations";
+import { bookingBlockedReason, type FulfillmentState, type OrderFacts } from "./order-state";
 
 export interface RecordDeliveryQuoteInput {
   tenantId: string;
@@ -47,6 +48,13 @@ export interface CreateDeliveryBookingInput {
 
 export async function createDeliveryBooking(input: CreateDeliveryBookingInput): Promise<string> {
   const db = getDb();
+  const [order] = await db
+    .select({ tenantId: orders.tenantId, locationId: orders.locationId })
+    .from(orders)
+    .where(eq(orders.id, input.orderId))
+    .limit(1);
+  if (!order) throw new Error("Order not found for delivery booking");
+  const pickupLocationId = order.locationId ?? (await getDefaultLocationId(db, order.tenantId));
   const [row] = await db
     .insert(deliveries)
     .values({
@@ -57,9 +65,12 @@ export async function createDeliveryBooking(input: CreateDeliveryBookingInput): 
       status: input.status,
       trackingUrl: input.trackingUrl,
       bookedAt: new Date(),
+      pickupLocationId,
     })
     .returning({ id: deliveries.id });
   if (!row) throw new Error("Failed to create delivery booking");
+  // The provider accepted the job → fulfillment "booked" (no-op if already further along).
+  await applyCourierFulfillmentUpdate(input.orderId, "booked", `Rider booked with ${input.provider}`);
   return row.id;
 }
 
@@ -137,21 +148,19 @@ export interface OrderDeliveryInfo {
 }
 
 /**
- * Courier-driven status update. Delegates to the order lifecycle service with
- * source "courier": forward-only, never out of a terminal state, and the same
- * COD/wallet side effects as a seller marking the order delivered.
- *
- * Courier cancellations are NOT order cancellations (the seller rebooks), so
- * only out_for_delivery / delivered are accepted here.
+ * Courier status → order fulfillment, through the order service (source
+ * "courier": forward-only, stale or replayed events are no-ops). A booking the
+ * courier cancelled before pickup sends the order back to "ready" so the
+ * seller can rebook — it never cancels the order.
  */
-export async function advanceOrderStatusFromDelivery(
+export async function applyCourierFulfillmentUpdate(
   orderId: string,
-  nextStatus: Extract<OrderStatus, "out_for_delivery" | "delivered">,
-  note: string
+  next: FulfillmentState | "booking_cancelled",
+  note?: string
 ): Promise<boolean> {
-  const result = await transitionOrderStatus({
+  const result = await applyOrderAction({
     orderId,
-    to: nextStatus,
+    action: next === "booking_cancelled" ? { type: "booking_cancelled" } : { type: "fulfillment_update", to: next },
     source: "courier",
     note,
   });
@@ -162,6 +171,9 @@ export interface OrderForDeliveryBooking {
   orderId: string;
   orderNumber: string;
   status: string;
+  facts: OrderFacts;
+  /** Why "Book delivery" isn't allowed right now, or null. */
+  bookingBlockedReason: string | null;
   deliveryType: string;
   customerName: string;
   customerPhone: string;
@@ -195,6 +207,8 @@ export async function getOrderForDeliveryBooking(
     orderId: order.id,
     orderNumber: order.orderNumber,
     status: order.status,
+    facts: factsOf(order),
+    bookingBlockedReason: bookingBlockedReason(factsOf(order)),
     deliveryType: order.deliveryType ?? "delivery",
     customerName: order.guestName ?? "Customer",
     customerPhone: order.guestPhone ?? "",
@@ -202,8 +216,7 @@ export async function getOrderForDeliveryBooking(
     dropoffNotes: address.notes ?? "",
     existingProviderOrderId: existing?.providerOrderId ?? null,
     // Cash the rider must collect: the order total while a COD order is unpaid.
-    codAmount:
-      order.paymentMethod === "cod" && order.paymentStatus !== "paid" ? Number(order.total) : 0,
+    codAmount: factsOf(order).paymentState === "cod_due" ? Number(order.total) : 0,
   };
 }
 
@@ -272,6 +285,7 @@ export async function upsertManualDeliveryForOrder(
     })
     .returning({ id: deliveries.id });
   if (!row) throw new Error("Failed to create manual delivery");
+  await applyCourierFulfillmentUpdate(input.orderId, "booked", "Rider assigned by seller");
   return { deliveryId: row.id, providerOrderId, status: statusLabel };
 }
 

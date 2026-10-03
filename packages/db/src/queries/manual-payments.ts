@@ -1,7 +1,8 @@
 import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "../client";
-import { orderStatusHistory, orders, paymentTransactions } from "../schema/index";
-import { creditSaleForOrder } from "./wallet";
+import { paymentTransactions } from "../schema/index";
+import { applyOrderAction } from "./order-lifecycle";
+import { OrderError } from "./order-status";
 
 export type PaymentsReceivingAccounts = {
   gcashNumber?: string;
@@ -53,169 +54,82 @@ export async function recordManualPaymentIntent(params: {
   return gatewayIntentId;
 }
 
+/**
+ * Buyer sent a GCash/Maya/bank reference and/or screenshot → payment is
+ * "pending verification" until the seller confirms (or rejects) it.
+ */
 export async function submitManualPaymentReference(params: {
   tenantId: string;
   orderId: string;
   reference: string;
   proofUrl?: string | null;
 }): Promise<{ ok: boolean; error?: string }> {
-  const db = getDb();
-  const [order] = await db
-    .select()
-    .from(orders)
-    .where(and(eq(orders.id, params.orderId), eq(orders.tenantId, params.tenantId)))
-    .limit(1);
-  if (!order) return { ok: false, error: "Order not found." };
-  if (order.paymentStatus === "paid") return { ok: true };
-  if (order.status === "cancelled" || order.status === "refunded") {
-    return { ok: false, error: "This order was closed. Contact the shop if you already paid." };
-  }
-
-  const [txn] = await db
-    .select()
-    .from(paymentTransactions)
-    .where(
-      and(
-        eq(paymentTransactions.orderId, params.orderId),
-        eq(paymentTransactions.gateway, "manual")
-      )
-    )
-    .limit(1);
-
-  const meta = {
-    adapter: "manual_ewallet",
-    orderNumber: order.orderNumber,
-    buyerReference: params.reference.trim(),
-    proofUrl: params.proofUrl?.trim() || null,
-    submittedAt: new Date().toISOString(),
-  };
-
-  if (txn) {
-    await db
-      .update(paymentTransactions)
-      .set({
-        status: "processing",
-        rawWebhookJson: meta,
-      })
-      .where(eq(paymentTransactions.id, txn.id));
-  } else {
-    await db.insert(paymentTransactions).values({
+  try {
+    await applyOrderAction({
       orderId: params.orderId,
       tenantId: params.tenantId,
-      gateway: "manual",
-      gatewayIntentId: `manual_${params.orderId}`,
-      amount: order.total,
-      status: "processing",
-      methodType: order.paymentMethod,
-      rawWebhookJson: meta,
+      action: { type: "submit_payment_proof" },
+      source: "buyer",
+      note: `Buyer sent payment details (ref ${params.reference.trim().slice(0, 60)})`,
+      payment: {
+        reference: params.reference.trim().slice(0, 120),
+        proofUrl: params.proofUrl?.trim() || null,
+      },
     });
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof OrderError) {
+      if (error.message === "This order is already paid.") return { ok: true };
+      return { ok: false, error: error.message };
+    }
+    throw error;
   }
-
-  await db.insert(orderStatusHistory).values({
-    orderId: params.orderId,
-    status: order.status,
-    note: `Buyer submitted payment reference: ${params.reference.trim()}`,
-  });
-
-  return { ok: true };
 }
 
-/**
- * Seller confirms a direct e-wallet / bank transfer.
- * Idempotent and race-safe (order row locked for the whole update). Refuses
- * orders that were cancelled/refunded — the seller should refund those instead.
- */
+/** Seller confirms a direct e-wallet / bank transfer (or cash collected for COD). */
 export async function confirmManualOrderPayment(params: {
   tenantId: string;
   orderId: string;
   actorId?: string;
   note?: string;
 }): Promise<{ ok: boolean; error?: string; orderNumber?: string; transitioned?: boolean }> {
-  const db = getDb();
-  const result = await db.transaction(async (tx) => {
-    const [order] = await tx
-      .select()
-      .from(orders)
-      .where(and(eq(orders.id, params.orderId), eq(orders.tenantId, params.tenantId)))
-      .limit(1)
-      .for("update");
-    if (!order) return { ok: false, error: "Order not found." };
-    if (order.paymentMethod === "cod") {
-      return { ok: false, error: "COD orders are not confirmed via e-wallet payment." };
-    }
-    if (order.status === "cancelled" || order.status === "refunded") {
-      return {
-        ok: false,
-        error: "This order was already closed. If the buyer paid, return the money directly.",
-      };
-    }
-    if (order.paymentStatus === "paid") {
-      return { ok: true, orderNumber: order.orderNumber, transitioned: false };
-    }
-
-    const now = new Date();
-    if (order.status === "pending_payment") {
-      await tx
-        .update(orders)
-        .set({ status: "paid", paymentStatus: "paid", paidAt: now })
-        .where(eq(orders.id, order.id));
-      await tx.insert(orderStatusHistory).values({
-        orderId: order.id,
-        status: "paid",
-        note: params.note ?? "Payment confirmed by seller (direct e-wallet)",
-        actorId: params.actorId,
-      });
-    } else {
-      await tx
-        .update(orders)
-        .set({ paymentStatus: "paid", paidAt: now })
-        .where(eq(orders.id, order.id));
-    }
-
-    const [txn] = await tx
-      .select()
-      .from(paymentTransactions)
-      .where(
-        and(eq(paymentTransactions.orderId, order.id), eq(paymentTransactions.gateway, "manual"))
-      )
-      .limit(1);
-
-    const confirmation = { confirmedAt: now.toISOString(), confirmedBy: params.actorId ?? null };
-    if (txn) {
-      await tx
-        .update(paymentTransactions)
-        .set({
-          status: "paid",
-          paidAt: now,
-          rawWebhookJson: {
-            ...(typeof txn.rawWebhookJson === "object" && txn.rawWebhookJson
-              ? (txn.rawWebhookJson as object)
-              : {}),
-            ...confirmation,
-          },
-        })
-        .where(eq(paymentTransactions.id, txn.id));
-    } else {
-      await tx.insert(paymentTransactions).values({
-        orderId: order.id,
-        tenantId: order.tenantId,
-        gateway: "manual",
-        gatewayIntentId: `manual_${order.id}`,
-        amount: order.total,
-        status: "paid",
-        methodType: order.paymentMethod,
-        paidAt: now,
-        rawWebhookJson: { adapter: "manual_ewallet", ...confirmation },
-      });
-    }
-
-    return { ok: true, orderNumber: order.orderNumber, transitioned: true };
-  });
-
-  if (result.ok && result.transitioned) {
-    await creditSaleForOrder(params.orderId);
+  try {
+    const result = await applyOrderAction({
+      orderId: params.orderId,
+      tenantId: params.tenantId,
+      action: { type: "confirm_payment" },
+      source: "seller",
+      actorId: params.actorId,
+      note: params.note,
+    });
+    return { ok: true, orderNumber: result.orderNumber, transitioned: result.changed };
+  } catch (error) {
+    if (error instanceof OrderError) return { ok: false, error: error.message };
+    throw error;
   }
-  return result;
+}
+
+/** Seller didn't receive the money: back to "unpaid" so the buyer can pay again. */
+export async function rejectManualPaymentProof(params: {
+  tenantId: string;
+  orderId: string;
+  actorId?: string;
+  note?: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await applyOrderAction({
+      orderId: params.orderId,
+      tenantId: params.tenantId,
+      action: { type: "reject_payment_proof" },
+      source: "seller",
+      actorId: params.actorId,
+      note: params.note,
+    });
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof OrderError) return { ok: false, error: error.message };
+    throw error;
+  }
 }
 
 export async function getManualPaymentMetaForOrder(
@@ -241,7 +155,7 @@ export async function getManualPaymentMetaForOrder(
   };
   return {
     status: txn.status,
-    buyerReference: raw.buyerReference ?? null,
-    proofUrl: raw.proofUrl ?? null,
+    buyerReference: txn.reference ?? raw.buyerReference ?? null,
+    proofUrl: txn.proofUrl ?? raw.proofUrl ?? null,
   };
 }

@@ -23,6 +23,12 @@ const upgradeSchema = z.object({
 export async function POST(request: Request) {
   try {
     const session = await requireTenantSession();
+    if (process.env.NEXT_PUBLIC_PLAN_BILLING_ENABLED !== "true") {
+      return NextResponse.json(
+        { ok: false, error: "Paid plans are coming soon." },
+        { status: 503 }
+      );
+    }
     const body = upgradeSchema.parse(await request.json());
 
     const amountPhp = PLAN_PRICES_PHP[body.plan];

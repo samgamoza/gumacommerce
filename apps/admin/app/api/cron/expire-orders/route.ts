@@ -13,14 +13,15 @@ function expiryHours(): number {
 }
 
 /**
- * Cancels orders still waiting for payment after ORDER_UNPAID_EXPIRY_HOURS
- * (default 24) and puts their stock back. Orders where the buyer already sent a
- * payment reference ("processing") are left for the seller to confirm.
+ * Cancels orders still unpaid after each shop's window (Settings → Checkout,
+ * `checkout.unpaidExpiryHours`, 1–72) and puts their stock back. Shops without
+ * a setting use ORDER_UNPAID_EXPIRY_HOURS (default 24). Orders where the buyer
+ * already sent payment details wait for the seller.
  */
 export async function GET(request: Request) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
-  const result = await expireUnpaidOrders({ olderThanHours: expiryHours() });
+  const result = await expireUnpaidOrders({ defaultHours: expiryHours() });
   return NextResponse.json({ ok: true, ...result });
 }

@@ -23,6 +23,13 @@ const PAY_METHODS = [
 
 const SUPPORT_EMAIL = "support@guma.one";
 
+/**
+ * Paid plans need PayMongo plus Guma One's business and BIR registration
+ * (on hold). Until NEXT_PUBLIC_PLAN_BILLING_ENABLED=true, upgrades show "coming
+ * soon" instead of opening a payment that can't complete.
+ */
+const PLAN_BILLING_ENABLED = process.env.NEXT_PUBLIC_PLAN_BILLING_ENABLED === "true";
+
 export function SubscriptionSettingsPage() {
   const searchParams = useSearchParams();
   const highlight = searchParams.get("highlight");
@@ -117,7 +124,17 @@ export function SubscriptionSettingsPage() {
         </p>
       )}
 
-      <div className="mb-4 flex items-center gap-2">
+      {!PLAN_BILLING_ENABLED && (
+        <div className="mb-4 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+          <p className="font-semibold">Paid plans are coming soon</p>
+          <p className="mt-1">
+            During the beta every shop runs on the plan shown as current. We&apos;ll let you know
+            when upgrades open.
+          </p>
+        </div>
+      )}
+
+      <div className={`mb-4 flex items-center gap-2 ${PLAN_BILLING_ENABLED ? "" : "hidden"}`}>
         <span className="text-sm text-muted-foreground">Pay with:</span>
         {PAY_METHODS.map((m) => (
           <button
@@ -161,7 +178,12 @@ export function SubscriptionSettingsPage() {
                   <li key={feature}>• {feature}</li>
                 ))}
               </ul>
-              {!active && plan.id !== "free" && (
+              {!active && plan.id !== "free" && !PLAN_BILLING_ENABLED && (
+                <Button className="mt-4 w-full" type="button" variant="secondary" disabled>
+                  Coming soon
+                </Button>
+              )}
+              {!active && plan.id !== "free" && PLAN_BILLING_ENABLED && (
                 <Button
                   className="mt-4 w-full"
                   type="button"

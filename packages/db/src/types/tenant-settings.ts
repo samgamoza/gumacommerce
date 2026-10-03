@@ -69,7 +69,14 @@ export interface TenantWalletSettings {
   kycVerifiedAt?: string;
 }
 
+export interface TenantOrderRulesSettings {
+  /** Unpaid orders are cancelled (stock released) after this many hours, 1–72. Default 24. */
+  unpaidExpiryHours?: number;
+}
+
 export interface TenantSettingsJson {
+  /** Order rules (key kept as `checkout` per the Phase 2 spec, D4). */
+  checkout?: TenantOrderRulesSettings;
   codEnabled?: boolean;
   autoAcceptOrders?: boolean;
   minOrderAmount?: number;
@@ -121,6 +128,7 @@ export interface UpdateTenantSettingsInput {
     shopAssistant?: Partial<TenantShopAssistantSettings>;
     agents?: Partial<TenantAgentSettings>;
     wallet?: Partial<TenantWalletSettings>;
+    checkout?: Partial<TenantOrderRulesSettings>;
     payments?: Partial<TenantPaymentsSettings> & {
       receiving?: Partial<NonNullable<TenantPaymentsSettings["receiving"]>>;
     };

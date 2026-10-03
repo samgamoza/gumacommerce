@@ -1,7 +1,7 @@
 import { allowIntegrationMocks } from "../../config/integrations";
 import { createLogger } from "../../logging";
 import {
-  BAYANGO_STATUS_TO_ORDER,
+  BAYANGO_STATUS_TO_FULFILLMENT,
   createBayanGoClient,
   parseBayanGoWebhook,
   type BayanGoClient,
@@ -132,9 +132,9 @@ export class BayanGoAdapter implements DeliveryProvider {
     };
   }
 
-  /** Order status a partner status advances to, if any (contract §3.3). */
-  static orderStatusFor(status: string) {
-    return BAYANGO_STATUS_TO_ORDER[status as keyof typeof BAYANGO_STATUS_TO_ORDER];
+  /** Fulfillment state a partner status maps to, if any (contract §3.3). */
+  static fulfillmentFor(status: string) {
+    return BAYANGO_STATUS_TO_FULFILLMENT[status as keyof typeof BAYANGO_STATUS_TO_FULFILLMENT];
   }
 }
 

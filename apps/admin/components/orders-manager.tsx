@@ -3,24 +3,39 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, Card, formatPrice } from "@gumakart/ui";
 
-type OrderStatus =
-  | "pending_payment"
+type OrderState = "open" | "completed" | "cancelled";
+type PaymentState =
+  | "unpaid"
+  | "pending_verification"
   | "paid"
-  | "accepted"
-  | "preparing"
-  | "ready_for_pickup"
+  | "cod_due"
+  | "failed"
+  | "refunded"
+  | "partially_refunded";
+type FulfillmentState =
+  | "unfulfilled"
+  | "ready"
+  | "booked"
+  | "picked_up"
   | "out_for_delivery"
   | "delivered"
-  | "cancelled"
-  | "refunded";
+  | "failed_delivery"
+  | "returned";
+type Bucket =
+  | "to_pay"
+  | "to_confirm"
+  | "to_pack"
+  | "to_ship"
+  | "shipping"
+  | "attention"
+  | "done"
+  | "cancelled";
 
 interface OrderRow {
   id: string;
   orderNumber: string;
   customerName: string;
   customerPhone: string;
-  status: OrderStatus;
-  paymentStatus: string;
   paymentMethod: string;
   deliveryType: string;
   total: string;
@@ -30,76 +45,123 @@ interface OrderRow {
   paymentReference?: string | null;
   paymentProofUrl?: string | null;
   paymentGateway?: string | null;
+  orderState: OrderState;
+  paymentState: PaymentState;
+  fulfillmentState: FulfillmentState;
+  bucket: Bucket;
+  acceptedAt: string | null;
+  deliveryProvider: string | null;
 }
 
-const TABS = [
+/** Merchant tabs, in the order work happens (plan §6). */
+const TABS: Array<{ id: "all" | Bucket; label: string }> = [
   { id: "all", label: "All" },
-  { id: "new", label: "New", statuses: ["pending_payment", "paid", "accepted"] },
-  { id: "preparing", label: "Preparing", statuses: ["preparing", "ready_for_pickup"] },
-  { id: "delivering", label: "Delivering", statuses: ["out_for_delivery"] },
-  { id: "completed", label: "Completed", statuses: ["delivered"] },
-  { id: "cancelled", label: "Cancelled", statuses: ["cancelled", "refunded"] },
-] as const;
-
+  { id: "to_pay", label: "To pay" },
+  { id: "to_confirm", label: "To confirm" },
+  { id: "to_pack", label: "To pack" },
+  { id: "to_ship", label: "To ship" },
+  { id: "shipping", label: "Shipping" },
+  { id: "attention", label: "Needs attention" },
+  { id: "done", label: "Done" },
+  { id: "cancelled", label: "Cancelled" },
+];
 type TabId = (typeof TABS)[number]["id"];
 
-/** The one-tap "next step" for each status, per fulfillment type. */
-function nextAction(order: OrderRow): { label: string; status: OrderStatus } | null {
-  const isPickup = order.deliveryType === "pickup";
-  switch (order.status) {
-    case "pending_payment":
-      return null; // confirmed via confirmPayment(), not status patch
-    case "paid":
-      return { label: "Accept order", status: "accepted" };
-    case "accepted":
-      return { label: "Start preparing", status: "preparing" };
-    case "preparing":
-      return isPickup
-        ? { label: "Ready for pickup", status: "ready_for_pickup" }
-        : { label: "Out for delivery", status: "out_for_delivery" };
-    case "ready_for_pickup":
-      return { label: "Mark picked up", status: "delivered" };
-    case "out_for_delivery":
-      return { label: "Mark delivered", status: "delivered" };
+type SellerAction =
+  | "accept"
+  | "mark_ready"
+  | "mark_out_for_delivery"
+  | "mark_delivered"
+  | "mark_failed_delivery"
+  | "mark_returned"
+  | "reject_payment"
+  | "cancel";
+
+const BUCKET_STYLES: Record<Bucket, string> = {
+  to_pay: "bg-muted text-muted-foreground",
+  to_confirm: "bg-amber-50 text-amber-800",
+  to_pack: "bg-blue-50 text-blue-700",
+  to_ship: "bg-cyan-50 text-cyan-700",
+  shipping: "bg-orange-50 text-orange-700",
+  attention: "bg-red-50 text-red-700",
+  done: "bg-emerald-50 text-emerald-700",
+  cancelled: "bg-red-50 text-red-600",
+};
+
+function statusLabel(order: OrderRow): string {
+  if (order.orderState === "cancelled") {
+    if (order.paymentState === "refunded") return "Refunded";
+    if (order.paymentState === "paid") return "Cancelled — paid, needs refund";
+    return "Cancelled";
+  }
+  if (order.orderState === "completed") return order.deliveryType === "pickup" ? "Picked up" : "Delivered";
+  switch (order.bucket) {
+    case "to_pay":
+      return "Waiting for payment";
+    case "to_confirm":
+      return order.fulfillmentState === "delivered" ? "Delivered — confirm payment" : "Check payment";
+    case "to_pack":
+      return order.paymentState === "cod_due" ? "To pack · COD" : "To pack · Paid";
+    case "to_ship":
+      return order.deliveryType === "pickup" ? "Ready for pickup" : "Packed — book a rider";
+    case "shipping":
+      return {
+        booked: "Rider booked",
+        picked_up: "Rider has it",
+        out_for_delivery: "Out for delivery",
+      }[order.fulfillmentState as "booked" | "picked_up" | "out_for_delivery"] ?? "Shipping";
+    case "attention":
+      return order.fulfillmentState === "returned" ? "Returned to shop" : "Delivery failed";
     default:
-      return null;
+      return order.bucket;
   }
 }
 
+/** The one-tap next step. */
+function nextAction(order: OrderRow): { label: string; action: SellerAction } | null {
+  if (order.orderState !== "open") return null;
+  const isPickup = order.deliveryType === "pickup";
+  const payable = order.paymentState === "paid" || order.paymentState === "cod_due";
+  if (payable && order.fulfillmentState === "unfulfilled") {
+    return { label: isPickup ? "Ready for pickup" : "Mark packed", action: "mark_ready" };
+  }
+  if (order.fulfillmentState === "ready" && isPickup) {
+    return { label: "Mark picked up", action: "mark_delivered" };
+  }
+  if (["booked", "picked_up"].includes(order.fulfillmentState) && order.deliveryProvider === "manual") {
+    return { label: "Out for delivery", action: "mark_out_for_delivery" };
+  }
+  if (order.fulfillmentState === "out_for_delivery") {
+    return { label: "Mark delivered", action: "mark_delivered" };
+  }
+  return null;
+}
+
+const IN_TRANSIT = new Set<FulfillmentState>(["picked_up", "out_for_delivery"]);
+
 /** Paid orders leave through Refund (money goes back), never a bare cancel. */
 function canCancel(order: OrderRow): boolean {
-  if (order.paymentStatus === "paid") return false;
-  return ["pending_payment", "accepted", "preparing"].includes(order.status);
+  return (
+    order.orderState === "open" &&
+    order.paymentState !== "paid" &&
+    !IN_TRANSIT.has(order.fulfillmentState) &&
+    order.fulfillmentState !== "delivered"
+  );
 }
 
 /** Includes cancelled orders whose payment arrived after the cancel. */
 function canRefund(order: OrderRow): boolean {
-  return order.paymentStatus === "paid" && order.status !== "refunded";
+  return order.paymentState === "paid" && !IN_TRANSIT.has(order.fulfillmentState);
 }
 
-const STATUS_STYLES: Record<string, string> = {
-  pending_payment: "bg-muted text-muted-foreground",
-  paid: "bg-blue-50 text-blue-700",
-  accepted: "bg-violet-50 text-violet-700",
-  preparing: "bg-amber-50 text-amber-700",
-  ready_for_pickup: "bg-cyan-50 text-cyan-700",
-  out_for_delivery: "bg-orange-50 text-orange-700",
-  delivered: "bg-emerald-50 text-emerald-700",
-  cancelled: "bg-red-50 text-red-600",
-  refunded: "bg-red-50 text-red-600",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  pending_payment: "Awaiting payment",
-  paid: "Paid — action needed",
-  accepted: "Accepted",
-  preparing: "Preparing",
-  ready_for_pickup: "Ready for pickup",
-  out_for_delivery: "Out for delivery",
-  delivered: "Delivered",
-  cancelled: "Cancelled",
-  refunded: "Refunded",
-};
+function canBook(order: OrderRow): boolean {
+  return (
+    order.deliveryType === "delivery" &&
+    order.orderState === "open" &&
+    (order.paymentState === "paid" || order.paymentState === "cod_due") &&
+    ["unfulfilled", "ready", "failed_delivery", "returned"].includes(order.fulfillmentState)
+  );
+}
 
 function relativeTime(iso: string): string {
   const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
@@ -119,7 +181,6 @@ export function OrdersManager() {
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [bookingId, setBookingId] = useState<string | null>(null);
-  const [bookedIds, setBookedIds] = useState<Set<string>>(new Set());
   const [notice, setNotice] = useState<string | null>(null);
   const [assignOrder, setAssignOrder] = useState<OrderRow | null>(null);
   const [assignSaving, setAssignSaving] = useState(false);
@@ -155,23 +216,27 @@ export function OrdersManager() {
     return () => window.clearInterval(interval);
   }, [load]);
 
-  async function updateStatus(order: OrderRow, status: OrderStatus, note?: string) {
+  async function runAction(order: OrderRow, action: SellerAction, extra?: { note?: string; reason?: string }) {
     setUpdatingId(order.id);
     setError(null);
+    setNotice(null);
     try {
       const res = await fetch(`/api/orders/${order.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, note }),
+        body: JSON.stringify({ action, ...extra }),
       });
       const data = await res.json();
       if (!data.ok) {
         setError(data.error ?? "Could not update the order.");
         return;
       }
-      setOrders((current) =>
-        current.map((row) => (row.id === order.id ? { ...row, status } : row))
-      );
+      if (data.cancelCourierBooking) {
+        setNotice(
+          `Order ${order.orderNumber} cancelled. A rider was already booked — cancel it in the courier's app too.`
+        );
+      }
+      await load(true);
     } catch {
       setError("Network error while updating the order.");
     } finally {
@@ -190,13 +255,13 @@ export function OrdersManager() {
         setError(data.error ?? "Could not book a rider.");
         return;
       }
-      setBookedIds((current) => new Set(current).add(order.id));
       const provider = data.delivery.provider ? String(data.delivery.provider) : "courier";
       setNotice(
         data.delivery.trackingUrl
           ? `${provider} rider booked for ${order.orderNumber} (₱${data.delivery.fee}). Track: ${data.delivery.trackingUrl}`
           : `${provider} rider booked for ${order.orderNumber} (₱${data.delivery.fee}).`
       );
+      await load(true);
     } catch {
       setError("Network error while booking the rider.");
     } finally {
@@ -220,11 +285,11 @@ export function OrdersManager() {
         setError(data.error ?? "Could not save rider.");
         return;
       }
-      setBookedIds((current) => new Set(current).add(assignOrder.id));
       setNotice(
         `Rider ${assignForm.driverName} assigned on ${assignOrder.orderNumber} (${assignForm.courierLabel}).`
       );
       setAssignOrder(null);
+      await load(true);
     } catch {
       setError("Network error while saving rider details.");
     } finally {
@@ -233,10 +298,11 @@ export function OrdersManager() {
   }
 
   async function confirmPayment(order: OrderRow) {
-    const confirmed = window.confirm(
-      `Confirm that you received ${formatPrice(Number(order.total))} for ${order.orderNumber} via ${order.paymentMethod.toUpperCase()}?`
-    );
-    if (!confirmed) return;
+    const what =
+      order.paymentMethod === "cod"
+        ? `the cash for ${order.orderNumber}`
+        : `${formatPrice(Number(order.total))} for ${order.orderNumber} via ${order.paymentMethod.toUpperCase()}`;
+    if (!window.confirm(`Confirm that you received ${what}?`)) return;
 
     setUpdatingId(order.id);
     setError(null);
@@ -252,14 +318,8 @@ export function OrdersManager() {
         setError(data.error ?? "Could not confirm payment.");
         return;
       }
-      setOrders((current) =>
-        current.map((row) =>
-          row.id === order.id
-            ? { ...row, status: "paid", paymentStatus: "paid" }
-            : row
-        )
-      );
       setNotice(`Payment confirmed for ${order.orderNumber}.`);
+      await load(true);
     } catch {
       setError("Network error while confirming payment.");
     } finally {
@@ -288,16 +348,12 @@ export function OrdersManager() {
         setError(data.error ?? "Refund failed.");
         return;
       }
-      setOrders((current) =>
-        current.map((row) =>
-          row.id === order.id ? { ...row, status: "refunded", paymentStatus: "refunded" } : row
-        )
-      );
       setNotice(
         data.refundedOutsidePlatform
           ? `Order ${order.orderNumber} marked refunded. Remember to return the money to the customer.`
           : `Order ${order.orderNumber} refunded through PayMongo.`
       );
+      await load(true);
     } catch {
       setError("Network error while refunding the order.");
     } finally {
@@ -307,34 +363,22 @@ export function OrdersManager() {
 
   const counts = useMemo(() => {
     const map = new Map<TabId, number>();
-    for (const tabDef of TABS) {
-      if (tabDef.id === "all") {
-        map.set(tabDef.id, orders.length);
-      } else {
-        map.set(
-          tabDef.id,
-          orders.filter((order) => (tabDef.statuses as readonly string[]).includes(order.status))
-            .length
-        );
-      }
-    }
+    map.set("all", orders.length);
+    for (const order of orders) map.set(order.bucket, (map.get(order.bucket) ?? 0) + 1);
     return map;
   }, [orders]);
 
-  const visible = useMemo(() => {
-    const tabDef = TABS.find((t) => t.id === tab);
-    if (!tabDef || tab === "all") return orders;
-    return orders.filter((order) =>
-      ((tabDef as { statuses?: readonly string[] }).statuses ?? []).includes(order.status)
-    );
-  }, [orders, tab]);
+  const visible = useMemo(
+    () => (tab === "all" ? orders : orders.filter((order) => order.bucket === tab)),
+    [orders, tab]
+  );
 
   return (
     <>
       <div className="mb-4 flex gap-2 overflow-x-auto">
         {TABS.map((tabDef) => {
           const count = counts.get(tabDef.id) ?? 0;
-          if (tabDef.id === "cancelled" && count === 0) return null;
+          if ((tabDef.id === "cancelled" || tabDef.id === "attention") && count === 0) return null;
           return (
             <button
               key={tabDef.id}
@@ -385,6 +429,16 @@ export function OrdersManager() {
         <div className="space-y-3">
           {visible.map((order) => {
             const action = nextAction(order);
+            const busy = updatingId === order.id;
+            const showProof =
+              order.paymentState === "pending_verification" &&
+              (order.paymentReference || order.paymentProofUrl);
+            const canConfirm =
+              order.orderState === "open" &&
+              (order.paymentState === "pending_verification" ||
+                ((order.paymentState === "unpaid" || order.paymentState === "failed") &&
+                  order.paymentGateway !== "paymongo") ||
+                (order.paymentState === "cod_due" && order.deliveryType === "pickup"));
             return (
               <Card key={order.id}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -395,11 +449,9 @@ export function OrdersManager() {
                         · {relativeTime(order.createdAt)}
                       </span>
                       <span
-                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          STATUS_STYLES[order.status] ?? "bg-muted text-muted-foreground"
-                        }`}
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${BUCKET_STYLES[order.bucket]}`}
                       >
-                        {STATUS_LABELS[order.status] ?? order.status}
+                        {statusLabel(order)}
                       </span>
                     </div>
                     <p className="mt-0.5 text-sm text-muted-foreground">
@@ -409,105 +461,128 @@ export function OrdersManager() {
                       </a>{" "}
                       · {order.deliveryType === "pickup" ? "Pickup" : "Delivery"} ·{" "}
                       {order.paymentMethod.toUpperCase()}
-                      {order.paymentMethod === "cod" && order.paymentStatus !== "paid"
-                        ? " (collect on delivery)"
-                        : ""}
+                      {order.paymentState === "cod_due" ? " (collect on delivery)" : ""}
                     </p>
                     <p className="mt-0.5 truncate text-sm text-muted-foreground">{order.itemsSummary}</p>
-                    {(order.paymentReference || order.paymentProofUrl) &&
-                      order.status === "pending_payment" && (
-                        <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
-                          {order.paymentReference ? (
-                            <p>
-                              Ref: <span className="font-semibold">{order.paymentReference}</span>
-                            </p>
-                          ) : null}
-                          {order.paymentProofUrl ? (
-                            <a
-                              href={order.paymentProofUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="mt-1 inline-block font-medium text-emerald-700 underline"
-                            >
-                              View payment screenshot
-                            </a>
-                          ) : null}
-                        </div>
-                      )}
+                    {showProof ? (
+                      <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
+                        {order.paymentReference ? (
+                          <p>
+                            Ref: <span className="font-semibold">{order.paymentReference}</span>
+                          </p>
+                        ) : null}
+                        {order.paymentProofUrl ? (
+                          <a
+                            href={order.paymentProofUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-1 inline-block font-medium text-emerald-700 underline"
+                          >
+                            View payment screenshot
+                          </a>
+                        ) : null}
+                      </div>
+                    ) : null}
                     <p className="mt-1 font-bold text-emerald-700">
                       {formatPrice(Number(order.total))}
                     </p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    {order.status === "pending_payment" &&
-                      order.paymentMethod !== "cod" && (
+                  <div className="flex shrink-0 flex-wrap items-center gap-2">
+                    {canConfirm && (
+                      <button
+                        onClick={() => confirmPayment(order)}
+                        disabled={busy}
+                        className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                      >
+                        {busy ? "Confirming…" : order.paymentMethod === "cod" ? "Cash received" : "Confirm payment"}
+                      </button>
+                    )}
+                    {order.paymentState === "pending_verification" && order.orderState === "open" && (
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`You didn't receive the payment for ${order.orderNumber}? The buyer will be asked to pay again.`)) {
+                            void runAction(order, "reject_payment");
+                          }
+                        }}
+                        disabled={busy}
+                        className="rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-red-50 hover:text-red-600"
+                      >
+                        Not received
+                      </button>
+                    )}
+                    {canBook(order) && (
+                      <>
                         <button
-                          onClick={() => confirmPayment(order)}
-                          disabled={updatingId === order.id}
-                          className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                          onClick={() => bookRider(order)}
+                          disabled={bookingId === order.id}
+                          className="rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-medium text-orange-700 transition hover:bg-orange-100 disabled:opacity-50"
                         >
-                          {updatingId === order.id ? "Confirming…" : "Confirm payment"}
+                          {bookingId === order.id ? "Booking…" : "Book courier"}
                         </button>
-                      )}
-                    {order.deliveryType === "delivery" &&
-                      ["paid", "accepted", "preparing", "ready_for_pickup"].includes(
-                        order.status
-                      ) &&
-                      !bookedIds.has(order.id) && (
-                        <>
-                          <button
-                            onClick={() => bookRider(order)}
-                            disabled={bookingId === order.id}
-                            className="rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-medium text-orange-700 transition hover:bg-orange-100 disabled:opacity-50"
-                          >
-                            {bookingId === order.id ? "Booking…" : "Book courier"}
-                          </button>
-                          <button
-                            onClick={() => {
-                              setAssignOrder(order);
-                              setAssignForm({
-                                courierLabel: "Angkas",
-                                driverName: "",
-                                driverPhone: "",
-                                driverPlateNumber: "",
-                                trackingUrl: "",
-                              });
-                            }}
-                            className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground transition hover:bg-muted"
-                          >
-                            Assign rider
-                          </button>
-                        </>
-                      )}
+                        <button
+                          onClick={() => {
+                            setAssignOrder(order);
+                            setAssignForm({
+                              courierLabel: "Angkas",
+                              driverName: "",
+                              driverPhone: "",
+                              driverPlateNumber: "",
+                              trackingUrl: "",
+                            });
+                          }}
+                          className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground transition hover:bg-muted"
+                        >
+                          Assign rider
+                        </button>
+                      </>
+                    )}
+                    {order.orderState === "open" && IN_TRANSIT.has(order.fulfillmentState) && (
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`Did delivery of ${order.orderNumber} fail?`)) {
+                            void runAction(order, "mark_failed_delivery");
+                          }
+                        }}
+                        disabled={busy}
+                        className="rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-red-50 hover:text-red-600"
+                      >
+                        Delivery failed
+                      </button>
+                    )}
+                    {order.orderState === "open" && order.fulfillmentState === "failed_delivery" && (
+                      <button
+                        onClick={() => void runAction(order, "mark_returned")}
+                        disabled={busy}
+                        className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground transition hover:bg-muted"
+                      >
+                        Item is back
+                      </button>
+                    )}
                     {canCancel(order) && (
                       <button
                         onClick={() => {
                           if (window.confirm(`Cancel order ${order.orderNumber}?`)) {
-                            updateStatus(order, "cancelled", "Cancelled by seller");
+                            void runAction(order, "cancel", { reason: "Cancelled by seller" });
                           }
                         }}
-                        disabled={updatingId === order.id}
+                        disabled={busy}
                         className="rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-red-50 hover:text-red-600"
                       >
                         Cancel
                       </button>
                     )}
                     {canRefund(order) && (
-                        <button
-                          onClick={() => refundOrder(order)}
-                          disabled={updatingId === order.id}
-                          className="rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-red-50 hover:text-red-600"
-                        >
-                          Refund
-                        </button>
-                      )}
-                    {action && (
-                      <Button
-                        size="sm"
-                        onClick={() => updateStatus(order, action.status)}
-                        disabled={updatingId === order.id}
+                      <button
+                        onClick={() => refundOrder(order)}
+                        disabled={busy}
+                        className="rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-red-50 hover:text-red-600"
                       >
-                        {updatingId === order.id ? "Saving..." : action.label}
+                        Refund
+                      </button>
+                    )}
+                    {action && (
+                      <Button size="sm" onClick={() => runAction(order, action.action)} disabled={busy}>
+                        {busy ? "Saving..." : action.label}
                       </Button>
                     )}
                   </div>

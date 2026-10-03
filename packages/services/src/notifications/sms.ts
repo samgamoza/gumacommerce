@@ -70,11 +70,18 @@ export class SemaphoreClient {
     total: string;
     trackingUrl?: string;
   }): Promise<SendSmsResult> {
-    const msg = params.trackingUrl
-      ? `Guma One: Order ${params.orderNumber} confirmed! Total ${params.total}. Track: ${params.trackingUrl}`
-      : `Guma One: Order ${params.orderNumber} confirmed! Total ${params.total}. Salamat po!`;
-    return this.send({ to: params.to, message: msg, priority: true });
+    return this.send({ to: params.to, message: orderConfirmationMessage(params), priority: true });
   }
+}
+
+export function orderConfirmationMessage(params: {
+  orderNumber: string;
+  total: string;
+  trackingUrl?: string;
+}): string {
+  return params.trackingUrl
+    ? `Guma One: Order ${params.orderNumber} confirmed! Total ${params.total}. Track: ${params.trackingUrl}`
+    : `Guma One: Order ${params.orderNumber} confirmed! Total ${params.total}. Salamat po!`;
 }
 
 export function createSemaphoreClient(): SemaphoreClient {

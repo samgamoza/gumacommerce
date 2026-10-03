@@ -16,7 +16,7 @@ import { closeDb, getDb } from "./client";
 import {
   expireUnpaidOrders,
   refundOrder,
-  transitionOrderStatus,
+  applyOrderAction,
 } from "./queries/order-lifecycle";
 import {
   OrderError,
@@ -43,6 +43,7 @@ import {
   tenantWallets,
   tenants,
   walletLedgerEntries,
+  domainEvents,
 } from "./schema/index";
 
 const url = process.env.DATABASE_URL ?? "";
@@ -86,6 +87,11 @@ function place(paymentMethod: "cod" | "gcash", quantity = 2) {
   });
 }
 
+const cancel = (orderId: string, tid = tenantId) =>
+  applyOrderAction({ orderId, tenantId: tid, action: { type: "cancel" }, source: "seller" });
+const courier = (orderId: string, to: "booked" | "picked_up" | "out_for_delivery" | "delivered") =>
+  applyOrderAction({ orderId, action: { type: "fulfillment_update", to }, source: "courier" });
+
 async function orderRow(id: string) {
   const [o] = await db.select().from(orders).where(eq(orders.id, id));
   return o!;
@@ -127,6 +133,7 @@ describe("order lifecycle", () => {
     await db.delete(kycVerificationSessions).where(eq(kycVerificationSessions.tenantId, tenantId));
     await db.delete(productVariants).where(eq(productVariants.productId, productId));
     await db.delete(products).where(eq(products.tenantId, tenantId));
+    await db.delete(domainEvents).where(eq(domainEvents.tenantId, tenantId));
     await db.delete(tenants).where(eq(tenants.id, tenantId));
   });
 
@@ -136,8 +143,8 @@ describe("order lifecycle", () => {
     assert.equal(await stock(), before - 3);
 
     const results = await Promise.allSettled([
-      transitionOrderStatus({ orderId: order.id, tenantId, to: "cancelled", source: "seller" }),
-      transitionOrderStatus({ orderId: order.id, tenantId, to: "cancelled", source: "seller" }),
+      cancel(order.id),
+      cancel(order.id),
     ]);
     const ok = results.filter((r) => r.status === "fulfilled");
     assert.equal(ok.length, 1, "second cancel must be rejected (cancelled → cancelled is invalid)");
@@ -158,12 +165,10 @@ describe("order lifecycle", () => {
   it("a paid order cannot be cancelled by the seller — only refunded", async () => {
     const order = await place("gcash", 1);
     await confirmManualOrderPayment({ tenantId, orderId: order.id });
+    await assert.rejects(cancel(order.id), (e: unknown) => e instanceof OrderError);
+    // A refund must go through refundOrder() (gateway + NOWAIT lock), never a bare action.
     await assert.rejects(
-      transitionOrderStatus({ orderId: order.id, tenantId, to: "cancelled", source: "seller" }),
-      (e: unknown) => e instanceof OrderError
-    );
-    await assert.rejects(
-      transitionOrderStatus({ orderId: order.id, tenantId, to: "refunded", source: "seller" }),
+      applyOrderAction({ orderId: order.id, tenantId, action: { type: "refund" }, source: "seller" }),
       (e: unknown) => e instanceof OrderError
     );
   });
@@ -171,10 +176,10 @@ describe("order lifecycle", () => {
   it("seller transitions are tenant-scoped", async () => {
     const order = await place("cod", 1);
     await assert.rejects(
-      transitionOrderStatus({
+      applyOrderAction({
         orderId: order.id,
         tenantId: randomUUID(),
-        to: "preparing",
+        action: { type: "accept" },
         source: "seller",
       }),
       (e: unknown) => e instanceof OrderError && e.code === "ORDER_NOT_FOUND"
@@ -183,23 +188,28 @@ describe("order lifecycle", () => {
 
   it("courier updates only move forward and never cancel", async () => {
     const order = await place("cod", 1);
-    const first = await transitionOrderStatus({ orderId: order.id, to: "out_for_delivery", source: "courier" });
+    const first = await courier(order.id, "out_for_delivery");
     assert.equal(first.changed, true);
-    const replay = await transitionOrderStatus({ orderId: order.id, to: "out_for_delivery", source: "courier" });
+    const replay = await courier(order.id, "out_for_delivery");
     assert.equal(replay.changed, false, "webhook replay is a no-op");
+    const stale = await courier(order.id, "booked");
+    assert.equal(stale.changed, false, "late 'booked' after 'out for delivery' is ignored");
     await assert.rejects(
-      transitionOrderStatus({ orderId: order.id, to: "cancelled", source: "courier" })
+      applyOrderAction({ orderId: order.id, action: { type: "cancel" }, source: "courier" })
     );
   });
 
   it("COD delivered marks the order paid and records the cash once", async () => {
     const order = await place("cod", 1);
-    await transitionOrderStatus({ orderId: order.id, to: "out_for_delivery", source: "courier" });
-    await transitionOrderStatus({ orderId: order.id, to: "delivered", source: "courier" });
-    await transitionOrderStatus({ orderId: order.id, to: "delivered", source: "courier" });
+    await courier(order.id, "out_for_delivery");
+    await courier(order.id, "delivered");
+    await courier(order.id, "delivered");
 
     const row = await orderRow(order.id);
-    assert.equal(row.status, "delivered");
+    assert.equal(row.orderState, "completed");
+    assert.equal(row.paymentState, "paid");
+    assert.equal(row.fulfillmentState, "delivered");
+    assert.equal(row.status, "delivered", "legacy column dual-written");
     assert.equal(row.paymentStatus, "paid");
     assert.ok(row.completedAt);
     const payments = await db
@@ -228,7 +238,8 @@ describe("order lifecycle", () => {
     assert.ok(result.orderIds.includes(stale.id));
     assert.ok(!result.orderIds.includes(referenced.id), "buyer already sent a reference");
     assert.ok(!result.orderIds.includes(fresh.id), "not old enough");
-    assert.equal((await orderRow(stale.id)).status, "cancelled");
+    assert.equal((await orderRow(stale.id)).orderState, "cancelled");
+    assert.equal((await orderRow(referenced.id)).paymentState, "pending_verification");
     assert.equal(await stock(), before - 2, "only the stale order's 2 units came back");
 
     const again = await expireUnpaidOrders({ olderThanHours: 24 });
@@ -245,16 +256,17 @@ describe("order lifecycle", () => {
       amount: order.total,
       methodType: "gcash",
     });
-    await transitionOrderStatus({ orderId: order.id, tenantId, to: "cancelled", source: "seller" });
+    await cancel(order.id);
 
     const result = await markOrderPaidByIntent(intentId, "pay_test_late", {});
     assert.equal(result.ok, true);
     assert.equal(result.paidAfterCancel, true);
     const row = await orderRow(order.id);
-    assert.equal(row.status, "cancelled", "late payment must not reopen the order");
+    assert.equal(row.orderState, "cancelled", "late payment must not reopen the order");
+    assert.equal(row.paymentState, "paid", "…but the money is recorded so Refund is offered");
 
     const manual = await place("gcash", 1);
-    await transitionOrderStatus({ orderId: manual.id, tenantId, to: "cancelled", source: "seller" });
+    await cancel(manual.id);
     const confirm = await confirmManualOrderPayment({ tenantId, orderId: manual.id });
     assert.equal(confirm.ok, false, "seller can't confirm payment on a closed order");
   });
@@ -290,7 +302,9 @@ describe("order lifecycle", () => {
     assert.equal(gatewayCalls, 1, "PayMongo refund called once");
 
     const row = await orderRow(order.id);
-    assert.equal(row.status, "refunded");
+    assert.equal(row.orderState, "cancelled");
+    assert.equal(row.paymentState, "refunded");
+    assert.equal(row.status, "refunded", "legacy column dual-written");
     assert.equal(row.paymentStatus, "refunded");
     assert.equal(await stock(), before, "refund before shipping restocks");
 

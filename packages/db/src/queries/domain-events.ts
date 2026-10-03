@@ -16,6 +16,9 @@ export async function persistDomainEvent(input: {
     idempotencyKey: input.idempotencyKey,
     correlationId: input.correlationId,
     payloadJson: input.payload,
+    // emitDomainEvent() sends to Inngest itself, so these rows are not for the
+    // outbox relay (only events written inside a transaction are).
+    publishedAt: new Date(),
   });
 }
 

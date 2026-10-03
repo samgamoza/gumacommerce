@@ -45,7 +45,8 @@ function toNumber(value: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-const PAID_ORDER = or(eq(orders.paymentStatus, "paid"), eq(orders.status, "paid"));
+// Money actually received and kept (refunds excluded).
+const PAID_ORDER = eq(orders.paymentState, "paid");
 
 // ─── Dashboard stats ───────────────────────────────────────────────────────
 
@@ -635,8 +636,11 @@ export interface PlatformOrderItem {
   tenantName: string | null;
   tenantSlug: string | null;
   total: number;
+  /** order_state: open / completed / cancelled */
   status: string;
+  /** payment_state */
   paymentStatus: string | null;
+  fulfillmentStatus: string | null;
   customerName: string | null;
   createdAt: Date;
 }
@@ -646,7 +650,8 @@ export async function listPlatformOrders(
 ): Promise<PlatformOrderItem[]> {
   const db = getDb();
   const conditions = [];
-  if (filters.status) conditions.push(eq(orders.status, filters.status as never));
+  // `status` filters on the Phase 2 order state (open / completed / cancelled).
+  if (filters.status) conditions.push(eq(orders.orderState, filters.status as never));
   if (filters.search) conditions.push(ilike(orders.orderNumber, `%${filters.search}%`));
 
   const rows = await db
@@ -654,8 +659,9 @@ export async function listPlatformOrders(
       id: orders.id,
       orderNumber: orders.orderNumber,
       total: orders.total,
-      status: orders.status,
-      paymentStatus: orders.paymentStatus,
+      status: orders.orderState,
+      paymentStatus: orders.paymentState,
+      fulfillmentStatus: orders.fulfillmentState,
       guestName: orders.guestName,
       createdAt: orders.createdAt,
       tenantName: tenants.name,
@@ -673,8 +679,9 @@ export async function listPlatformOrders(
     tenantName: o.tenantName,
     tenantSlug: o.tenantSlug,
     total: toNumber(o.total),
-    status: o.status,
+    status: o.status ?? "open",
     paymentStatus: o.paymentStatus,
+    fulfillmentStatus: o.fulfillmentStatus,
     customerName: o.guestName,
     createdAt: o.createdAt,
   }));

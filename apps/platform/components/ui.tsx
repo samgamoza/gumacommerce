@@ -90,6 +90,20 @@ const STATUS_TONES: Record<string, string> = {
   cancelled: "bg-rose-100 text-rose-700",
   refunded: "bg-rose-100 text-rose-700",
   skipped: "bg-slate-100 text-slate-500",
+  // Phase 2 order states
+  open: "bg-sky-100 text-sky-700",
+  completed: "bg-emerald-100 text-emerald-700",
+  unpaid: "bg-amber-100 text-amber-700",
+  pending_verification: "bg-amber-100 text-amber-700",
+  cod_due: "bg-sky-100 text-sky-700",
+  failed: "bg-rose-100 text-rose-700",
+  unfulfilled: "bg-slate-100 text-slate-600",
+  ready: "bg-sky-100 text-sky-700",
+  booked: "bg-sky-100 text-sky-700",
+  picked_up: "bg-sky-100 text-sky-700",
+  out_for_delivery: "bg-sky-100 text-sky-700",
+  failed_delivery: "bg-rose-100 text-rose-700",
+  returned: "bg-rose-100 text-rose-700",
 };
 
 export function StatusPill({ status }: { status: string }) {

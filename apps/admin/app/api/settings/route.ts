@@ -85,6 +85,11 @@ const patchSchema = z.object({
           payoutAccountName: z.string().min(2).max(120).optional(),
         })
         .optional(),
+      checkout: z
+        .object({
+          unpaidExpiryHours: z.number().int().min(1).max(72).optional(),
+        })
+        .optional(),
       payments: z
         .object({
           // mode is Platform-only (PayMongo activation). Sellers may only edit receiving accounts.

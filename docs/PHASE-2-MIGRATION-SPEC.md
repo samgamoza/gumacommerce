@@ -1,6 +1,6 @@
 # Phase 2 — Core alignment: migration spec (for review)
 
-Status: **draft for owner review — no code yet** (plan §11: "write the Phase 2 migration spec and review it before coding").
+Status: **approved 2026-10-03 with the recommended D1–D5; implemented** — see `docs/PHASE-2-NOTES-2026-10-03.md`.
 Date: 2026-10-03. Builds on Phase 1 (migrations 0018–0020).
 
 Scope from plan §4/§6/§11: three statuses + migration, locations (default only), stock ledger (done in 0020),
@@ -44,7 +44,8 @@ New columns on `orders`: `order_state`, `payment_state`, `fulfillment_state`, `a
 
 **Invariants.** Enforced in `orderService.transition()`; the two marked (DB) are also CHECK constraints.
 1. (DB) `order_state = 'completed'` ⇒ `payment_state = 'paid'` AND `fulfillment_state = 'delivered'`.
-2. (DB) `order_state = 'cancelled'` ⇒ `fulfillment_state IN ('unfulfilled','ready','booked','returned','failed_delivery')`.
+2. (DB) `order_state = 'cancelled'` ⇒ the goods aren't in transit (`picked_up`/`out_for_delivery`), and `delivered` only
+   when the payment was refunded (a refund after delivery closes the order).
 3. `payment_state = 'cod_due'` only when `payment_method = 'cod'`.
 4. Cancel is allowed while fulfillment is `unfulfilled`, `ready` or `booked`. Cancelling a `booked` order also cancels the
    courier booking. A paid cancel goes through the refund flow; this is the Phase 1 rule, unchanged.
@@ -67,7 +68,7 @@ all in **one transaction**. Phase 1's `transitionOrderStatus` and `refundOrder` 
 | `fulfillment_update` (courier webhook, forward-only) | ready/unfulfilled → booked → picked_up → out_for_delivery → delivered; any → failed_delivery / returned | on delivered: COD → paid + cod payment row, wallet release; auto-complete | `Fulfillment.<Status>.V1` |
 | `cancel` | open → cancelled | restock (if goods not out), cancel courier booking, refund flow if paid | `Order.Cancelled.V1` |
 | `expire` (system) | open/unpaid → cancelled | restock | `Order.Expired.V1` |
-| `refund` | paid → refunded (order → cancelled unless delivered) | NOWAIT lock, gateway once, restock if not out, wallet reverse | `Order.Refunded.V1` |
+| `refund` | paid → refunded, order → cancelled (refused while in transit) | NOWAIT lock, gateway once, restock if not out, wallet reverse | `Order.Refunded.V1` |
 
 During the cut-over the service also writes the **legacy** `status`/`payment_status` (dual-write, §7) using one
 function, `legacyStatusOf(order)`, so every existing reader keeps working until it is moved.

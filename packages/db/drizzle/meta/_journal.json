@@ -148,6 +148,20 @@
       "when": 1785100000000,
       "tag": "0020_stock_movements",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1785200000000,
+      "tag": "0021_phase2_expand",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1785300000000,
+      "tag": "0022_phase2_backfill",
+      "breakpoints": true
     }
   ]
 }

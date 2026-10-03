@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { afterEach, test } from "node:test";
 import {
-  BAYANGO_STATUS_TO_ORDER,
+  BAYANGO_STATUS_TO_FULFILLMENT,
   BayanGoApiError,
   BayanGoClient,
   normalizeBayanGoStatus,
@@ -209,11 +209,12 @@ test("webhook parsing follows the contract and rejects unknown statuses", () => 
   assert.equal(normalizeBayanGoStatus("Failed_Delivery"), "failed_delivery");
 });
 
-test("status mapping moves orders forward only on physical progress", () => {
-  assert.equal(BAYANGO_STATUS_TO_ORDER.picked_up, "out_for_delivery");
-  assert.equal(BAYANGO_STATUS_TO_ORDER.out_for_delivery, "out_for_delivery");
-  assert.equal(BAYANGO_STATUS_TO_ORDER.delivered, "delivered");
-  assert.equal(BAYANGO_STATUS_TO_ORDER.assigned, undefined);
-  assert.equal(BAYANGO_STATUS_TO_ORDER.failed_delivery, undefined);
-  assert.equal(BAYANGO_STATUS_TO_ORDER.cancelled, undefined);
+test("partner statuses map 1:1 onto fulfillment; a cancel is never an order cancel", () => {
+  assert.equal(BAYANGO_STATUS_TO_FULFILLMENT.assigned, "booked");
+  assert.equal(BAYANGO_STATUS_TO_FULFILLMENT.picked_up, "picked_up");
+  assert.equal(BAYANGO_STATUS_TO_FULFILLMENT.in_transit, "out_for_delivery");
+  assert.equal(BAYANGO_STATUS_TO_FULFILLMENT.delivered, "delivered");
+  assert.equal(BAYANGO_STATUS_TO_FULFILLMENT.failed_delivery, "failed_delivery");
+  assert.equal(BAYANGO_STATUS_TO_FULFILLMENT.returned, "returned");
+  assert.equal(BAYANGO_STATUS_TO_FULFILLMENT.cancelled, "booking_cancelled");
 });

@@ -1,9 +1,19 @@
 import { and, asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { timingSafeEqual } from "node:crypto";
 import { getDb } from "../client";
-import { creditSaleForOrder } from "./wallet";
 import { recordStockMovement } from "./stock-ledger";
-import { transitionOrderStatus } from "./order-lifecycle";
+import { insertOutboxEvent } from "./outbox";
+import { getDefaultLocationId } from "./locations";
+import {
+  describeStates,
+  legacyStatusOf,
+  orderBucketOf,
+  type FulfillmentState,
+  type OrderBucket,
+  type OrderState,
+  type PaymentState,
+} from "./order-state";
+import { applyOrderActionInTx, applyWalletEffects, factsOf } from "./order-lifecycle";
 import {
   customers,
   deliveries,
@@ -70,6 +80,8 @@ export interface CreateOrderInput {
   couponCode?: string | null;
   notes?: string;
   sourceChannel?: string;
+  /** Buyer ticked "send me reminders about this order" (marketing SMS consent). */
+  smsMarketingConsent?: boolean;
 }
 
 export interface CreatedOrder {
@@ -242,9 +254,17 @@ export async function createOrderForTenant(input: CreateOrderInput): Promise<Cre
     const taxCentavos = toCentavos(totals.tax);
     const totalCentavos = toCentavos(totals.total);
 
-    // COD orders are actionable immediately; online payments wait for the webhook.
-    const initialStatus: OrderStatus =
-      input.paymentMethod === "cod" ? "accepted" : "pending_payment";
+    // COD orders are actionable immediately (cash due on delivery); every other
+    // method waits for its payment. Legacy status is derived for dual-write.
+    const isCod = input.paymentMethod === "cod";
+    const initialFacts = {
+      orderState: "open" as const,
+      paymentState: (isCod ? "cod_due" : "unpaid") as "cod_due" | "unpaid",
+      fulfillmentState: "unfulfilled" as const,
+      accepted: false,
+    };
+    const initialStatus: OrderStatus = legacyStatusOf(initialFacts);
+    const locationId = await getDefaultLocationId(tx, tenant.id);
 
     // Per-tenant sequential order numbers (GMA-0001, GMA-0002, ...), claimed
     // atomically: the UPDATE row-locks the tenant so two concurrent checkouts
@@ -272,6 +292,9 @@ export async function createOrderForTenant(input: CreateOrderInput): Promise<Cre
           email: input.customer.email ?? null,
           firstOrderAt: nowTs,
           lastOrderAt: nowTs,
+          ...(input.smsMarketingConsent
+            ? { smsMarketingOptIn: true, smsOptInAt: nowTs, smsOptInSource: "checkout" }
+            : {}),
         })
         .onConflictDoUpdate({
           target: [customers.tenantId, customers.phone],
@@ -280,6 +303,10 @@ export async function createOrderForTenant(input: CreateOrderInput): Promise<Cre
             email: sql`coalesce(nullif(excluded.email, ''), ${customers.email})`,
             lastOrderAt: nowTs,
             updatedAt: nowTs,
+            // Consent is only ever granted here, never silently withdrawn by a later order.
+            ...(input.smsMarketingConsent
+              ? { smsMarketingOptIn: true, smsOptInAt: nowTs, smsOptInSource: "checkout" }
+              : {}),
           },
         })
         .returning({ id: customers.id });
@@ -308,6 +335,10 @@ export async function createOrderForTenant(input: CreateOrderInput): Promise<Cre
         deliveryAddressJson: input.deliveryAddress ?? null,
         notes: input.notes,
         sourceChannel: input.sourceChannel ?? "storefront",
+        orderState: initialFacts.orderState,
+        paymentState: initialFacts.paymentState,
+        fulfillmentState: initialFacts.fulfillmentState,
+        locationId,
       })
       .returning();
 
@@ -326,13 +357,48 @@ export async function createOrderForTenant(input: CreateOrderInput): Promise<Cre
       }))
     );
 
-    await tx.insert(orderStatusHistory).values({
-      orderId: order.id,
-      status: initialStatus,
-      note:
-        input.paymentMethod === "cod"
-          ? "Order placed (Cash on Delivery)"
-          : "Order placed, awaiting payment",
+    const [history] = await tx
+      .insert(orderStatusHistory)
+      .values({
+        orderId: order.id,
+        status: initialStatus,
+        event: "create",
+        toState: describeStates(initialFacts),
+        note: isCod ? "Order placed (Cash on Delivery)" : "Order placed, awaiting payment",
+      })
+      .returning({ id: orderStatusHistory.id });
+
+    // COD has its charge row from the start (amount due on delivery). Manual
+    // and PayMongo rows are added by the checkout route once it knows which.
+    if (isCod) {
+      await tx
+        .insert(paymentTransactions)
+        .values({
+          orderId: order.id,
+          tenantId: tenant.id,
+          gateway: "cod",
+          gatewayIntentId: `cod_${order.id}`,
+          amount: order.total,
+          status: "pending",
+          methodType: "cod",
+        })
+        .onConflictDoNothing({ target: paymentTransactions.gatewayIntentId });
+    }
+
+    await insertOutboxEvent(tx, {
+      name: "Order.Created.V2",
+      tenantId: tenant.id,
+      idempotencyKey: `Order.Created.V2:${order.id}`,
+      data: {
+        tenantId: tenant.id,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        paymentMethod: input.paymentMethod,
+        sourceChannel: input.sourceChannel ?? "storefront",
+        total: order.total,
+        historyId: history?.id ?? null,
+        ...initialFacts,
+      },
     });
 
     // Decrement stock for tracked products — atomically and conditionally.
@@ -378,6 +444,7 @@ export async function createOrderForTenant(input: CreateOrderInput): Promise<Cre
           reason: "sale",
           delta: -line.quantity,
           balanceAfter: decremented[0]!.stockQty,
+          locationId,
         });
       }
     }
@@ -424,6 +491,7 @@ export async function recordPaymentIntent(params: {
     amount: params.amount,
     status: "pending",
     methodType: params.methodType,
+    checkoutUrl: params.checkoutUrl ?? null,
     rawWebhookJson:
       params.checkoutUrl || params.checkoutSessionId
         ? { checkoutUrl: params.checkoutUrl ?? null, checkoutSessionId: params.checkoutSessionId ?? null }
@@ -458,6 +526,7 @@ export async function markOrderPaidByIntent(
   rawWebhookJson?: unknown
 ): Promise<MarkOrderPaidResult> {
   const db = getDb();
+  let applied: Awaited<ReturnType<typeof applyOrderActionInTx>> | null = null;
   const result = await db.transaction(async (tx) => {
     const [txn] = await tx
       .select()
@@ -476,11 +545,12 @@ export async function markOrderPaidByIntent(
     if (!order) return { ok: false } as MarkOrderPaidResult;
 
     const now = new Date();
+    const wasPaid = txn.status === "paid";
     await tx
       .update(paymentTransactions)
       .set({
         status: "paid",
-        gatewayPaymentId,
+        gatewayPaymentId: gatewayPaymentId ?? txn.gatewayPaymentId,
         paidAt: txn.paidAt ?? now,
         ...(rawWebhookJson !== undefined ? { rawWebhookJson } : {}),
       })
@@ -493,42 +563,49 @@ export async function markOrderPaidByIntent(
       tenantId: order.tenantId,
       total: order.total,
     };
+    const facts = factsOf(order);
 
-    if (order.status === "cancelled" || order.status === "refunded") {
-      if (txn.status !== "paid") {
-        await tx.insert(orderStatusHistory).values({
-          orderId: order.id,
-          status: order.status,
-          note: "Payment arrived after the order was closed — refund the buyer",
+    if (facts.orderState === "cancelled") {
+      // Money arrived after the order closed. Record it (so "Refund" becomes
+      // available) but never reopen the order or credit the seller.
+      if (!wasPaid && facts.paymentState !== "paid" && facts.paymentState !== "refunded") {
+        await tx
+          .update(orders)
+          .set({ paymentState: "paid", paymentStatus: "paid", paidAt: now })
+          .where(eq(orders.id, order.id));
+        const [history] = await tx
+          .insert(orderStatusHistory)
+          .values({
+            orderId: order.id,
+            status: order.status,
+            event: "late_payment",
+            fromState: describeStates(facts),
+            toState: describeStates({ ...facts, paymentState: "paid" }),
+            note: "Payment arrived after the order was closed — refund the buyer",
+          })
+          .returning({ id: orderStatusHistory.id });
+        await insertOutboxEvent(tx, {
+          name: "Order.PaidAfterClose.V1",
+          tenantId: order.tenantId,
+          idempotencyKey: `Order.PaidAfterClose.V1:${order.id}:${history!.id}`,
+          data: { tenantId: order.tenantId, orderId: order.id, orderNumber: order.orderNumber, total: order.total },
         });
       }
-      return { ...base, transitioned: false, paidAfterCancel: txn.status !== "paid" };
+      return { ...base, transitioned: false, paidAfterCancel: !wasPaid };
     }
 
-    if (order.paymentStatus === "paid") return { ...base, transitioned: false };
+    if (facts.paymentState === "paid") return { ...base, transitioned: false };
 
-    if (order.status === "pending_payment") {
-      await tx
-        .update(orders)
-        .set({ status: "paid", paymentStatus: "paid", paidAt: now })
-        .where(eq(orders.id, order.id));
-      await tx.insert(orderStatusHistory).values({
-        orderId: order.id,
-        status: "paid",
-        note: "Payment confirmed via PayMongo",
-      });
-    } else {
-      await tx
-        .update(orders)
-        .set({ paymentStatus: "paid", paidAt: now })
-        .where(eq(orders.id, order.id));
-    }
-    return { ...base, transitioned: true };
+    applied = await applyOrderActionInTx(tx, {
+      orderId: order.id,
+      action: { type: "confirm_payment" },
+      source: "gateway",
+      payment: { rowHandled: true, gatewayPaymentId: gatewayPaymentId ?? null },
+    });
+    return { ...base, transitioned: applied.changed };
   });
 
-  if (result.ok && result.transitioned && result.orderId) {
-    await creditSaleForOrder(result.orderId);
-  }
+  if (applied) await applyWalletEffects(applied);
   return result;
 }
 
@@ -564,6 +641,14 @@ export interface TenantOrderListItem {
   paymentProofUrl: string | null;
   /** Gateway of the settled payment (paymongo / manual / cod), when there is one. */
   paymentGateway: string | null;
+  orderState: OrderState;
+  paymentState: PaymentState;
+  fulfillmentState: FulfillmentState;
+  /** The merchant tab this order sits in (To pay · To confirm · To pack · …). */
+  bucket: OrderBucket;
+  acceptedAt: Date | null;
+  /** Latest courier booking, if any. */
+  deliveryProvider: string | null;
 }
 
 export async function listOrdersForTenant(tenantId: string): Promise<TenantOrderListItem[]> {
@@ -604,6 +689,8 @@ export async function listOrdersForTenant(tenantId: string): Promise<TenantOrder
       status: paymentTransactions.status,
       gateway: paymentTransactions.gateway,
       rawWebhookJson: paymentTransactions.rawWebhookJson,
+      reference: paymentTransactions.reference,
+      proofUrl: paymentTransactions.proofUrl,
     })
     .from(paymentTransactions)
     .where(
@@ -631,14 +718,28 @@ export async function listOrdersForTenant(tenantId: string): Promise<TenantOrder
       proofUrl?: string | null;
     };
     paymentMetaByOrder.set(txn.orderId, {
-      reference: raw.buyerReference ?? null,
-      proofUrl: raw.proofUrl ?? null,
+      reference: txn.reference ?? raw.buyerReference ?? null,
+      proofUrl: txn.proofUrl ?? raw.proofUrl ?? null,
     });
   }
+
+  const deliveryRows = await db
+    .select({ orderId: deliveries.orderId, provider: deliveries.provider, bookedAt: deliveries.bookedAt })
+    .from(deliveries)
+    .where(
+      inArray(
+        deliveries.orderId,
+        rows.map((row) => row.id)
+      )
+    )
+    .orderBy(asc(deliveries.bookedAt));
+  const providerByOrder = new Map<string, string>();
+  for (const d of deliveryRows) providerByOrder.set(d.orderId, d.provider);
 
   return rows.map((row) => {
     const orderItemsList = itemsByOrder.get(row.id) ?? [];
     const payMeta = paymentMetaByOrder.get(row.id);
+    const facts = factsOf(row);
     return {
       id: row.id,
       orderNumber: row.orderNumber,
@@ -657,27 +758,14 @@ export async function listOrdersForTenant(tenantId: string): Promise<TenantOrder
       paymentReference: payMeta?.reference ?? null,
       paymentProofUrl: payMeta?.proofUrl ?? null,
       paymentGateway: settledGatewayByOrder.get(row.id) ?? null,
+      orderState: facts.orderState,
+      paymentState: facts.paymentState,
+      fulfillmentState: facts.fulfillmentState,
+      bucket: orderBucketOf(facts),
+      acceptedAt: row.acceptedAt,
+      deliveryProvider: providerByOrder.get(row.id) ?? null,
     };
   });
-}
-
-/** Seller status change — delegates to the single order lifecycle service. */
-export async function updateOrderStatusForTenant(params: {
-  tenantId: string;
-  orderId: string;
-  status: OrderStatus;
-  note?: string;
-  actorId?: string;
-}): Promise<TenantOrderListItem["status"]> {
-  const result = await transitionOrderStatus({
-    orderId: params.orderId,
-    tenantId: params.tenantId,
-    to: params.status,
-    source: "seller",
-    actorId: params.actorId,
-    note: params.note,
-  });
-  return result.to;
 }
 
 export interface OrderRefundInfo {
@@ -759,6 +847,9 @@ export interface OrderTrackingData {
   paymentGateway: string | null;
   /** PayMongo page to finish paying, while the payment is still pending. */
   resumePaymentUrl: string | null;
+  orderState: OrderState;
+  paymentState: PaymentState;
+  fulfillmentState: FulfillmentState;
 }
 
 /** Only ever hand the buyer a PayMongo-hosted URL. */
@@ -822,6 +913,7 @@ export async function getOrderForTracking(
       gateway: paymentTransactions.gateway,
       status: paymentTransactions.status,
       raw: paymentTransactions.rawWebhookJson,
+      checkoutUrl: paymentTransactions.checkoutUrl,
     })
     .from(paymentTransactions)
     .where(eq(paymentTransactions.orderId, row.order.id))
@@ -831,11 +923,16 @@ export async function getOrderForTracking(
   return {
     orderId: row.order.id,
     paymentGateway: payment?.gateway ?? null,
+    ...(() => {
+      const f = factsOf(row.order);
+      return { orderState: f.orderState, paymentState: f.paymentState, fulfillmentState: f.fulfillmentState };
+    })(),
     resumePaymentUrl:
       payment?.gateway === "paymongo" &&
       payment.status === "pending" &&
-      row.order.status === "pending_payment"
-        ? safeCheckoutUrl((payment.raw as { checkoutUrl?: unknown } | null)?.checkoutUrl)
+      factsOf(row.order).orderState === "open" &&
+      factsOf(row.order).paymentState === "unpaid"
+        ? safeCheckoutUrl(payment.checkoutUrl ?? (payment.raw as { checkoutUrl?: unknown } | null)?.checkoutUrl)
         : null,
     orderNumber: row.order.orderNumber,
     tenantSlug: row.tenant.slug,

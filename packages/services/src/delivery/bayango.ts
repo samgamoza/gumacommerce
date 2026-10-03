@@ -1,3 +1,4 @@
+import type { CourierFulfillment } from "./courier-status";
 import { createLogger } from "../logging";
 import { allowIntegrationMocks } from "../config/integrations";
 import { verifyTimestampedHmacSignature } from "./webhook-signature";
@@ -40,13 +41,18 @@ export const BAYANGO_STATUSES: readonly BayanGoStatus[] = [
 ];
 
 /** Partner statuses that move a Guma order forward (contract §3.3). */
-export const BAYANGO_STATUS_TO_ORDER: Partial<
-  Record<BayanGoStatus, "out_for_delivery" | "delivered">
-> = {
-  picked_up: "out_for_delivery",
+/** BayanGo partner statuses map 1:1 onto Guma Kart fulfillment (Phase 2). */
+export const BAYANGO_STATUS_TO_FULFILLMENT: Partial<Record<BayanGoStatus, CourierFulfillment>> = {
+  pending: "booked",
+  assigned: "booked",
+  pickup_scheduled: "booked",
+  picked_up: "picked_up",
   in_transit: "out_for_delivery",
   out_for_delivery: "out_for_delivery",
   delivered: "delivered",
+  failed_delivery: "failed_delivery",
+  returned: "returned",
+  cancelled: "booking_cancelled",
 };
 
 /** Partner statuses that need the merchant to act (rebook / contact buyer). */

@@ -48,10 +48,10 @@ export async function POST(request: Request) {
         { status: 404 }
       );
     }
-    if (order.status === "cancelled" || order.status === "refunded") {
+    if (order.orderState !== "open") {
       return NextResponse.json({ ok: false, error: "This order is closed." }, { status: 400 });
     }
-    if (order.paymentStatus === "paid") {
+    if (order.paymentState === "paid") {
       return NextResponse.json({ ok: false, error: "This order is already paid." }, { status: 400 });
     }
     if (order.paymentMethod === "cod") {

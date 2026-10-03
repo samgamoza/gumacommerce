@@ -3,7 +3,8 @@ import { getDb } from "../client";
 import { customers, orders } from "../schema/index";
 
 /** Statuses that don't count toward a customer's spend. */
-const REVENUE_STATUS_SQL = sql`${orders.status} not in ('cancelled', 'refunded')`;
+// Cancelled (incl. refunded) orders don't count as spend.
+const REVENUE_STATUS_SQL = sql`coalesce(${orders.orderState}::text, 'open') <> 'cancelled'`;
 
 export interface CustomerSummary {
   id: string;
@@ -113,6 +114,7 @@ export async function getCustomerForTenant(
       id: orders.id,
       orderNumber: orders.orderNumber,
       status: orders.status,
+      orderState: orders.orderState,
       total: orders.total,
       createdAt: orders.createdAt,
     })
@@ -122,7 +124,7 @@ export async function getCustomerForTenant(
     .limit(100);
 
   const totalSpent = orderRows
-    .filter((o) => o.status !== "cancelled" && o.status !== "refunded")
+    .filter((o) => o.orderState !== "cancelled")
     .reduce((sum, o) => sum + Number(o.total), 0);
 
   return {

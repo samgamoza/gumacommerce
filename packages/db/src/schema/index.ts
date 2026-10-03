@@ -40,6 +40,27 @@ export const orderStatusEnum = pgEnum("order_status", [
   "cancelled",
   "refunded",
 ]);
+// Phase 2: an order is three independent facts (docs/PHASE-2-MIGRATION-SPEC.md).
+export const orderStateEnum = pgEnum("order_state", ["open", "completed", "cancelled"]);
+export const orderPaymentStateEnum = pgEnum("order_payment_state", [
+  "unpaid",
+  "pending_verification",
+  "paid",
+  "cod_due",
+  "failed",
+  "refunded",
+  "partially_refunded",
+]);
+export const fulfillmentStateEnum = pgEnum("fulfillment_state", [
+  "unfulfilled",
+  "ready",
+  "booked",
+  "picked_up",
+  "out_for_delivery",
+  "delivered",
+  "failed_delivery",
+  "returned",
+]);
 export const paymentGatewayEnum = pgEnum("payment_gateway", [
   "paymongo",
   "xendit",
@@ -516,6 +537,35 @@ export const productImages = pgTable(
 // commerce). Distinct from `users` (seller/platform accounts). Order counts and
 // spend are computed from `orders` at read time — not denormalized here — so the
 // CRM can never drift from the source of truth.
+// ─── Locations (one default per shop in V1) ──────────────────────────────────
+
+export const locations = pgTable(
+  "locations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .references(() => tenants.id, { onDelete: "cascade" })
+      .notNull(),
+    name: varchar("name", { length: 120 }).notNull(),
+    addressLine: text("address_line"),
+    barangay: varchar("barangay", { length: 255 }),
+    city: varchar("city", { length: 255 }),
+    province: varchar("province", { length: 255 }),
+    psgcCode: varchar("psgc_code", { length: 20 }),
+    lat: decimal("lat", { precision: 10, scale: 7 }),
+    lng: decimal("lng", { precision: 10, scale: 7 }),
+    phone: varchar("phone", { length: 20 }),
+    isDefault: boolean("is_default").default(false).notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("locations_tenant_idx").on(table.tenantId),
+    uniqueIndex("locations_tenant_default_idx").on(table.tenantId).where(sql`${table.isDefault}`),
+  ]
+);
+
 export const customers = pgTable(
   "customers",
   {
@@ -529,6 +579,9 @@ export const customers = pgTable(
     firstOrderAt: timestamp("first_order_at", { withTimezone: true }),
     lastOrderAt: timestamp("last_order_at", { withTimezone: true }),
     notes: text("notes"),
+    smsMarketingOptIn: boolean("sms_marketing_opt_in").default(false).notNull(),
+    smsOptInAt: timestamp("sms_opt_in_at", { withTimezone: true }),
+    smsOptInSource: varchar("sms_opt_in_source", { length: 40 }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -582,6 +635,15 @@ export const orders = pgTable(
     // Set once when reserved stock is put back (cancel / refund / expiry), so a
     // replayed transition can never restock twice.
     stockRestoredAt: timestamp("stock_restored_at", { withTimezone: true }),
+    // Phase 2 statuses. `status` / `payment_status` above are legacy, written
+    // from these by legacyStatusOf() until migration 0024 drops them.
+    orderState: orderStateEnum("order_state"),
+    paymentState: orderPaymentStateEnum("payment_state"),
+    fulfillmentState: fulfillmentStateEnum("fulfillment_state"),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    cancelReason: varchar("cancel_reason", { length: 200 }),
+    locationId: uuid("location_id").references(() => locations.id),
   },
   (table) => [
     uniqueIndex("orders_access_token_idx").on(table.accessToken),
@@ -591,6 +653,12 @@ export const orders = pgTable(
     index("orders_tenant_status_idx").on(table.tenantId, table.status, table.createdAt),
     index("orders_tenant_created_idx").on(table.tenantId, table.createdAt),
     index("orders_guest_phone_idx").on(table.guestPhone),
+    index("orders_tenant_states_idx").on(
+      table.tenantId,
+      table.orderState,
+      table.paymentState,
+      table.fulfillmentState
+    ),
   ]
 );
 
@@ -624,6 +692,9 @@ export const orderStatusHistory = pgTable(
       .references(() => orders.id, { onDelete: "cascade" })
       .notNull(),
     status: orderStatusEnum("status").notNull(),
+    event: varchar("event", { length: 60 }),
+    fromState: text("from_state"),
+    toState: text("to_state"),
     note: text("note"),
     actorId: uuid("actor_id").references(() => users.id),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -663,6 +734,7 @@ export const stockMovements = pgTable(
     balanceAfter: integer("balance_after"),
     note: varchar("note", { length: 200 }),
     actorId: uuid("actor_id").references(() => users.id, { onDelete: "set null" }),
+    locationId: uuid("location_id").references(() => locations.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
@@ -692,6 +764,12 @@ export const checkoutSessions = pgTable(
       .notNull(),
     abandonedAt: timestamp("abandoned_at", { withTimezone: true }),
     convertedOrderId: uuid("converted_order_id"),
+    phone: varchar("phone", { length: 20 }),
+    marketingConsent: boolean("marketing_consent").default(false).notNull(),
+    recoverySentCount: integer("recovery_sent_count").default(0).notNull(),
+    lastRecoveryAt: timestamp("last_recovery_at", { withTimezone: true }),
+    sourceChannel: varchar("source_channel", { length: 50 }),
+    utmJson: jsonb("utm_json"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
@@ -724,6 +802,14 @@ export const paymentTransactions = pgTable(
     status: paymentStatusEnum("status").default("pending").notNull(),
     methodType: varchar("method_type", { length: 50 }),
     rawWebhookJson: jsonb("raw_webhook_json"),
+    reference: varchar("reference", { length: 120 }),
+    proofUrl: text("proof_url"),
+    verifiedBy: uuid("verified_by").references(() => users.id, { onDelete: "set null" }),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    checkoutUrl: text("checkout_url"),
+    refundId: varchar("refund_id", { length: 255 }),
+    refundedAt: timestamp("refunded_at", { withTimezone: true }),
+    failureReason: varchar("failure_reason", { length: 255 }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     paidAt: timestamp("paid_at", { withTimezone: true }),
   },
@@ -900,6 +986,9 @@ export const deliveries = pgTable(
     bookedAt: timestamp("booked_at", { withTimezone: true }),
     pickedUpAt: timestamp("picked_up_at", { withTimezone: true }),
     deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+    pickupLocationId: uuid("pickup_location_id").references(() => locations.id, {
+      onDelete: "set null",
+    }),
   },
   (table) => [
     index("deliveries_order_idx").on(table.orderId),
@@ -953,6 +1042,55 @@ export const pushSubscriptions = pgTable(
     index("push_subscriptions_tenant_idx").on(table.tenantId),
   ]
 );
+
+// ─── Messaging ───────────────────────────────────────────────────────────────
+
+export type MessageChannel = "sms" | "messenger" | "email" | "push";
+export type MessageStatus = "queued" | "sent" | "delivered" | "failed" | "suppressed";
+
+/** Every outbound message, every channel. idempotency_key = `${recipe}:${entity}:${step}`. */
+export const messageLog = pgTable(
+  "message_log",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
+    orderId: uuid("order_id").references(() => orders.id, { onDelete: "set null" }),
+    customerId: uuid("customer_id").references(() => customers.id, { onDelete: "set null" }),
+    channel: varchar("channel", { length: 20 }).$type<MessageChannel>().notNull(),
+    recipient: varchar("recipient", { length: 255 }).notNull(),
+    recipe: varchar("recipe", { length: 80 }).notNull(),
+    step: integer("step").default(0).notNull(),
+    idempotencyKey: varchar("idempotency_key", { length: 255 }).notNull(),
+    status: varchar("status", { length: 20 }).$type<MessageStatus>().default("queued").notNull(),
+    suppressedReason: varchar("suppressed_reason", { length: 80 }),
+    provider: varchar("provider", { length: 40 }),
+    providerMessageId: varchar("provider_message_id", { length: 255 }),
+    body: text("body"),
+    segments: integer("segments"),
+    costCentavos: integer("cost_centavos"),
+    error: text("error"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("message_log_idempotency_idx").on(table.idempotencyKey),
+    index("message_log_tenant_idx").on(table.tenantId, table.createdAt),
+    index("message_log_order_idx").on(table.orderId),
+    index("message_log_recipient_idx").on(table.recipient, table.createdAt),
+  ]
+);
+
+/** STOP list. tenant_id NULL = every shop (one platform sender — decision D3). */
+export const messagingOptOuts = pgTable("messaging_opt_outs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  phone: varchar("phone", { length: 20 }).notNull(),
+  channel: varchar("channel", { length: 20 }).default("sms").notNull(),
+  scope: varchar("scope", { length: 20 }).$type<"marketing" | "all">().default("marketing").notNull(),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
+  source: varchar("source", { length: 20 }).default("STOP").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
 
 // ─── AI & Content ────────────────────────────────────────────────────────────
 
@@ -1067,6 +1205,12 @@ export const domainEvents = pgTable(
     correlationId: varchar("correlation_id", { length: 64 }),
     payloadJson: jsonb("payload_json").$type<Record<string, unknown>>().notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    // Outbox: rows written inside a transaction stay unpublished until the
+    // relay hands them to Inngest (id = idempotency key, so retries dedupe).
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    attempts: integer("attempts").default(0).notNull(),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }),
+    lastError: text("last_error"),
   },
   (table) => [
     uniqueIndex("domain_events_idempotency_uidx").on(table.idempotencyKey),

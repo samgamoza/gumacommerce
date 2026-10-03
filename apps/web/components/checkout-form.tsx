@@ -89,6 +89,7 @@ export function CheckoutForm({
   const [payment, setPayment] = useState(paymentMethods[0]?.id ?? "gcash");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [smsConsent, setSmsConsent] = useState(false);
   const [email, setEmail] = useState("");
   const [phAddress, setPhAddress] = useState<PhAddressValue>({
     street1: "",
@@ -184,6 +185,7 @@ export function CheckoutForm({
             province,
           },
           couponCode: couponCode || null,
+          smsConsent,
         }),
       }).catch(() => undefined);
     }, 1200);
@@ -195,6 +197,7 @@ export function CheckoutForm({
     tenantSlug,
     name,
     phone,
+    smsConsent,
     email,
     street1,
     street2,
@@ -268,6 +271,7 @@ export function CheckoutForm({
           fulfillment,
           sessionKey: sessionKey || undefined,
           couponCode: couponCode.trim() || undefined,
+          smsConsent,
           customer: {
             name: name.trim(),
             phone: cleanPhone,
@@ -606,6 +610,18 @@ export function CheckoutForm({
                 <p className="mt-1 text-xs text-stone-500">
                   For order updates and delivery tracking via SMS.
                 </p>
+                <label className="mt-2 flex items-start gap-2 text-xs text-stone-600">
+                  <input
+                    type="checkbox"
+                    checked={smsConsent}
+                    onChange={(event) => setSmsConsent(event.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-stone-300 accent-orange-600"
+                  />
+                  <span>
+                    Text me reminders about this order (e.g. if I don&apos;t finish paying). Reply
+                    STOP anytime. Order updates are always sent.
+                  </span>
+                </label>
               </div>
               <div>
                 <label className="mb-1 block text-xs font-semibold text-stone-600">

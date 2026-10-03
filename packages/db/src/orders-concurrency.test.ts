@@ -24,7 +24,15 @@ import { after, before, describe, it } from "node:test";
 import { eq } from "drizzle-orm";
 import { closeDb, getDb } from "./client";
 import { OrderError, createOrderForTenant } from "./queries/orders";
-import { customers, orders, productVariants, products, tenants } from "./schema/index";
+import {
+  customers,
+  domainEvents,
+  orders,
+  paymentTransactions,
+  productVariants,
+  products,
+  tenants,
+} from "./schema/index";
 
 const url = process.env.DATABASE_URL ?? "";
 
@@ -99,10 +107,12 @@ describe("createOrderForTenant — concurrent stock safety", () => {
   after(async () => {
     // FK order matters: orders (cascades items + status history) → customers
     // (orders.customer_record_id references it) → variants → products → tenant.
+    await db.delete(paymentTransactions).where(eq(paymentTransactions.tenantId, tenantId));
     await db.delete(orders).where(eq(orders.tenantId, tenantId));
     await db.delete(customers).where(eq(customers.tenantId, tenantId));
     await db.delete(productVariants).where(eq(productVariants.productId, productId));
     await db.delete(products).where(eq(products.tenantId, tenantId));
+    await db.delete(domainEvents).where(eq(domainEvents.tenantId, tenantId));
     await db.delete(tenants).where(eq(tenants.id, tenantId));
     await closeDb();
   });

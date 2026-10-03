@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import {
-  advanceOrderStatusFromDelivery,
+  applyCourierFulfillmentUpdate,
   updateDeliveryByProviderOrderId,
 } from "@gumakart/db";
-import { createLogger, verifyTimestampedHmacSignature } from "@gumakart/services";
+import {
+  COURIER_NOTES,
+  createLogger,
+  grabFulfillment,
+  verifyTimestampedHmacSignature,
+} from "@gumakart/services";
 
 const log = createLogger("webhook:grab");
 
@@ -41,14 +46,6 @@ function verifySignature(rawBody: string, body: GrabWebhookBody, secret: string)
   });
 }
 
-const STATUS_TO_ORDER: Record<string, "out_for_delivery" | "delivered"> = {
-  PICKING_UP: "out_for_delivery",
-  IN_DELIVERY: "out_for_delivery",
-  COLLECTED: "out_for_delivery",
-  IN_PROGRESS: "out_for_delivery",
-  COMPLETED: "delivered",
-  DELIVERED: "delivered",
-};
 
 export async function POST(request: Request) {
   // Without a secret anyone could mark orders delivered — refuse everything.
@@ -98,17 +95,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true });
     }
 
-    const nextOrderStatus = courierStatus ? STATUS_TO_ORDER[courierStatus] : undefined;
-    if (nextOrderStatus) {
-      await advanceOrderStatusFromDelivery(
+    const fulfillment = grabFulfillment(courierStatus);
+    if (fulfillment) {
+      await applyCourierFulfillmentUpdate(
         linked.orderId,
-        nextOrderStatus,
-        nextOrderStatus === "delivered"
-          ? "Delivered by GrabExpress rider"
-          : "GrabExpress rider is on the way"
+        fulfillment,
+        `${COURIER_NOTES[fulfillment]} (GrabExpress)`
       );
-    } else if (courierStatus === "CANCELED" || courierStatus === "CANCELLED" || courierStatus === "FAILED") {
-      log.info("Grab delivery cancelled", { providerOrderId, orderId: linked.orderId });
     }
 
     return NextResponse.json({ received: true });

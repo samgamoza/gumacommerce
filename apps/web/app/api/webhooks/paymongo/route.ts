@@ -7,6 +7,7 @@ import {
   markOrderPaidByIntent,
   markPaymentFailedByIntent,
   markPlanPaymentPaidByIntent,
+  sendWithLog,
   type MarkOrderPaidResult,
 } from "@gumakart/db";
 import {
@@ -53,13 +54,23 @@ async function notifySellerPaymentReceived(result: MarkOrderPaidResult): Promise
   if (!phone) return;
 
   const total = result.total ? formatPhp(Number(result.total)) : "";
-  await createSemaphoreClient().send({
-    to: phone,
-    message: `Guma One: Payment received for order ${result.orderNumber}${
-      total ? ` (${total})` : ""
-    }. Open your dashboard to start preparing it.`,
-    priority: true,
-  });
+  const message = `Guma One: Payment received for order ${result.orderNumber}${
+    total ? ` (${total})` : ""
+  }. Open your dashboard to start preparing it.`;
+  await sendWithLog(
+    {
+      tenantId: result.tenantId,
+      orderId: result.orderId ?? null,
+      channel: "sms",
+      recipient: phone,
+      recipe: "seller_payment_received",
+      entityId: result.orderId ?? result.orderNumber,
+      body: message,
+      provider: "semaphore",
+      kind: "transactional",
+    },
+    () => createSemaphoreClient().send({ to: phone, message, priority: true })
+  );
 }
 
 export async function POST(request: Request) {

@@ -36,6 +36,12 @@ export {
 export { verifyTimestampedHmacSignature } from "./delivery/webhook-signature";
 export { lalamoveSignatureBase, verifyLalamoveWebhook } from "./delivery/lalamove-webhook";
 export {
+  COURIER_NOTES,
+  grabFulfillment,
+  lalamoveFulfillment,
+  type CourierFulfillment,
+} from "./delivery/courier-status";
+export {
   PREVIEW_TOKEN_TTL_SECONDS,
   signStorefrontPreviewToken,
   verifyStorefrontPreviewToken,
@@ -48,7 +54,7 @@ export {
   verifyBayanGoWebhook,
   normalizeBayanGoStatus,
   BAYANGO_STATUSES,
-  BAYANGO_STATUS_TO_ORDER,
+  BAYANGO_STATUS_TO_FULFILLMENT,
   BAYANGO_ATTENTION_STATUSES,
   type BayanGoStatus,
   type BayanGoWebhookEvent,
@@ -82,6 +88,7 @@ export {
 export {
   SemaphoreClient,
   createSemaphoreClient,
+  orderConfirmationMessage,
   formatPhp,
   generateOrderNumber,
 } from "./notifications/sms";
