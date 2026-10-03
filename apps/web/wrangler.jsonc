@@ -10,6 +10,8 @@
   "observability": { "enabled": true },
   "routes": [{ "pattern": "kart.guma.one", "custom_domain": true }],
   "r2_buckets": [{ "binding": "UPLOADS", "bucket_name": "gumakart-uploads" }],
+  // Cloudflare Hyperdrive "gumakart-db" -> Neon production (direct). getDb() uses it on Workers.
+  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "93f8b5636eb1478c9f3d13b3e7d589b8" }],
   "vars": {
     "NODE_ENV": "production",
     "NEXT_PUBLIC_STOREFRONT_URL": "https://kart.guma.one",
