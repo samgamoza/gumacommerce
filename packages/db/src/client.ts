@@ -27,7 +27,13 @@ export function normalizeDatabaseUrl(raw: string): string {
   }
 }
 
-function createClient() {
+function createClient(hyperdriveUrl?: string) {
+  // On Cloudflare Workers the HYPERDRIVE binding gives a Cloudflare-side pooled
+  // connection to Neon; a direct TCP+TLS connection from a Worker to Neon times out.
+  if (hyperdriveUrl) {
+    const sql = postgres(hyperdriveUrl, { prepare: false, max: 5, fetch_types: false, connect_timeout: 15 });
+    return { db: drizzle(sql, { schema }), sql };
+  }
   const url = normalizeDatabaseUrl(getDatabaseUrl("app"));
   const neon = isNeonDatabase(url);
 
@@ -68,7 +74,8 @@ export function getDb(): Database {
   if (requestContext) {
     let client = workerClients.get(requestContext);
     if (!client) {
-      client = createClient();
+      const env = (requestContext as { env?: { HYPERDRIVE?: { connectionString?: string } } }).env;
+      client = createClient(env?.HYPERDRIVE?.connectionString);
       workerClients.set(requestContext, client);
     }
     return client.db;
