@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ tenantSlug: string; orderNumber: string }>;
-  searchParams: Promise<{ t?: string | string[] }>;
+  searchParams: Promise<{ t?: string | string[]; paid?: string | string[] }>;
 }
 
 /** Shown when the link has no (or a wrong) access token. Same page either way, so it doesn't reveal whether an order number exists. */
@@ -117,7 +117,9 @@ function buildTimeline(status: OrderStatus, deliveryType: string, paymentMethod:
 
 export default async function OrderTrackingPage({ params, searchParams }: PageProps) {
   const { tenantSlug, orderNumber } = await params;
-  const { t } = await searchParams;
+  const { t, paid } = await searchParams;
+  // Back from PayMongo's page: the webhook usually lands within seconds.
+  const returningFromCheckout = paid === "1";
   const accessToken = typeof t === "string" ? t : "";
 
   // Demo shops show a simulated order instead of hitting the database.
@@ -142,8 +144,10 @@ export default async function OrderTrackingPage({ params, searchParams }: PagePr
   const payments = resolveTenantPaymentsSettings(
     (tenant?.settingsJson ?? null) as Record<string, unknown> | null
   );
+  // Direct-transfer instructions only for manual payments — PayMongo buyers pay
+  // on PayMongo's page and must never be shown the shop's GCash number.
   const payInstructions =
-    order && order.paymentMethod !== "cod"
+    order && order.paymentMethod !== "cod" && order.paymentGateway !== "paymongo"
       ? buildManualEwalletInstructions({
           method:
             order.paymentMethod === "paymaya"
@@ -192,12 +196,22 @@ export default async function OrderTrackingPage({ params, searchParams }: PagePr
             </p>
           )}
           {!isCancelled && <Badge className="mt-3">SMS updates sent to your phone</Badge>}
-          {awaitingPayment && (
+          {awaitingPayment && returningFromCheckout && (
+            <p className="mx-auto mt-3 max-w-xs text-sm text-emerald-700">
+              Thanks! We&apos;re confirming your payment with PayMongo — this page updates by itself.
+            </p>
+          )}
+          {awaitingPayment && !returningFromCheckout && (
             <p className="mx-auto mt-3 max-w-xs text-sm text-amber-700">
               Complete your {PAYMENT_LABELS[order?.paymentMethod ?? ""] ?? "online"} payment to
               start the order. This page updates once payment is confirmed.
             </p>
           )}
+          {awaitingPayment && order?.resumePaymentUrl ? (
+            <a href={order.resumePaymentUrl} className="mt-4 inline-block">
+              <Button>Continue to payment</Button>
+            </a>
+          ) : null}
         </Card>
 
         {order && payInstructions && storeSettings && awaitingPayment ? (

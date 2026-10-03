@@ -1,4 +1,9 @@
-export { PayMongoClient, createPayMongoClient, type PayMongoMethod } from "./payments/paymongo";
+export {
+  PayMongoClient,
+  createPayMongoClient,
+  parsePayMongoPaymentEvent,
+  type PayMongoMethod,
+} from "./payments/paymongo";
 export {
   resolvePaymentAdapterId,
   resolvePaymentsMode,

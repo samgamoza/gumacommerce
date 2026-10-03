@@ -411,6 +411,9 @@ export async function recordPaymentIntent(params: {
   gatewayIntentId: string;
   amount: string;
   methodType: string;
+  /** PayMongo hosted-checkout URL, so the buyer can resume paying from the order page. */
+  checkoutUrl?: string;
+  checkoutSessionId?: string;
 }): Promise<void> {
   const db = getDb();
   await db.insert(paymentTransactions).values({
@@ -421,6 +424,10 @@ export async function recordPaymentIntent(params: {
     amount: params.amount,
     status: "pending",
     methodType: params.methodType,
+    rawWebhookJson:
+      params.checkoutUrl || params.checkoutSessionId
+        ? { checkoutUrl: params.checkoutUrl ?? null, checkoutSessionId: params.checkoutSessionId ?? null }
+        : null,
   });
 }
 
@@ -748,6 +755,21 @@ export interface OrderTrackingData {
   items: Array<{ title: string; quantity: number; unitPrice: string; lineTotal: string }>;
   history: Array<{ status: OrderStatus; note: string | null; createdAt: Date }>;
   delivery: OrderTrackingDelivery | null;
+  /** "paymongo" when the buyer pays on PayMongo's page, "manual" for direct transfer. */
+  paymentGateway: string | null;
+  /** PayMongo page to finish paying, while the payment is still pending. */
+  resumePaymentUrl: string | null;
+}
+
+/** Only ever hand the buyer a PayMongo-hosted URL. */
+function safeCheckoutUrl(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && url.hostname.endsWith("paymongo.com") ? value : null;
+  } catch {
+    return null;
+  }
 }
 
 function tokensMatch(expected: string, provided: string): boolean {
@@ -795,8 +817,26 @@ export async function getOrderForTracking(
     .orderBy(desc(deliveries.bookedAt))
     .limit(1);
 
+  const [payment] = await db
+    .select({
+      gateway: paymentTransactions.gateway,
+      status: paymentTransactions.status,
+      raw: paymentTransactions.rawWebhookJson,
+    })
+    .from(paymentTransactions)
+    .where(eq(paymentTransactions.orderId, row.order.id))
+    .orderBy(desc(paymentTransactions.createdAt))
+    .limit(1);
+
   return {
     orderId: row.order.id,
+    paymentGateway: payment?.gateway ?? null,
+    resumePaymentUrl:
+      payment?.gateway === "paymongo" &&
+      payment.status === "pending" &&
+      row.order.status === "pending_payment"
+        ? safeCheckoutUrl((payment.raw as { checkoutUrl?: unknown } | null)?.checkoutUrl)
+        : null,
     orderNumber: row.order.orderNumber,
     tenantSlug: row.tenant.slug,
     tenantName: row.tenant.name,

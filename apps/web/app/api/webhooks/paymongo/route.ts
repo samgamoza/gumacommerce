@@ -11,6 +11,7 @@ import {
 } from "@gumakart/db";
 import {
   createPayMongoClient,
+  parsePayMongoPaymentEvent,
   createSemaphoreClient,
   formatPhp,
   isPushConfigured,
@@ -61,21 +62,6 @@ async function notifySellerPaymentReceived(result: MarkOrderPaidResult): Promise
   });
 }
 
-interface PayMongoEvent {
-  data: {
-    attributes: {
-      type: string;
-      data: {
-        id: string;
-        attributes: {
-          payment_intent_id?: string;
-          status?: string;
-        };
-      };
-    };
-  };
-}
-
 export async function POST(request: Request) {
   const payload = await request.text();
   const signature = request.headers.get("paymongo-signature") ?? "";
@@ -86,21 +72,30 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
-  let event: PayMongoEvent;
+  let event: unknown;
   try {
-    event = JSON.parse(payload) as PayMongoEvent;
+    event = JSON.parse(payload) as unknown;
   } catch {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
-  const eventType = event.data?.attributes?.type;
-  const resource = event.data?.attributes?.data;
-  const intentId = resource?.attributes?.payment_intent_id;
+  // Hosted checkout sends `checkout_session.payment.paid`; PayMongo may also
+  // send `payment.paid` for the same payment. Both resolve to the payment
+  // intent id we stored at checkout, so the second one is a no-op.
+  const parsed = parsePayMongoPaymentEvent(event);
+  const eventType = parsed?.type;
+  const intentId = parsed?.intentId ?? parsed?.sessionId;
+  const paymentId = parsed?.paymentId;
   console.info("[PayMongo Webhook]", eventType, intentId ?? "");
 
   try {
-    if (eventType === "payment.paid" && intentId) {
-      const result = await markOrderPaidByIntent(intentId, resource.id, event);
+    const isPaid = eventType === "payment.paid" || eventType === "checkout_session.payment.paid";
+    if (isPaid && intentId) {
+      let result = await markOrderPaidByIntent(intentId, paymentId, event);
+      if (!result.ok && parsed?.sessionId && parsed.sessionId !== intentId) {
+        // Session created before PayMongo assigned an intent — we stored the session id.
+        result = await markOrderPaidByIntent(parsed.sessionId, paymentId, event);
+      }
       if (result.ok && result.paidAfterCancel) {
         // The order was cancelled/refunded before the money arrived. It stays
         // closed; the seller sees a history note and must refund the buyer.
@@ -111,7 +106,10 @@ export async function POST(request: Request) {
       }
       if (!result.ok) {
         // Not an order payment — check plan-upgrade billing.
-        const planResult = await markPlanPaymentPaidByIntent(intentId);
+        let planResult = await markPlanPaymentPaidByIntent(intentId);
+        if (!planResult.ok && parsed?.sessionId && parsed.sessionId !== intentId) {
+          planResult = await markPlanPaymentPaidByIntent(parsed.sessionId);
+        }
         if (planResult.ok && planResult.transitioned) {
           console.info(
             "[PayMongo Webhook] Plan upgraded",
@@ -172,6 +170,7 @@ export async function POST(request: Request) {
         ]);
       }
     } else if (eventType === "payment.failed" && intentId) {
+      // A failed attempt on PayMongo's page; the buyer can still retry there.
       await markPaymentFailedByIntent(intentId);
     }
   } catch (error) {

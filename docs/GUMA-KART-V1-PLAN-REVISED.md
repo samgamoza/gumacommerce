@@ -432,8 +432,8 @@ Still open:
 1. ✅ BayanGo hook on the Guma side, plus the partner contract handed to Cursor.
 2. ✅ Veyron security hotfixes shipped (commit `999833a`). BayanGo ones are in the Cursor partner-API prompt.
 3. ✅ Phase 1 in Guma Kart: KYC lock, order tokens, the order service, stock restore — see `docs/PHASE-1-NOTES-2026-10-02.md` (needs migrations 0018 + 0019 applied).
-4. Start the PayMongo track: fix attach, add the return page, run a live ₱1 test.
-5. Write the Phase 2 migration spec (three statuses, locations, stock ledger, payment rows, outbox, message_log) and review it before coding.
+4. ✅ PayMongo code moved to hosted checkout with a return page (`docs/PAYMONGO-TRACK-2026-10-03.md`). Left for you: register the webhook, then test-mode and live ₱1 tests.
+5. ✅ Phase 2 migration spec written: `docs/PHASE-2-MIGRATION-SPEC.md`. **Waiting on owner review (decisions D1–D5)** before coding.
 6. Start the Cloudflare move for `platform`, which is the easiest. Then do `admin` after the upload and image changes (§19).
 
 ---

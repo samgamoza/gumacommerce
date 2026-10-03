@@ -64,14 +64,17 @@ export interface StartOnlinePaymentInput {
   method: Exclude<CheckoutPaymentMethod, "cod" | "bank">;
   metadata: Record<string, string>;
   /** Where the buyer lands after paying — the tokenized order page. */
-  returnUrl?: string;
+  returnUrl: string;
+  /** Shown on PayMongo's page and echoed in webhooks (our order number). */
+  referenceNumber: string;
+  lineItemName: string;
 }
 
 export interface StartOnlinePaymentResult {
   adapter: "paymongo";
   paymentIntentId: string;
-  clientKey: string;
-  redirectUrl: string | null;
+  checkoutSessionId: string;
+  redirectUrl: string;
 }
 
 /**
@@ -82,24 +85,26 @@ export async function startOnlinePayment(
   input: StartOnlinePaymentInput
 ): Promise<StartOnlinePaymentResult> {
   const paymongo = createPayMongoClient();
-  const intent = await paymongo.createPaymentIntent({
+  const session = await paymongo.createCheckoutSession({
     amountCentavos: input.amountCentavos,
+    lineItemName: input.lineItemName,
     description: input.description,
     methods: [input.method as PayMongoMethod],
+    referenceNumber: input.referenceNumber,
+    successUrl: withParam(input.returnUrl, "paid", "1"),
+    cancelUrl: input.returnUrl,
     metadata: input.metadata,
   });
-  const attached = await paymongo.attachPaymentMethod(
-    intent.id,
-    input.method as PayMongoMethod,
-    intent.clientKey,
-    input.returnUrl
-  );
   return {
     adapter: "paymongo",
-    paymentIntentId: intent.id,
-    clientKey: intent.clientKey,
-    redirectUrl: attached.redirectUrl ?? null,
+    paymentIntentId: session.paymentIntentId,
+    checkoutSessionId: session.id,
+    redirectUrl: session.checkoutUrl,
   };
+}
+
+function withParam(url: string, key: string, value: string): string {
+  return `${url}${url.includes("?") ? "&" : "?"}${key}=${encodeURIComponent(value)}`;
 }
 
 export interface ManualEwalletInstructions {

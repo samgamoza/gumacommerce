@@ -26,10 +26,58 @@ export interface PaymentIntentResult {
   mock?: boolean;
 }
 
-export interface AttachPaymentMethodResult {
-  redirectUrl?: string;
-  status: string;
+export interface CreateCheckoutSessionInput {
+  amountCentavos: number;
+  lineItemName: string;
+  description: string;
+  methods: PayMongoMethod[];
+  /** Our reference shown to the buyer on PayMongo and echoed in webhooks. */
+  referenceNumber: string;
+  successUrl: string;
+  cancelUrl?: string;
+  metadata?: Record<string, string>;
+}
+
+export interface CheckoutSessionResult {
+  id: string;
+  checkoutUrl: string;
+  /** Key we store on the payment row (payment intent id, else the session id). */
+  paymentIntentId: string;
   mock?: boolean;
+}
+
+/**
+ * Pulls the ids we need out of a PayMongo webhook event, for both the hosted
+ * checkout event and the plain payment events.
+ */
+export function parsePayMongoPaymentEvent(event: unknown): {
+  type: string;
+  intentId?: string;
+  sessionId?: string;
+  paymentId?: string;
+} | null {
+  const attrs = (event as { data?: { attributes?: { type?: unknown; data?: unknown } } })?.data
+    ?.attributes;
+  if (!attrs || typeof attrs.type !== "string") return null;
+  const resource = attrs.data as
+    | { id?: string; attributes?: Record<string, unknown> }
+    | undefined;
+  const r = resource?.attributes ?? {};
+  if (attrs.type.startsWith("checkout_session.")) {
+    const intent = r.payment_intent as { id?: string } | null | undefined;
+    const payments = Array.isArray(r.payments) ? (r.payments as Array<{ id?: string }>) : [];
+    return {
+      type: attrs.type,
+      sessionId: resource?.id,
+      intentId: intent?.id,
+      paymentId: payments[0]?.id,
+    };
+  }
+  return {
+    type: attrs.type,
+    intentId: typeof r.payment_intent_id === "string" ? r.payment_intent_id : undefined,
+    paymentId: resource?.id,
+  };
 }
 
 function isUsableSecret(secretKey: string): boolean {
@@ -105,28 +153,27 @@ export class PayMongoClient {
     };
   }
 
-  async attachPaymentMethod(
-    intentId: string,
-    methodType: PayMongoMethod,
-    clientKey: string,
-    returnUrl?: string
-  ): Promise<AttachPaymentMethodResult> {
-    if (intentId.startsWith("pi_mock_")) {
-      if (!allowIntegrationMocks()) {
-        throw new Error(
-          "Refusing to attach a mock PayMongo intent outside mock-allowed runtimes."
-        );
-      }
+  /**
+   * PayMongo hosted checkout (POST /v1/checkout_sessions). One integration for
+   * GCash, Maya, QR Ph and cards — the buyer pays on PayMongo's page and comes
+   * back to `successUrl`. Card details never touch our servers.
+   *
+   * We key the payment on the session's payment intent id, so both
+   * `checkout_session.payment.paid` and `payment.paid` webhooks land on the same
+   * payment row (and the second one is a no-op).
+   */
+  async createCheckoutSession(input: CreateCheckoutSessionInput): Promise<CheckoutSessionResult> {
+    if (this.ensureLiveOrMock("createCheckoutSession") === "mock") {
+      const id = `cs_mock_${Date.now()}`;
       return {
-        redirectUrl: `https://checkout.paymongo.com/mock?intent=${intentId}`,
-        status: "awaiting_next_action",
+        id,
+        checkoutUrl: `${input.successUrl}${input.successUrl.includes("?") ? "&" : "?"}mock_checkout=${id}`,
+        paymentIntentId: `pi_mock_${Date.now()}`,
         mock: true,
       };
     }
 
-    this.ensureLiveOrMock("attachPaymentMethod");
-
-    const res = await fetch(`${PAYMONGO_API}/payment_intents/${intentId}/attach`, {
+    const res = await fetch(`${PAYMONGO_API}/checkout_sessions`, {
       method: "POST",
       headers: {
         Authorization: this.authHeader(),
@@ -135,30 +182,44 @@ export class PayMongoClient {
       body: JSON.stringify({
         data: {
           attributes: {
-            client_key: clientKey,
-            payment_method: { type: methodType },
-            ...(returnUrl ? { return_url: returnUrl } : {}),
+            line_items: [
+              {
+                name: input.lineItemName.slice(0, 255),
+                amount: input.amountCentavos,
+                currency: "PHP",
+                quantity: 1,
+              },
+            ],
+            payment_method_types: input.methods,
+            description: input.description,
+            reference_number: input.referenceNumber,
+            success_url: input.successUrl,
+            cancel_url: input.cancelUrl ?? input.successUrl,
+            send_email_receipt: false,
+            show_line_items: true,
+            metadata: input.metadata,
           },
         },
       }),
     });
 
     if (!res.ok) {
-      throw new Error(`PayMongo attach failed: ${await res.text()}`);
+      throw new Error(`PayMongo create checkout session failed: ${await res.text()}`);
     }
 
     const json = (await res.json()) as {
       data: {
-        attributes: {
-          status: string;
-          next_action?: { redirect?: { url?: string } };
-        };
+        id: string;
+        attributes: { checkout_url?: string; payment_intent?: { id?: string } | null };
       };
     };
-
+    const checkoutUrl = json.data.attributes.checkout_url;
+    if (!checkoutUrl) throw new Error("PayMongo checkout session returned no checkout_url");
     return {
-      redirectUrl: json.data.attributes.next_action?.redirect?.url,
-      status: json.data.attributes.status,
+      id: json.data.id,
+      checkoutUrl,
+      // Fall back to the session id; the webhook handler looks up either.
+      paymentIntentId: json.data.attributes.payment_intent?.id ?? json.data.id,
     };
   }
 

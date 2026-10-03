@@ -462,8 +462,10 @@ export async function POST(request: Request) {
       amountCentavos: order.totalCentavos,
       description: `Order ${order.orderNumber} — ${tenant.name}`,
       method: body.paymentMethod as Exclude<CheckoutPaymentMethod, "cod" | "bank">,
-      metadata: { order_number: order.orderNumber, tenant: body.tenantSlug },
+      metadata: { order_number: order.orderNumber, tenant: body.tenantSlug, order_id: order.id },
       returnUrl: trackingUrl(body.tenantSlug, order.orderNumber, order.accessToken),
+      referenceNumber: order.orderNumber,
+      lineItemName: `Order ${order.orderNumber} — ${tenant.name}`,
     });
 
     await recordPaymentIntent({
@@ -472,6 +474,8 @@ export async function POST(request: Request) {
       gatewayIntentId: started.paymentIntentId,
       amount: order.total,
       methodType: body.paymentMethod,
+      checkoutUrl: started.redirectUrl,
+      checkoutSessionId: started.checkoutSessionId,
     });
 
     await sms
