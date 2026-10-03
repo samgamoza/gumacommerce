@@ -428,3 +428,9 @@ export {
   type PhLocationSuggestion,
 } from "./queries/ph-locations";
 export * from "./schema/index";
+export {
+  recordStockMovement,
+  listStockMovementsForProduct,
+  type StockMovementItem,
+  type StockMovementReason,
+} from "./queries/stock-ledger";

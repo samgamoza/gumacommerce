@@ -46,9 +46,9 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    await requireTenantSession();
+    const session = await requireTenantSession();
     const body = z.object({ endpoint: z.string().url().max(1024) }).parse(await request.json());
-    await deletePushSubscription(body.endpoint);
+    await deletePushSubscription(session.tenantId, body.endpoint);
     return NextResponse.json({ ok: true });
   } catch (error) {
     if (error instanceof ApiAuthError) {

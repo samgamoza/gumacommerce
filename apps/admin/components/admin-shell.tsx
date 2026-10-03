@@ -361,7 +361,7 @@ export function AdminShell({
           <div className="flex items-center gap-1 rounded-lg border border-white/[0.08] bg-white/[0.02] p-0.5 text-xs font-medium">
             {slug ? (
               <a
-                href={`${storefrontBase}/${slug}?preview=1`}
+                href="/api/storefront-preview"
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-slate-500 hover:bg-white/[0.04] hover:text-slate-200"

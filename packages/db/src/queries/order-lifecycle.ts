@@ -14,6 +14,7 @@ import {
   reverseSaleCreditForOrder,
 } from "./wallet";
 import { ORDER_STATUS_TRANSITIONS, OrderError, type OrderStatus } from "./order-status";
+import { recordStockMovement } from "./stock-ledger";
 
 /**
  * The one place an order's status changes after checkout.
@@ -87,12 +88,19 @@ async function lockOrder(tx: Tx, orderId: string, tenantId?: string): Promise<Or
  * Puts reserved stock back, exactly once per order. Mirrors the checkout
  * decrement: only variants of products that track inventory.
  */
-export async function restockOrderInTx(tx: Tx, orderId: string): Promise<boolean> {
+export type RestockReason = "restock_cancel" | "restock_refund" | "restock_expiry";
+
+export async function restockOrderInTx(
+  tx: Tx,
+  orderId: string,
+  reason: RestockReason = "restock_cancel",
+  actorId?: string | null
+): Promise<boolean> {
   const [claimed] = await tx
     .update(orders)
     .set({ stockRestoredAt: new Date() })
     .where(and(eq(orders.id, orderId), isNull(orders.stockRestoredAt)))
-    .returning({ id: orders.id });
+    .returning({ id: orders.id, tenantId: orders.tenantId });
   if (!claimed) return false;
 
   const lines = await tx
@@ -105,12 +113,29 @@ export async function restockOrderInTx(tx: Tx, orderId: string): Promise<boolean
     .innerJoin(products, eq(products.id, orderItems.productId))
     .where(eq(orderItems.orderId, orderId));
 
+  // One ledger row per variant even if the order had it on two lines.
+  const qtyByVariant = new Map<string, number>();
   for (const line of lines) {
     if (!line.variantId || !line.trackInventory) continue;
-    await tx
+    qtyByVariant.set(line.variantId, (qtyByVariant.get(line.variantId) ?? 0) + line.quantity);
+  }
+
+  for (const [variantId, quantity] of qtyByVariant) {
+    const [updated] = await tx
       .update(productVariants)
-      .set({ stockQty: sql`coalesce(${productVariants.stockQty}, 0) + ${line.quantity}` })
-      .where(eq(productVariants.id, line.variantId));
+      .set({ stockQty: sql`coalesce(${productVariants.stockQty}, 0) + ${quantity}` })
+      .where(eq(productVariants.id, variantId))
+      .returning({ stockQty: productVariants.stockQty });
+    if (!updated) continue; // variant deleted since the sale
+    await recordStockMovement(tx, {
+      tenantId: claimed.tenantId,
+      variantId,
+      orderId,
+      reason,
+      delta: quantity,
+      balanceAfter: updated.stockQty,
+      actorId,
+    });
   }
   return true;
 }
@@ -207,7 +232,12 @@ export async function transitionOrderStatus(input: {
 
     let restocked = false;
     if (to === "cancelled" && !GOODS_LEFT_SHOP.has(from)) {
-      restocked = await restockOrderInTx(tx, order.id);
+      restocked = await restockOrderInTx(
+        tx,
+        order.id,
+        input.source === "system" ? "restock_expiry" : "restock_cancel",
+        input.actorId
+      );
     }
 
     await tx.insert(orderStatusHistory).values({
@@ -341,7 +371,9 @@ export async function refundOrder(params: {
           and(eq(paymentTransactions.orderId, order.id), eq(paymentTransactions.status, "paid"))
         );
 
-      const restocked = GOODS_LEFT_SHOP.has(from) ? false : await restockOrderInTx(tx, order.id);
+      const restocked = GOODS_LEFT_SHOP.has(from)
+        ? false
+        : await restockOrderInTx(tx, order.id, "restock_refund", params.actorId);
 
       const baseNote =
         params.note ??

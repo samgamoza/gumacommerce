@@ -1,4 +1,16 @@
 const RESERVED_SLUGS = new Set([
+  // Top-level storefront routes (apps/web/app/*) — a shop with one of these
+  // slugs would be shadowed by, or shadow, a real page.
+  "about",
+  "frontend1",
+  "guma-one-ai",
+  "kart",
+  "preview",
+  "uploads",
+  "icon",
+  "robots",
+  "sitemap",
+  "favicon",
   "admin",
   "api",
   "app",
@@ -51,7 +63,8 @@ export function validateSlug(slug: string): { ok: true } | { ok: false; reason: 
       reason: "Use lowercase letters, numbers, and hyphens only (e.g. halo-queen).",
     };
   }
-  if (RESERVED_SLUGS.has(slug)) {
+  // "*-demo" is the namespace for built-in demo shops.
+  if (RESERVED_SLUGS.has(slug) || slug.endsWith("-demo")) {
     return { ok: false, reason: "This shop URL is reserved. Please choose another." };
   }
   return { ok: true };

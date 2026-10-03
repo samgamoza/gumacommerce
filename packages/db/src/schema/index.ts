@@ -631,6 +631,47 @@ export const orderStatusHistory = pgTable(
   (table) => [index("order_status_history_order_idx").on(table.orderId)]
 );
 
+// ─── Stock ledger ────────────────────────────────────────────────────────────
+
+export const stockMovementReasonEnum = pgEnum("stock_movement_reason", [
+  "initial",
+  "sale",
+  "restock_cancel",
+  "restock_refund",
+  "restock_expiry",
+  "adjustment",
+]);
+
+/**
+ * Append-only ledger: every change to product_variants.stock_qty writes one row.
+ * Sum(delta) per variant reconciles to stock_qty from the moment the ledger
+ * started (0020 back-fills an "initial" row with the stock at that time).
+ */
+export const stockMovements = pgTable(
+  "stock_movements",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .references(() => tenants.id, { onDelete: "cascade" })
+      .notNull(),
+    variantId: uuid("variant_id")
+      .references(() => productVariants.id, { onDelete: "cascade" })
+      .notNull(),
+    orderId: uuid("order_id").references(() => orders.id, { onDelete: "set null" }),
+    reason: stockMovementReasonEnum("reason").notNull(),
+    delta: integer("delta").notNull(),
+    balanceAfter: integer("balance_after"),
+    note: varchar("note", { length: 200 }),
+    actorId: uuid("actor_id").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("stock_movements_variant_idx").on(table.variantId, table.createdAt),
+    index("stock_movements_tenant_idx").on(table.tenantId, table.createdAt),
+    index("stock_movements_order_idx").on(table.orderId),
+  ]
+);
+
 // ─── Checkout sessions (abandoned cart / progress) ───────────────────────────
 
 export const checkoutSessions = pgTable(

@@ -68,3 +68,52 @@ uses a raw `FOR UPDATE NOWAIT` instead.
 - PayMongo fix track (attach flow needs a real payment-method id; webhook signature check review).
 - Per-event webhook dedupe table (inbox/outbox) — Phase 2.
 - Real disbursement provider for payouts.
+
+---
+
+## Phase 1 close-out (2026-10-03)
+
+Deploy: apply migration **0020** (`stock_movements`) after 0018/0019. Set `STOREFRONT_PREVIEW_SECRET`
+(≥32 chars) on **both** admin and web — it falls back to `AUTH_SECRET`, and the web app may not have that.
+Without it, seller "Preview" shows the live shop instead of the draft.
+
+### Webhook hardening
+- **Grab:** rejects every request (503) when `GRAB_WEBHOOK_SECRET` is unset; the signature is always required.
+- **Lalamove:** the old check signed the whole raw body, which contains the signature itself, so no genuine
+  Lalamove event could pass. Now follows Lalamove's guide: HMAC-SHA256 with the API secret over
+  `timestamp\r\nPOST\r\n<your webhook path>\r\n\r\n<JSON data>`, and `apiKey` must match `LALAMOVE_API_KEY`.
+  **Still needs one sandbox event to confirm** (the guide doesn't spell out the JSON serialization). If a
+  proxy changes the path, set `LALAMOVE_WEBHOOK_PATH`.
+
+### Reserved slugs and demo shops
+- Reserved: every top-level storefront route (`about`, `kart`, `preview`, `uploads`, `frontend1`, `guma-one-ai`,
+  `model`, …) and anything ending in `-demo`. Existing shops aren't renamed — check none already use these.
+- Real shops are looked up **before** built-in demos (storefront, checkout, order page), so a demo can never
+  shadow a merchant or swallow a real order.
+
+### Tenant scoping
+- Push unsubscribe only deletes the subscription if it belongs to the seller's shop.
+- Draft storefront (`?preview=1`) needs a signed link (`/api/storefront-preview` in admin → 2-hour token for that
+  shop). Every admin "Preview" link goes through it.
+
+### Stock ledger (`stock_movements`, migration 0020)
+- Append-only. Written in the same transaction as every stock change: `sale`, `restock_cancel`,
+  `restock_refund`, `restock_expiry`, `adjustment` (seller edit, variant row locked), `initial` (new product,
+  plus a back-filled opening balance per tracked variant).
+- One row per order × variant × reason (unique index), so retries can't double-count.
+- Seller API: `GET /api/products/{id}/stock-movements`.
+
+### Sister products
+- **Veyron** (`veyron-pos-saas`, commit `999833a`): super_admin can't be assigned or touched from
+  `/admin/users`; `/debug/routes` only when `APP_ENV=development` (make sure production sets `APP_ENV=production`);
+  API login rate limited; PayPal stub disabled. Also fixed a tenant-scoper bug that made every scoped
+  `INSERT … VALUES` without `tenant_id` fail (adding a user was broken). 90/90 tests on SQLite.
+- **BayanGo:** the three fixes are in Cursor's partner-API prompt (`docs/CURSOR-PROMPT-PARTNER-API.md`).
+
+### Tests
+db integration 17/17 (adds ledger reconciliation), db unit 26/26, services 42/42 incl. preview token and Lalamove
+signature; typecheck clean for db, services, auth, admin, web, platform.
+
+### Phase 1 exit status
+Everything in plan §3 is done except: the Lalamove sandbox confirmation (needs your Lalamove sandbox keys) and the
+BayanGo fixes (Cursor). Next per §11: Phase 2 (write the migration spec first), PayMongo track, Cloudflare move.

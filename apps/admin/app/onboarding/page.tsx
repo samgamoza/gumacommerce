@@ -120,7 +120,7 @@ export default function OnboardingPage() {
             <Link href="/launch">
               <Button>Continue GUMA Launch</Button>
             </Link>
-            <a href={`${storefrontUrl}/${user?.tenantSlug}?preview=1`} target="_blank" rel="noreferrer">
+            <a href="/api/storefront-preview" target="_blank" rel="noreferrer">
               <Button variant="secondary">Preview storefront</Button>
             </a>
           </div>

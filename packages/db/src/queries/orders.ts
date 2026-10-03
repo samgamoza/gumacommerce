@@ -2,6 +2,7 @@ import { and, asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { timingSafeEqual } from "node:crypto";
 import { getDb } from "../client";
 import { creditSaleForOrder } from "./wallet";
+import { recordStockMovement } from "./stock-ledger";
 import { transitionOrderStatus } from "./order-lifecycle";
 import {
   customers,
@@ -369,6 +370,15 @@ export async function createOrderForTenant(input: CreateOrderInput): Promise<Cre
             "OUT_OF_STOCK"
           );
         }
+
+        await recordStockMovement(tx, {
+          tenantId: tenant.id,
+          variantId: line.variantId,
+          orderId: order.id,
+          reason: "sale",
+          delta: -line.quantity,
+          balanceAfter: decremented[0]!.stockQty,
+        });
       }
     }
 

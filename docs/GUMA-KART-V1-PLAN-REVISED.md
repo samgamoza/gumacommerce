@@ -309,7 +309,7 @@ Durations are rough estimates for a small team (1–2 developers). Re-estimate a
 | Phase | Scope | Exit criteria | Est. |
 |---|---|---|---|
 | **0. Audit** | ✅ Done (the three audit docs) | — | — |
-| **1. Stabilize** | §3: security, order service, stock correctness, refund idempotency; Veyron and BayanGo hotfixes | Tests prove state, stock and access rules | 1.5–2 wks |
+| **1. Stabilize** | ✅ Done 2026-10-03 (§3; see `docs/PHASE-1-NOTES-2026-10-02.md`). Open: Lalamove sandbox signature check; BayanGo fixes with Cursor | Tests prove state, stock and access rules | 1.5–2 wks |
 | **2. Core alignment** | §4 and §6: three statuses and migration, locations (default), stock ledger, payment rows for all methods, outbox relay, message_log, consent fields | Existing store checkout runs on the new core without regressions | 2 wks |
 | **3. Checkout Links** | §5: entity, merchant UI, production checkout built from the `/kart` components, token order page, abandonment capture, source tracking | A merchant creates a link, a buyer orders, and the order appears with the correct source | 2–3 wks |
 | **4. Automations (SMS)** | §8: Inngest consumers, recipes 1–7, merchant alerts, logs UI | Every recipe fires once, suppression works, and no duplicate sends occur | 1.5–2 wks |
@@ -430,7 +430,7 @@ Still open:
 ## 17. Immediate next actions
 
 1. ✅ BayanGo hook on the Guma side, plus the partner contract handed to Cursor.
-2. Ship the Veyron and BayanGo security hotfixes (§3.3). Cursor can include the BayanGo ones in the partner-API work.
+2. ✅ Veyron security hotfixes shipped (commit `999833a`). BayanGo ones are in the Cursor partner-API prompt.
 3. ✅ Phase 1 in Guma Kart: KYC lock, order tokens, the order service, stock restore — see `docs/PHASE-1-NOTES-2026-10-02.md` (needs migrations 0018 + 0019 applied).
 4. Start the PayMongo track: fix attach, add the return page, run a live ₱1 test.
 5. Write the Phase 2 migration spec (three statuses, locations, stock ledger, payment rows, outbox, message_log) and review it before coding.

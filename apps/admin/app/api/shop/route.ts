@@ -59,7 +59,7 @@ export async function GET() {
       patternId,
       urls: {
         storefront: `${storefrontUrl}/${dashboard.tenant.slug}`,
-        preview: `${storefrontUrl}/${dashboard.tenant.slug}?preview=1`,
+        preview: "/api/storefront-preview",
         orderLink: `${storefrontUrl}/${dashboard.tenant.slug}?utm_source=instagram`,
       },
     });
@@ -127,7 +127,7 @@ export async function PATCH(request: Request) {
       theme,
       urls: {
         storefront: `${storefrontUrl}/${updated.slug}`,
-        preview: `${storefrontUrl}/${updated.slug}?preview=1`,
+        preview: "/api/storefront-preview",
       },
     });
   } catch (error) {

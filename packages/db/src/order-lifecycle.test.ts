@@ -38,6 +38,7 @@ import {
   paymentTransactions,
   productVariants,
   products,
+  stockMovements,
   tenantPayouts,
   tenantWallets,
   tenants,
@@ -142,6 +143,16 @@ describe("order lifecycle", () => {
     assert.equal(ok.length, 1, "second cancel must be rejected (cancelled → cancelled is invalid)");
     assert.equal(await stock(), before, "stock returns once, not twice");
     assert.ok((await orderRow(order.id)).stockRestoredAt);
+
+    const moves = await db
+      .select({ reason: stockMovements.reason, delta: stockMovements.delta })
+      .from(stockMovements)
+      .where(eq(stockMovements.orderId, order.id));
+    assert.deepEqual(
+      moves.map((m) => `${m.reason}:${m.delta}`).sort(),
+      ["restock_cancel:3", "sale:-3"],
+      "ledger has exactly one sale and one restock"
+    );
   });
 
   it("a paid order cannot be cancelled by the seller — only refunded", async () => {
@@ -299,6 +310,26 @@ describe("order lifecycle", () => {
       },
     });
     assert.equal(result.refundedOutsidePlatform, true);
+  });
+
+  it("stock ledger reconciles with the variant's stock and records seller edits", async () => {
+    const { updateProductForTenant } = await import("./queries/products");
+    await updateProductForTenant(tenantId, productId, { stockQty: (await stock()) + 5 });
+    const [{ total }] = await db
+      .select({ total: sql<number>`coalesce(sum(${stockMovements.delta}), 0)::int` })
+      .from(stockMovements)
+      .where(eq(stockMovements.variantId, variantId));
+    // The test variant was seeded directly (no "initial" row), so the ledger
+    // explains everything that happened after START_STOCK.
+    assert.equal(START_STOCK + total, await stock());
+    const reasons = await db
+      .selectDistinct({ reason: stockMovements.reason })
+      .from(stockMovements)
+      .where(eq(stockMovements.variantId, variantId));
+    const seen = new Set(reasons.map((r) => r.reason));
+    for (const r of ["sale", "restock_cancel", "restock_expiry", "restock_refund", "adjustment"]) {
+      assert.ok(seen.has(r as never), `expected a ${r} movement`);
+    }
   });
 
   it("order page needs the access token", async () => {

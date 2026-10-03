@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, ne, sql } from "drizzle-orm";
 import { getDb } from "../client";
+import { recordStockMovement } from "./stock-ledger";
 import { orderItems, productImages, productVariants, products } from "../schema/index";
 
 export type ProductMetadataJson = {
@@ -189,6 +190,17 @@ export async function createProductForTenant(
 
     if (!variant) throw new Error("Failed to create product variant");
 
+    if (created.trackInventory !== false) {
+      await recordStockMovement(tx, {
+        tenantId,
+        variantId: variant.id,
+        reason: "initial",
+        delta: stockQty,
+        balanceAfter: stockQty,
+        note: "Product created",
+      });
+    }
+
     if (input.imageUrl) {
       await tx.insert(productImages).values({
         productId: created.id,
@@ -275,12 +287,15 @@ export async function updateProductForTenant(
         .where(eq(products.id, productId));
 
       // Keep the default (first) variant in sync for price/stock/image.
+      // Locked so a checkout can't sell between reading the old count and
+      // writing the new one (the ledger delta would be wrong).
       const [variant] = await tx
-        .select({ id: productVariants.id })
+        .select({ id: productVariants.id, stockQty: productVariants.stockQty })
         .from(productVariants)
         .where(eq(productVariants.productId, productId))
         .orderBy(asc(productVariants.id))
-        .limit(1);
+        .limit(1)
+        .for("update");
 
       if (variant) {
         await tx
@@ -291,6 +306,17 @@ export async function updateProductForTenant(
             ...(input.imageUrl !== undefined ? { imageUrl: input.imageUrl } : {}),
           })
           .where(eq(productVariants.id, variant.id));
+
+        if (input.stockQty !== undefined) {
+          await recordStockMovement(tx, {
+            tenantId,
+            variantId: variant.id,
+            reason: "adjustment",
+            delta: input.stockQty - (variant.stockQty ?? 0),
+            balanceAfter: input.stockQty,
+            note: "Stock edited by seller",
+          });
+        }
       }
 
       if (input.imageUrl) {

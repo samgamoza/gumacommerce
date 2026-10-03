@@ -111,7 +111,7 @@ export async function GET() {
       },
       urls: {
         storefront: `${storefrontUrl}/${state.slug}`,
-        preview: `${storefrontUrl}/${state.slug}?preview=1`,
+        preview: "/api/storefront-preview",
       },
     });
   } catch (error) {

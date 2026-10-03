@@ -1,16 +1,16 @@
-import { createHmac, timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 import {
   advanceOrderStatusFromDelivery,
   updateDeliveryByProviderOrderId,
 } from "@gumakart/db";
-import { createLogger } from "@gumakart/services";
+import { createLogger, verifyLalamoveWebhook } from "@gumakart/services";
 
 const log = createLogger("webhook:lalamove");
 
 /**
- * Lalamove partner webhook. Configure the same secret in the Lalamove
- * developer console and LALAMOVE_WEBHOOK_SECRET.
+ * Lalamove partner webhook. Signed with the Lalamove API secret
+ * (LALAMOVE_WEBHOOK_SECRET, falling back to LALAMOVE_API_SECRET) — see
+ * packages/services/src/delivery/lalamove-webhook.ts for the format.
  *
  * Handles ORDER_STATUS_CHANGED (advances our order), DRIVER_ASSIGNED
  * (driver name/phone/plate) and DRIVER_LOCATION pings (live tracking).
@@ -39,20 +39,6 @@ interface LalamoveWebhookBody {
   };
 }
 
-function verifySignature(rawBody: string, body: LalamoveWebhookBody, secret: string): boolean {
-  // Lalamove signs webhooks as HMAC-SHA256 over `${timestamp}\r\n${rawBody}`.
-  const timestamp = body.timestamp;
-  const signature = body.signature;
-  if (!timestamp || !signature) return false;
-
-  const signed = `${timestamp}\r\n${rawBody}`;
-  const expected = createHmac("sha256", secret).update(signed).digest("hex");
-  const expectedBuf = Buffer.from(expected);
-  const providedBuf = Buffer.from(String(signature));
-  if (expectedBuf.length !== providedBuf.length) return false;
-  return timingSafeEqual(expectedBuf, providedBuf);
-}
-
 // Courier statuses that map onto our order lifecycle.
 const STATUS_TO_ORDER: Record<string, "out_for_delivery" | "delivered"> = {
   PICKED_UP: "out_for_delivery",
@@ -75,7 +61,16 @@ export async function POST(request: Request) {
     log.error("LALAMOVE_WEBHOOK_SECRET not configured; rejecting webhook");
     return NextResponse.json({ error: "Webhook not configured" }, { status: 503 });
   }
-  if (!verifySignature(rawBody, body, secret)) {
+  // The path Lalamove signs is the one registered in their console; override
+  // with LALAMOVE_WEBHOOK_PATH if a proxy rewrites it.
+  const path = process.env.LALAMOVE_WEBHOOK_PATH?.trim() || new URL(request.url).pathname;
+  const valid = verifyLalamoveWebhook({
+    payload: body,
+    path,
+    secret,
+    expectedApiKey: process.env.LALAMOVE_API_KEY?.trim() || undefined,
+  });
+  if (!valid) {
     log.warn("Invalid webhook signature");
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }

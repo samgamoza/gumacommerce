@@ -5,6 +5,7 @@ import {
   getStorefrontTenantPreview,
   getUnavailableStorefrontTenant,
 } from "@/lib/get-storefront-tenant";
+import { verifyStorefrontPreviewToken } from "@gumakart/services";
 import { adminUrl } from "@/lib/utils";
 import { TenantStorefrontHome } from "@/components/storefront/tenant-storefront-home";
 
@@ -27,7 +28,10 @@ interface PageProps {
 export default async function StorefrontPage({ params, searchParams }: PageProps) {
   const { tenantSlug } = await params;
   const query = await searchParams;
-  const isPreview = query.preview === "1";
+  // Drafts are private: ?preview=1 only works with a signed link from admin
+  // (/api/storefront-preview). Without it the visitor sees the live shop.
+  const isPreview =
+    query.preview === "1" && verifyStorefrontPreviewToken(tenantSlug, query.pt ?? null);
 
   const tenant = isPreview
     ? await getStorefrontTenantPreview(tenantSlug)

@@ -82,26 +82,21 @@ function mapDbTenantToDemo(
 export async function getStorefrontTenant(slug: string): Promise<DemoTenant | null> {
   if (slug === MODEL_STORE_SLUG) return getModelStoreTenant();
 
-  const demo = getDemoTenant(slug);
-  if (demo) return demo;
-
+  // Real shops win over built-in demos, so a demo can never shadow a merchant.
   const tenant = await getTenantStorefrontBySlug(slug);
-  if (!tenant) return null;
+  if (tenant) return mapDbTenantToDemo(tenant);
 
-  return mapDbTenantToDemo(tenant);
+  return getDemoTenant(slug) ?? null;
 }
 
 /** Launch / Shop Builder preview — includes pending shops + draft theme. */
 export async function getStorefrontTenantPreview(slug: string): Promise<DemoTenant | null> {
   if (slug === MODEL_STORE_SLUG) return getModelStoreTenant();
 
-  const demo = getDemoTenant(slug);
-  if (demo) return demo;
-
   const tenant = await getTenantStorefrontPreviewBySlug(slug);
-  if (!tenant) return null;
+  if (tenant) return mapDbTenantToDemo(tenant);
 
-  return mapDbTenantToDemo(tenant);
+  return getDemoTenant(slug) ?? null;
 }
 
 export async function getStorefrontProduct(

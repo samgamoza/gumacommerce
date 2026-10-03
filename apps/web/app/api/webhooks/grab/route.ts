@@ -32,8 +32,7 @@ interface GrabWebhookBody {
   timestamp?: string | number;
 }
 
-function verifyOptionalSignature(rawBody: string, body: GrabWebhookBody, secret: string): boolean {
-  if (!secret) return true;
+function verifySignature(rawBody: string, body: GrabWebhookBody, secret: string): boolean {
   return verifyTimestampedHmacSignature({
     rawBody,
     signature: body.signature ?? "",
@@ -52,6 +51,13 @@ const STATUS_TO_ORDER: Record<string, "out_for_delivery" | "delivered"> = {
 };
 
 export async function POST(request: Request) {
+  // Without a secret anyone could mark orders delivered — refuse everything.
+  const secret = process.env.GRAB_WEBHOOK_SECRET?.trim() ?? "";
+  if (!secret) {
+    log.error("GRAB_WEBHOOK_SECRET not configured; rejecting webhook");
+    return NextResponse.json({ error: "Webhook not configured" }, { status: 503 });
+  }
+
   const rawBody = await request.text();
 
   let body: GrabWebhookBody;
@@ -61,8 +67,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const secret = process.env.GRAB_WEBHOOK_SECRET?.trim() ?? "";
-  if (secret && !verifyOptionalSignature(rawBody, body, secret)) {
+  if (!verifySignature(rawBody, body, secret)) {
     log.warn("Invalid Grab webhook signature");
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }

@@ -121,10 +121,9 @@ export default async function OrderTrackingPage({ params, searchParams }: PagePr
   const accessToken = typeof t === "string" ? t : "";
 
   // Demo shops show a simulated order instead of hitting the database.
-  const demoTenant = getDemoTenant(tenantSlug);
-  const order = demoTenant
-    ? null
-    : await getOrderForTracking(tenantSlug, orderNumber, accessToken);
+  const order = await getOrderForTracking(tenantSlug, orderNumber, accessToken);
+  const demoTenant =
+    !order && !(await getTenantStorefrontBySlug(tenantSlug)) ? getDemoTenant(tenantSlug) : null;
 
   if (!order && !demoTenant) {
     return <OrderLinkRequired tenantSlug={tenantSlug} orderNumber={orderNumber} />;

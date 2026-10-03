@@ -186,7 +186,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    const demo = getDemoTenant(body.tenantSlug);
+    // Demo only when no real shop owns the slug — a demo must never swallow a real order.
+    const realShop = await getTenantAvailabilityBySlug(body.tenantSlug);
+    const demo = realShop ? null : getDemoTenant(body.tenantSlug);
     if (demo) {
       const orderNumber = generateOrderNumber("DMO");
       return NextResponse.json({
