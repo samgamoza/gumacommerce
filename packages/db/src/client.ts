@@ -12,8 +12,23 @@ declare global {
   var __gumaKartSql: ReturnType<typeof postgres> | undefined;
 }
 
+/**
+ * Neon's copy-paste URLs end with `channel_binding=require`. postgres.js sends
+ * unknown query params to the server as settings, and Postgres rejects it
+ * ("unrecognized configuration parameter channel_binding"), so drop it.
+ */
+export function normalizeDatabaseUrl(raw: string): string {
+  try {
+    const url = new URL(raw);
+    url.searchParams.delete("channel_binding");
+    return url.toString();
+  } catch {
+    return raw.replace(/([?&])channel_binding=[^&]*(&?)/, (_m, lead: string, tail: string) => (tail ? lead : ""));
+  }
+}
+
 function createClient() {
-  const url = getDatabaseUrl("app");
+  const url = normalizeDatabaseUrl(getDatabaseUrl("app"));
   const neon = isNeonDatabase(url);
 
   const sql = postgres(url, {
