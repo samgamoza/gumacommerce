@@ -10,7 +10,17 @@ like Kuya Eddie. Proxmox CT 106 is no longer needed for Guma Kart once this is l
 | `apps/admin` (seller admin) | `gumakart-admin` | admin.guma.one | R2 `UPLOADS`, cron every 5 min |
 | `apps/platform` (ops console) | `gumakart-platform` | ops.guma.one | — |
 
-## One command
+## Build on Linux, not Windows
+
+`@opennextjs/cloudflare` writes Windows paths (`.next\routes-manifest.json`) into the bundle when it
+builds on Windows, and the deployed Worker then answers **500 on every page**. So builds run on
+GitHub Actions (`.github/workflows/deploy-cloudflare.yml`, Ubuntu): every push to `main` / `wip/**`
+that touches `apps/`, `packages/` or the lockfile deploys all three, and **Actions → Deploy Guma Kart
+(Cloudflare) → Run workflow** deploys on demand. Repo secret needed: `CLOUDFLARE_API_TOKEN`
+(optional `CLOUDFLARE_ACCOUNT_ID`). On Windows the PowerShell script below only does settings,
+DNS cutover and Worker secrets (use `-ForceLocalBuild` only from WSL/Linux).
+
+## One command (settings, DNS, secrets)
 
 ```powershell
 cd "D:\All Apps\gumakart"

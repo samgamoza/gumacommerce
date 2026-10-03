@@ -1,0 +1,116 @@
+# Deploys Guma Kart to Cloudflare Workers:
+#   web       -> kart.guma.one   (gumakart-web)
+#   admin     -> admin.guma.one  (gumakart-admin, also runs the crons)
+#   platform  -> ops.guma.one    (gumakart-platform)
+#
+# Why CI and not a Windows build: @opennextjs/cloudflare writes Windows paths
+# (".next\routes-manifest.json") into the bundle when it builds on Windows, so
+# every request fails with a 500. Building on Linux (this runner) is correct.
+#
+# Repo secrets (Settings -> Secrets and variables -> Actions):
+#   CLOUDFLARE_API_TOKEN   same token as scripts/deploy-cloudflare.ps1
+#   CLOUDFLARE_ACCOUNT_ID  optional, defaults below
+# Optional repo variables (public browser keys): NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
+#   NEXT_PUBLIC_PAYMONGO_PUBLIC_KEY, NEXT_PUBLIC_SUPPORT_EMAIL
+# Runtime secrets (DATABASE_URL_POOLED, AUTH_SECRET, CRON_SECRET, ...) live on the
+# Workers, uploaded by scripts/deploy-cloudflare.ps1, and survive redeploys.
+name: Deploy Guma Kart (Cloudflare)
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "Which app"
+        type: choice
+        options: [all, web, admin, platform]
+        default: all
+  push:
+    branches: [main, master, "wip/**"]
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/deploy-cloudflare.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: web
+            host: kart.guma.one
+            smoke: "/kart /"
+          - app: admin
+            host: admin.guma.one
+            smoke: "/login"
+          - app: platform
+            host: ops.guma.one
+            smoke: "/login"
+    concurrency:
+      group: deploy-${{ matrix.app }}
+      cancel-in-progress: true
+    env:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_STOREFRONT_URL: https://kart.guma.one
+      NEXT_PUBLIC_ADMIN_URL: https://admin.guma.one
+      NEXT_PUBLIC_PLATFORM_URL: https://ops.guma.one
+      NEXT_PUBLIC_ROOT_DOMAIN: guma.one
+      NEXT_PUBLIC_PLAN_BILLING_ENABLED: "false"
+      NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ vars.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+      NEXT_PUBLIC_PAYMONGO_PUBLIC_KEY: ${{ vars.NEXT_PUBLIC_PAYMONGO_PUBLIC_KEY }}
+      NEXT_PUBLIC_SUPPORT_EMAIL: ${{ vars.NEXT_PUBLIC_SUPPORT_EMAIL }}
+    steps:
+      - name: Skip if another app was picked
+        id: pick
+        run: |
+          want="${{ github.event.inputs.app || 'all' }}"
+          if [ "$want" = "all" ] || [ "$want" = "${{ matrix.app }}" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; else echo "run=false" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: actions/checkout@v4
+        if: steps.pick.outputs.run == 'true'
+
+      - uses: pnpm/action-setup@v4
+        if: steps.pick.outputs.run == 'true'
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        if: steps.pick.outputs.run == 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        if: steps.pick.outputs.run == 'true'
+        run: pnpm install --frozen-lockfile
+        env:
+          NODE_ENV: development   # devDependencies (opennext, wrangler) are needed for the build
+
+      - name: Build (OpenNext)
+        if: steps.pick.outputs.run == 'true'
+        working-directory: apps/${{ matrix.app }}
+        run: pnpm exec opennextjs-cloudflare build
+
+      - name: Deploy
+        if: steps.pick.outputs.run == 'true'
+        working-directory: apps/${{ matrix.app }}
+        run: pnpm exec wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || vars.CLOUDFLARE_ACCOUNT_ID || '14e2cde158da2d561d055949bf5a3f19' }}
+
+      - name: Smoke test
+        if: steps.pick.outputs.run == 'true'
+        run: |
+          sleep 10
+          fail=0
+          for p in ${{ matrix.smoke }}; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "https://${{ matrix.host }}$p")
+            echo "https://${{ matrix.host }}$p -> $code"
+            if [ "$code" -ge 500 ] || [ "$code" = "000" ]; then fail=1; fi
+          done
+          exit $fail

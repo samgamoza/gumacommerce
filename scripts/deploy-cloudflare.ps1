@@ -41,7 +41,11 @@ param(
   [string]$Bucket = "gumakart-uploads",
   [switch]$SkipSecrets,
   [switch]$SkipInstall,
-  [switch]$Yes
+  [switch]$Yes,
+  # Building on Windows produces a broken bundle (Windows paths -> 500 on every page),
+  # so on Windows this script only sets up DNS + secrets; GitHub Actions
+  # (.github/workflows/deploy-cloudflare.yml) builds and deploys on Linux.
+  [switch]$ForceLocalBuild
 )
 
 $ErrorActionPreference = "Continue"   # native stderr chatter must not abort; exit codes decide.
@@ -53,6 +57,8 @@ $Apps = [ordered]@{
   admin    = @{ Dir = "apps/admin";    Host = "admin.$Zone"; Smoke = @("/login") }
   platform = @{ Dir = "apps/platform"; Host = "ops.$Zone";   Smoke = @("/login") }
 }
+$OnWindows = ($env:OS -eq "Windows_NT")
+$BuildHere = (-not $OnWindows) -or $ForceLocalBuild
 $Selected = if ($App -eq "all") { @("web", "admin", "platform") } else { @($App) }
 
 function Info($msg) { Write-Host "   $msg" }
@@ -166,7 +172,7 @@ try {
   Warn "If deploy says 'R2 bucket not found', create '$Bucket' in the dashboard (R2 Object Storage)."
 }
 
-if (-not $SkipInstall) {
+if ($BuildHere -and -not $SkipInstall) {
   Head "pnpm install"
   & pnpm install 2>&1 | ForEach-Object { Info $_ }
   if ($LASTEXITCODE -ne 0) { throw "pnpm install failed." }
@@ -221,13 +227,17 @@ foreach ($name in $Selected) {
 
   Push-Location $cfg.Dir
   try {
-    Info "building (OpenNext)..."
-    & pnpm exec opennextjs-cloudflare build 2>&1 | ForEach-Object { Info $_ }
-    if ($LASTEXITCODE -ne 0) { throw "$name : OpenNext build failed." }
+    if ($BuildHere) {
+      Info "building (OpenNext)..."
+      & pnpm exec opennextjs-cloudflare build 2>&1 | ForEach-Object { Info $_ }
+      if ($LASTEXITCODE -ne 0) { throw "$name : OpenNext build failed." }
 
-    Info "deploying..."
-    & pnpm exec wrangler deploy 2>&1 | ForEach-Object { Info $_ }
-    if ($LASTEXITCODE -ne 0) { throw "$name : wrangler deploy failed." }
+      Info "deploying..."
+      & pnpm exec wrangler deploy 2>&1 | ForEach-Object { Info $_ }
+      if ($LASTEXITCODE -ne 0) { throw "$name : wrangler deploy failed." }
+    } else {
+      Info "Windows: build + deploy run on GitHub Actions (Deploy Guma Kart (Cloudflare)); updating secrets only."
+    }
 
     if ($SkipSecrets) { Info "secrets skipped" } else {
       $tmp = [System.IO.Path]::GetTempFileName()
@@ -255,6 +265,10 @@ foreach ($name in $Selected) {
   }
 }
 
+if (-not $BuildHere) {
+  Write-Host "`nSecrets and DNS are set. Now build + deploy on GitHub: push, or GitHub -> Actions ->" -ForegroundColor Cyan
+  Write-Host "'Deploy Guma Kart (Cloudflare)' -> Run workflow. Re-run this script afterwards to see the checks." -ForegroundColor Cyan
+}
 Head "Summary"
 $results | ForEach-Object { if ($_ -like "*CHECK*") { Warn $_ } else { Write-Host "   $_" -ForegroundColor Green } }
 Write-Host "`nNew custom domains can take a few minutes to get their certificate - re-run the check if one says CHECK." -ForegroundColor Gray
