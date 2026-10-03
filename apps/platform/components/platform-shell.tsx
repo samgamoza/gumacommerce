@@ -10,6 +10,7 @@ import {
   LayoutTemplate,
   LogOut,
   Menu,
+  MessageSquare,
   Palette,
   ScrollText,
   Settings,
@@ -47,7 +48,10 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     label: "Commerce",
-    items: [{ href: "/orders", label: "Orders", icon: ShoppingCart }],
+    items: [
+      { href: "/orders", label: "Orders", icon: ShoppingCart },
+      { href: "/messaging", label: "SMS & opt-outs", icon: MessageSquare },
+    ],
   },
   {
     label: "Trust & safety",

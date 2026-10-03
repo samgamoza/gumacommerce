@@ -36,6 +36,13 @@ export {
 export { verifyTimestampedHmacSignature } from "./delivery/webhook-signature";
 export { lalamoveSignatureBase, verifyLalamoveWebhook } from "./delivery/lalamove-webhook";
 export {
+  normalizeOptOutPhone,
+  optOutUrl,
+  signOptOutToken,
+  verifyOptOutToken,
+  withOptOutFooter,
+} from "./messaging/opt-out-link";
+export {
   COURIER_NOTES,
   grabFulfillment,
   lalamoveFulfillment,

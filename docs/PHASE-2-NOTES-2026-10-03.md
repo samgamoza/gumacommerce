@@ -84,3 +84,33 @@ and keeps them as the order event log — nothing consumes them until Phase 4.
 ## Not in Phase 2
 Checkout Links (Phase 3), SMS recipes and the STOP inbound handler (Phase 4), POS (Phase 5), per-location stock,
 partial refunds, merchant UI for stock history and message log (APIs/queries exist).
+
+---
+
+## Pre-deploy follow-ups (2026-10-03)
+
+### STOP / opt-out
+Semaphore only **sends**: buyers can't reply STOP to a sender name, so "reply STOP" could never work.
+- Every reminder (marketing) SMS must carry a signed **"Stop reminders" link** (`withOptOutFooter()` in
+  `@gumakart/services`); `sendWithLog()` **refuses** a marketing SMS without it. Order updates don't need it (D2).
+- `kart.guma.one/stop/<token>` shows the masked number and a **Stop reminders** button (a POST, so SMS link
+  previews can't unsubscribe anyone). It opts the number out of reminders from every shop (D3).
+- Platform → **SMS & opt-outs**: add an opt-out for buyers who ask by chat/call ("reminders only" or "all texts"),
+  remove one, and see recent/failed texts (numbers masked). Audited.
+- Checkout consent copy now says each reminder has a link to stop them. `stop` is a reserved shop slug.
+- Env: `SMS_OPT_OUT_SECRET` (≥32 chars; falls back to `STOREFRONT_PREVIEW_SECRET` / `AUTH_SECRET`) on web.
+
+### Lalamove webhook check
+- The verifier accepts the documented layout and the readings Lalamove's guide leaves open (exact `data` bytes vs
+  re-serialized JSON; path with/without a trailing slash) — every one still needs the API secret — and logs
+  **which one matched**.
+- `pnpm --filter @gumakart/services lalamove:check -- https://<web host>/api/webhooks/lalamove` (sandbox keys in
+  `.env`): registers the webhook, books a sandbox delivery, cancels it to trigger a webhook. Refuses to run unless
+  `LALAMOVE_ENV=sandbox`.
+- Then read the web logs: `Lalamove webhook signature verified {variant}` → set `LALAMOVE_WEBHOOK_VARIANT` to it.
+  `Invalid Lalamove webhook signature` → share the log line.
+
+### Tests
+db integration 26/26 (adds message log: once-only sends, failures recorded, reminder without link refused,
+STOP blocks reminders not updates, "all" blocks both) · services 50/50 (opt-out token, Lalamove variants and
+raw-value extraction) · typecheck clean.

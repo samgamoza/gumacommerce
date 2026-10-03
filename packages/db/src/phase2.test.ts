@@ -17,12 +17,15 @@ import { applyOrderAction, expireUnpaidOrders } from "./queries/order-lifecycle"
 import { createOrderForTenant, OrderError } from "./queries/orders";
 import { confirmManualOrderPayment, recordManualPaymentIntent, submitManualPaymentReference } from "./queries/manual-payments";
 import { relayOutbox } from "./queries/outbox";
+import { addOptOut, sendWithLog } from "./queries/message-log";
 import { legacyPaymentStatusOf, legacyStatusOf } from "./queries/order-state";
 import {
   customers,
   deliveries,
   domainEvents,
   locations,
+  messageLog,
+  messagingOptOuts,
   orderStatusHistory,
   orders,
   paymentTransactions,
@@ -91,6 +94,8 @@ before(async () => {
 after(async () => {
   const orderIds = db.select({ id: orders.id }).from(orders).where(eq(orders.tenantId, tenantId));
   await db.delete(domainEvents).where(eq(domainEvents.tenantId, tenantId));
+  await db.delete(messageLog).where(eq(messageLog.tenantId, tenantId));
+  await db.delete(messagingOptOuts).where(sql`${messagingOptOuts.phone} like '0999000%'`);
   await db.delete(walletLedgerEntries).where(eq(walletLedgerEntries.tenantId, tenantId));
   await db.delete(tenantWallets).where(eq(tenantWallets.tenantId, tenantId));
   await db.delete(deliveries).where(sql`${deliveries.orderId} in ${orderIds}`);
@@ -297,5 +302,72 @@ describe("per-shop unpaid expiry (D4)", () => {
     const expired = await expireUnpaidOrders();
     assert.ok(expired.orderIds.includes(order.id), "1h window: expired");
     assert.equal((await row(order.id)).orderState, "cancelled");
+  });
+});
+
+describe("message log + opt-outs", () => {
+  const phone = `0999000${String(Math.floor(Math.random() * 9000) + 1000)}`;
+  const entity = randomUUID();
+  // Getter: tenantId is only known after the top-level before() runs.
+  const b = () => ({
+    tenantId,
+    channel: "sms" as const,
+    recipient: phone,
+    entityId: entity,
+    provider: "semaphore",
+  });
+
+  it("sends once per recipe/order/step and records the result", async () => {
+    let sends = 0;
+    const send = async () => {
+      sends += 1;
+      return { success: true, messageId: "sem_1" };
+    };
+    const first = await sendWithLog({ ...b(), recipe: "order_created", body: "Order received", kind: "transactional" }, send);
+    const replay = await sendWithLog({ ...b(), recipe: "order_created", body: "Order received", kind: "transactional" }, send);
+    assert.equal(first.status, "sent");
+    assert.equal(replay.status, "duplicate");
+    assert.equal(sends, 1, "the provider is called once");
+    const [row] = await db.select().from(messageLog).where(eq(messageLog.idempotencyKey, `order_created:${entity}:0`));
+    assert.equal(row!.status, "sent");
+    assert.equal(row!.providerMessageId, "sem_1");
+    assert.equal(row!.segments, 1);
+  });
+
+  it("records provider failures without throwing", async () => {
+    const res = await sendWithLog(
+      { ...b(), recipe: "order_shipped", body: "On the way", kind: "transactional" },
+      async () => {
+        throw new Error("semaphore 500");
+      }
+    );
+    assert.equal(res.status, "failed");
+  });
+
+  it("refuses a reminder without the stop link", async () => {
+    await assert.rejects(
+      sendWithLog({ ...b(), recipe: "checkout_recovery", body: "Your cart is waiting", kind: "marketing" }, async () => ({ success: true }))
+    );
+  });
+
+  it("STOP blocks reminders but not order updates; 'all' blocks both", async () => {
+    await addOptOut({ phone, scope: "marketing", source: "STOP" });
+    let sends = 0;
+    const send = async () => {
+      sends += 1;
+      return { success: true };
+    };
+    const reminder = await sendWithLog(
+      { ...b(), recipe: "checkout_recovery", step: 1, body: "Finish your order https://kart.guma.one/stop/abc.def123456789", kind: "marketing" },
+      send
+    );
+    assert.equal(reminder.status, "suppressed");
+    const update = await sendWithLog({ ...b(), recipe: "order_paid", body: "Payment confirmed", kind: "transactional" }, send);
+    assert.equal(update.status, "sent", "decision D2: order updates continue after STOP");
+
+    await addOptOut({ phone: `+63${phone.slice(1)}`, scope: "all", source: "admin" });
+    const blocked = await sendWithLog({ ...b(), recipe: "order_delivered", body: "Delivered", kind: "transactional" }, send);
+    assert.equal(blocked.status, "suppressed", "normalized +63 number matches");
+    assert.equal(sends, 1);
   });
 });

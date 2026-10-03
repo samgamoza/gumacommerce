@@ -618,8 +618,8 @@ export function CheckoutForm({
                     className="mt-0.5 h-4 w-4 rounded border-stone-300 accent-orange-600"
                   />
                   <span>
-                    Text me reminders about this order (e.g. if I don&apos;t finish paying). Reply
-                    STOP anytime. Order updates are always sent.
+                    Text me reminders about this order (e.g. if I don&apos;t finish paying). Every
+                    reminder has a link to stop them. Order updates are always sent.
                   </span>
                 </label>
               </div>

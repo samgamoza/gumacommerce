@@ -7,6 +7,7 @@ const RESERVED_SLUGS = new Set([
   "kart",
   "preview",
   "uploads",
+  "stop",
   "icon",
   "robots",
   "sitemap",

@@ -90,6 +90,10 @@ const STATUS_TONES: Record<string, string> = {
   cancelled: "bg-rose-100 text-rose-700",
   refunded: "bg-rose-100 text-rose-700",
   skipped: "bg-slate-100 text-slate-500",
+  // message_log
+  sent: "bg-emerald-100 text-emerald-700",
+  queued: "bg-slate-100 text-slate-600",
+  suppressed: "bg-slate-100 text-slate-500",
   // Phase 2 order states
   open: "bg-sky-100 text-sky-700",
   completed: "bg-emerald-100 text-emerald-700",

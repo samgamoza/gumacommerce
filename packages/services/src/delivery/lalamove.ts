@@ -205,6 +205,36 @@ export class LalamoveClient {
       trackingUrl: json.data.shareLink,
     };
   }
+
+  /**
+   * Registers where Lalamove sends status webhooks (PATCH /v3/webhook). Used by
+   * the sandbox check script; in production set it once in the Lalamove portal
+   * or with this call.
+   */
+  /** Cancels a booking (DELETE /v3/orders/{id}). Lalamove then sends a CANCELED webhook. */
+  async cancelOrder(orderId: string): Promise<void> {
+    if (!this.configured()) throw new Error("LALAMOVE_API_KEY / LALAMOVE_API_SECRET are not set.");
+    const path = `/v3/orders/${encodeURIComponent(orderId)}`;
+    const res = await fetch(`${this.baseUrl}${path.replace("/v3", "")}`, {
+      method: "DELETE",
+      headers: this.headers("DELETE", path, ""),
+    });
+    if (!res.ok && res.status !== 204) {
+      throw new Error(`Lalamove cancel failed: ${res.status} ${await res.text()}`);
+    }
+  }
+
+  async setWebhookUrl(url: string): Promise<void> {
+    if (!this.configured()) throw new Error("LALAMOVE_API_KEY / LALAMOVE_API_SECRET are not set.");
+    const path = "/v3/webhook";
+    const body = JSON.stringify({ data: { url } });
+    const res = await fetch(`${this.baseUrl}${path.replace("/v3", "")}`, {
+      method: "PATCH",
+      headers: this.headers("PATCH", path, body),
+      body,
+    });
+    if (!res.ok) throw new Error(`Lalamove webhook registration failed: ${res.status} ${await res.text()}`);
+  }
 }
 
 export function createLalamoveClient(): LalamoveClient {

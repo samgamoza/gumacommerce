@@ -24,6 +24,8 @@ import {
   setTenantPaymentsMode,
   upsertShopBusinessCategory,
   writeAudit,
+  addOptOut,
+  removeOptOut,
   type ActiveLanding,
   type PlatformPaymentsMode,
   type ShopCategoryStatus,
@@ -118,6 +120,53 @@ export async function updateTenantPlanAction(
     revalidatePath(`/tenants/${tenantId}`);
     revalidatePath("/subscriptions");
     revalidatePath("/");
+    return { ok: true };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+// ─── SMS opt-outs ─────────────────────────────────────────────────────────────
+
+/** Support: a buyer asked (by chat/email/call) to stop texts. */
+export async function addSmsOptOutAction(input: {
+  phone: string;
+  scope: "marketing" | "all";
+}): Promise<ActionResult> {
+  try {
+    const session = await guard();
+    const digits = input.phone.replace(/\D/g, "");
+    if (digits.length < 10 || digits.length > 13) return { ok: false, error: "Enter a valid mobile number." };
+    await addOptOut({ phone: input.phone, scope: input.scope, tenantId: null, source: "admin" });
+    await writeAudit({
+      actorId: session.userId,
+      actorEmail: session.email,
+      action: "sms_opt_out_added",
+      entityType: "phone",
+      entityId: null,
+      entityLabel: `…${digits.slice(-4)}`,
+      metadata: { scope: input.scope },
+    });
+    revalidatePath("/messaging");
+    return { ok: true };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+export async function removeSmsOptOutAction(id: string, label: string): Promise<ActionResult> {
+  try {
+    const session = await guard();
+    await removeOptOut(id);
+    await writeAudit({
+      actorId: session.userId,
+      actorEmail: session.email,
+      action: "sms_opt_out_removed",
+      entityType: "phone",
+      entityId: id,
+      entityLabel: label,
+    });
+    revalidatePath("/messaging");
     return { ok: true };
   } catch (error) {
     return fail(error);

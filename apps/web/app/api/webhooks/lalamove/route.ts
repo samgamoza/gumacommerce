@@ -63,14 +63,31 @@ export async function POST(request: Request) {
   // The path Lalamove signs is the one registered in their console; override
   // with LALAMOVE_WEBHOOK_PATH if a proxy rewrites it.
   const path = process.env.LALAMOVE_WEBHOOK_PATH?.trim() || new URL(request.url).pathname;
-  const valid = verifyLalamoveWebhook({
+  const pinned = process.env.LALAMOVE_WEBHOOK_VARIANT?.trim() as
+    | "json"
+    | "raw"
+    | "json-slash"
+    | "raw-slash"
+    | undefined;
+  const verified = verifyLalamoveWebhook({
     payload: body,
     path,
     secret,
+    rawBody,
     expectedApiKey: process.env.LALAMOVE_API_KEY?.trim() || undefined,
+    only: pinned || undefined,
   });
-  if (!valid) {
-    log.warn("Invalid webhook signature");
+  if (verified.ok && !pinned) {
+    // Shows which signature layout Lalamove uses — pin it with LALAMOVE_WEBHOOK_VARIANT.
+    log.info("Lalamove webhook signature verified", { variant: verified.variant, path });
+  }
+  if (!verified.ok) {
+    log.warn("Invalid Lalamove webhook signature", {
+      path,
+      hasTimestamp: Boolean(body.timestamp),
+      hasSignature: Boolean(body.signature),
+      apiKeyMatches: !process.env.LALAMOVE_API_KEY || body.apiKey === process.env.LALAMOVE_API_KEY,
+    });
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 

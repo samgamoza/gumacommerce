@@ -1,4 +1,4 @@
-import { and, eq, isNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
 import { getDb } from "../client";
 import { messageLog, messagingOptOuts, type MessageChannel } from "../schema/index";
 
@@ -113,6 +113,12 @@ export async function sendWithLog(
   const db = getDb();
   const idempotencyKey = messageIdempotencyKey(entry.recipe, entry.entityId, entry.step ?? 0);
 
+  // Buyers can't reply STOP to a sender name, so every reminder must carry the
+  // signed "Stop reminders" link (withOptOutFooter in @gumakart/services).
+  if (entry.kind === "marketing" && entry.channel === "sms" && !/\/stop\/[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/.test(entry.body)) {
+    throw new Error(`Marketing SMS "${entry.recipe}" has no opt-out link — use withOptOutFooter().`);
+  }
+
   const [reserved] = await db
     .insert(messageLog)
     .values({
@@ -172,6 +178,72 @@ export async function sendWithLog(
       .where(eq(messageLog.id, reserved.id));
     return { status: "failed", error, logId: reserved.id };
   }
+}
+
+export interface OptOutItem {
+  id: string;
+  phone: string;
+  channel: string;
+  scope: string;
+  tenantId: string | null;
+  source: string;
+  createdAt: Date;
+}
+
+export async function listOptOuts(limit = 200): Promise<OptOutItem[]> {
+  const db = getDb();
+  return db
+    .select({
+      id: messagingOptOuts.id,
+      phone: messagingOptOuts.phone,
+      channel: messagingOptOuts.channel,
+      scope: messagingOptOuts.scope,
+      tenantId: messagingOptOuts.tenantId,
+      source: messagingOptOuts.source,
+      createdAt: messagingOptOuts.createdAt,
+    })
+    .from(messagingOptOuts)
+    .orderBy(desc(messagingOptOuts.createdAt))
+    .limit(limit);
+}
+
+/** Support undo (buyer asked to get reminders again). */
+export async function removeOptOut(id: string): Promise<void> {
+  const db = getDb();
+  await db.delete(messagingOptOuts).where(eq(messagingOptOuts.id, id));
+}
+
+export interface PlatformMessageItem {
+  id: string;
+  tenantId: string | null;
+  orderId: string | null;
+  channel: string;
+  recipient: string;
+  recipe: string;
+  status: string;
+  error: string | null;
+  createdAt: Date;
+}
+
+/** Ops view: recent sends, optionally only failures. Recipients are masked for display by the caller. */
+export async function listRecentMessages(options: { failedOnly?: boolean; limit?: number } = {}): Promise<PlatformMessageItem[]> {
+  const db = getDb();
+  return db
+    .select({
+      id: messageLog.id,
+      tenantId: messageLog.tenantId,
+      orderId: messageLog.orderId,
+      channel: messageLog.channel,
+      recipient: messageLog.recipient,
+      recipe: messageLog.recipe,
+      status: messageLog.status,
+      error: messageLog.error,
+      createdAt: messageLog.createdAt,
+    })
+    .from(messageLog)
+    .where(options.failedOnly ? eq(messageLog.status, "failed") : undefined)
+    .orderBy(desc(messageLog.createdAt))
+    .limit(Math.min(options.limit ?? 100, 500));
 }
 
 export interface MessageLogItem {
