@@ -12,12 +12,16 @@
     .\scripts\deploy-cloudflare.ps1 -SkipInstall       # faster re-deploys
     .\scripts\deploy-cloudflare.ps1 -SkipSecrets       # keep the Workers' stored secrets
 
-  Settings come from .env, then .env.cloudflare on top (production values; gitignored).
+  Settings come from .env, then .env.ct (a copy of CT 106's production .env, if present),
+  then .env.cloudflare on top. All three are gitignored. Get .env.ct once with:
+
+    ssh root@192.168.1.15 "pct exec 106 -- cat /root/guma/.env" | Set-Content .env.ct
+
   Put the PRODUCTION database there, so the dev URL in .env is never deployed:
 
     DATABASE_URL_POOLED=postgresql://...@ep-xxxx-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
 
-  CRON_SECRET, STOREFRONT_PREVIEW_SECRET and SMS_OPT_OUT_SECRET are generated into
+  AUTH_SECRET, CRON_SECRET, STOREFRONT_PREVIEW_SECRET and SMS_OPT_OUT_SECRET are generated into
   .env.cloudflare on the first run. Safe launch defaults are added too:
   WALLET_PAYOUTS_ENABLED=false, BAYANGO_ENABLED=false, NEXT_PUBLIC_PLAN_BILLING_ENABLED=false.
 
@@ -93,6 +97,9 @@ if (-not (Test-Path "pnpm-workspace.yaml")) { throw "Run this from the repo root
 # ---------------------------------------------------------------- settings
 Head "Settings"
 $envMap = ReadEnvFile ".env"
+$ct = ReadEnvFile ".env.ct"
+foreach ($k in $ct.Keys) { if ($ct[$k]) { $envMap[$k] = $ct[$k] } }
+if ($ct.Count -gt 0) { Info "using .env.ct ($($ct.Count) keys from CT 106)" }
 $prodFile = ".env.cloudflare"
 $prod = ReadEnvFile $prodFile
 foreach ($k in $prod.Keys) { $envMap[$k] = $prod[$k] }
@@ -122,8 +129,8 @@ if (-not (AskYes "Is that the PRODUCTION branch (Neon -> production -> Connect, 
 
 # Generated secrets + launch defaults, persisted to .env.cloudflare.
 $added = @()
-foreach ($k in @("CRON_SECRET", "STOREFRONT_PREVIEW_SECRET", "SMS_OPT_OUT_SECRET")) {
-  if (-not $envMap[$k]) { $envMap[$k] = NewSecret; $added += "$k=$($envMap[$k])" }
+foreach ($k in @("AUTH_SECRET", "CRON_SECRET", "STOREFRONT_PREVIEW_SECRET", "SMS_OPT_OUT_SECRET")) {
+  if (-not $envMap[$k] -or $envMap[$k].Length -lt 32) { $envMap[$k] = NewSecret; $added += "$k=$($envMap[$k])" }
 }
 foreach ($pair in @(@("WALLET_PAYOUTS_ENABLED", "false"), @("BAYANGO_ENABLED", "false"), @("NEXT_PUBLIC_PLAN_BILLING_ENABLED", "false"))) {
   if (-not $envMap.Contains($pair[0])) { $envMap[$pair[0]] = $pair[1]; $added += "$($pair[0])=$($pair[1])" }
