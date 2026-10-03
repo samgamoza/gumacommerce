@@ -1,6 +1,6 @@
 # Guma Kart — Agent Handoff Document
 
-**Last updated:** 2026-08-20 (Full re-audit against this repo + Mission 000 executable baseline)  
+**Last updated:** 2026-10-03 (Phase 1 + Phase 2 of the V1 plan shipped to branch `wip/uncommitted-work-2026-08-01`; PayMongo on hold; work paused for another venture)  
 **Purpose:** Hands-off context for the next agent or developer. Read this before making changes.
 
 > **Strategy re-audit (external review):** [`GUMA-SOCIAL-CHECKOUT-STRATEGY-REVIEW.md`](./GUMA-SOCIAL-CHECKOUT-STRATEGY-REVIEW.md)  
@@ -12,7 +12,58 @@
 
 > Newest durable deltas (2026-08-20): **Mission 000 (repo hygiene)** — added `.gitattributes` (fixed a CRLF-drift bug that made ~99% of the tree falsely show as modified), untracked `*.tsbuildinfo` caches, committed the previously-uncommitted 2026-08-07→08 session notes below. **External strategy re-audit** delivered — flags the Checkout-First-vs-Template-Intel direction as unresolved (see Session 2026-08-20) and reconfirms the unfixed concurrent-checkout stock race at `packages/db/src/queries/orders.ts:250`. Prior: Platform ops control plane + Template Intel + PayMongo gate (2026-08-07→08); Chief Engineer Phases 1–6 + marketing legal UX (2026-08-06).
 
+> **START HERE (2026-10-03):** the plan of record is [`GUMA-KART-V1-PLAN-REVISED.md`](./GUMA-KART-V1-PLAN-REVISED.md). Phase notes: [`PHASE-1-NOTES-2026-10-02.md`](./PHASE-1-NOTES-2026-10-02.md), [`PHASE-2-NOTES-2026-10-03.md`](./PHASE-2-NOTES-2026-10-03.md), [`PAYMONGO-TRACK-2026-10-03.md`](./PAYMONGO-TRACK-2026-10-03.md), spec [`PHASE-2-MIGRATION-SPEC.md`](./PHASE-2-MIGRATION-SPEC.md). Audits: [`CURRENT-STATE-AUDIT-2026-10-02.md`](./CURRENT-STATE-AUDIT-2026-10-02.md), [`VEYRON-BAYANGO-FIT-AUDIT-2026-10-02.md`](./VEYRON-BAYANGO-FIT-AUDIT-2026-10-02.md). The session section below supersedes older sections where they conflict (e.g. order statuses, KYC, payouts).
+
 > **Deferred post-MVP beta:** Trust / Legal entity page (real SEC/TIN); KYC review queue + wallet/payout ops UI on Platform. **Do not start** Workstation / LangGraph / Meta Messenger without a new Chief Engineer directive (Phase 7).
+
+---
+
+## Session 2026-10-02 → 2026-10-03 — Rebrand, V1 plan, Phase 1, Phase 2 (PAUSED here)
+
+**Status when paused:** all work committed and **pushed** to `origin/wip/uncommitted-work-2026-08-01` (head `60e9f4b`). Not merged to `main`, **not deployed**. Owner ran `pnpm --filter @gumakart/db migrate` successfully (migrations through **0022** applied to the DB in that shell's `DATABASE_URL` — confirm it was Neon production and run the verify SQL below). Work paused for another Guma venture.
+
+### Commits (oldest → newest)
+| Commit | What |
+|---|---|
+| `f8b6232` | Full rename Guma Commerce → **Guma Kart** (`@gumakart/*`, repo `samgamoza/gumakart`). |
+| `48a09a5` | **BayanGo partner hook** (client/adapter, signed webhook `/api/webhooks/bayango`, migration 0018) + current-state and Veyron/BayanGo fit audits. Contract: `docs/BAYANGO-PARTNER-API-CONTRACT.md`. BayanGo side is being built by Cursor from `BayanGo App/docs/CURSOR-PROMPT-PARTNER-API.md`. |
+| `d756a9a` | **Phase 1:** KYC lock-down (platform review only, payouts off behind `WALLET_PAYOUTS_ENABLED`), order access tokens (`?t=` links, migration 0019), single order lifecycle service, idempotent restock, refund NOWAIT lock, unpaid-order expiry cron. |
+| `f52ffd0` | **Phase 1 close-out:** Grab webhook fail-closed, Lalamove signature fix, reserved slugs, real shops before demo shops, push-unsubscribe scoping, signed draft preview (`STOREFRONT_PREVIEW_SECRET`), `stock_movements` ledger (0020). |
+| `832bf61` | **PayMongo** moved to hosted Checkout Sessions + return page (code ready, **on hold**); Phase 2 spec. |
+| `946ac2e` | **Phase 2:** three order states (order/payment/fulfillment), migrations 0021+0022, pure state machine `packages/db/src/queries/order-state.ts`, order service `applyOrderAction` (dual-writes legacy `status`/`payment_status`), outbox relay `/api/cron/outbox`, `message_log` + `sendWithLog`, consent checkbox, locations, new admin order tabs, per-shop unpaid expiry, plan upgrades "coming soon". |
+| `60e9f4b` | **Pre-deploy follow-ups:** SMS opt-out link (`/stop/<token>`, Semaphore can't receive STOP replies), Platform → SMS & opt-outs, Lalamove webhook variant verifier + `lalamove:check` sandbox script. |
+
+Also committed in **veyron-pos-saas** (`999833a`, branch `feature/ci-locations-promotions`, not pushed by us): super_admin escalation fix, `/debug/routes` dev-only, API login rate limit, PayPal stub disabled, tenant-scoper INSERT bug fix + tests.
+
+### Owner decisions in force
+- Payments: **direct GCash/Maya/bank + COD** now. **PayMongo on hold** until Guma One business registration + BIR are funded; code is ready (`docs/PAYMONGO-TRACK-2026-10-03.md`). Paid plan upgrades hidden (`NEXT_PUBLIC_PLAN_BILLING_ENABLED=false`).
+- BayanGo: separate product; Cursor builds its partner API; Guma side hook is done.
+- Veyron: stays separate; **POS Lite built natively in Guma Kart** (plan Phase 5).
+- Pricing: plan §18 recommendation (add-ons + plan inclusion), validate in beta.
+- Hosting: Cloudflare Workers now, Proxmox later is possible (plan §19).
+- Phase 2 decisions D1–D5: accept = timestamp; STOP blocks reminders not order updates; STOP is platform-wide; unpaid expiry per shop (1–72 h, default 24); drop legacy columns one release after a clean week.
+
+### To finish the deploy (in order)
+1. Confirm the migrate ran against **Neon production**; then run `packages/db/drizzle-pending/phase2-verify.sql` → V1–V5 must return **0 rows**.
+2. Merge `wip/uncommitted-work-2026-08-01` → `main` (or deploy that branch) and deploy admin + web + platform.
+3. Env: `STOREFRONT_PREVIEW_SECRET`, `SMS_OPT_OUT_SECRET` (≥32 chars, web + admin), `WALLET_PAYOUTS_ENABLED=false`, `NEXT_PUBLIC_PLAN_BILLING_ENABLED=false`, `CRON_SECRET`, `BAYANGO_ENABLED=false` until BayanGo passes its gate.
+4. Crons (Bearer `CRON_SECRET`): `/api/cron/outbox` every minute if possible, `/api/cron/expire-orders` hourly. `apps/admin/vercel.json` only has daily runs (Vercel Hobby limit).
+5. Smoke test: COD order; manual GCash order (proof → confirm / "Not received"); book + assign rider; deliver; cancel unpaid; buyer order page via SMS link; draft Preview from admin.
+6. Lalamove: `pnpm --filter @gumakart/services lalamove:check -- https://<web>/api/webhooks/lalamove` with sandbox keys → set `LALAMOVE_WEBHOOK_VARIANT` from the log.
+7. After a clean week of verify queries: move `drizzle-pending/0023_phase2_constrain.sql` into `drizzle/` (journal idx 23) and migrate. Later: 0024 drops legacy columns.
+
+### Next work when resuming (plan §11)
+- **Phase 3 — Checkout Links** (entity, merchant UI, production checkout from the `/kart` components, abandonment capture, source tracking).
+- Phase 4 SMS recipes (consume outbox events via Inngest; every reminder must use `withOptOutFooter`, enforced by `sendWithLog`), Phase 5 POS Lite, Phase 6 nav/onboarding.
+- Parallel: Cloudflare move for admin/platform; PayMongo go-live when registration is done.
+
+### Pitfalls learned this session
+- **drizzle 0.38** renders `.for("update", { noWait: true })` as invalid `for update no wait` — use raw `FOR UPDATE NOWAIT` (see `refundOrder`).
+- All order changes go through `applyOrderAction` / `refundOrder`. Never write `orders.status` directly — it's a dual-written legacy column.
+- Integration tests need local Postgres (`DATABASE_URL=postgres://postgres:postgres@localhost:5434/gumakart`) and refuse Neon. Veyron's `.env` points at Neon — run its tests with `DATABASE_URL=""` (SQLite).
+- Semaphore is send-only; STOP must be a link. A marketing SMS without `/stop/` link throws.
+- `drizzle-pending/` holds SQL that must not auto-apply (not in the journal).
+- Commits use the repo-local identity `mateenforjob-max`; `simply-sweet-source` submodule pointer and `docs/Guma_Kart_V1_Implementation_Plan.md` were intentionally left uncommitted.
 
 ---
 
